@@ -1,4 +1,4 @@
 seriationct
-===========
+==========
 
-Multiscale simulation of cultural transmission in a regional metapopulation, measured via seriation
+Cultural transmission models with heterogeneous mixtures of social learning modes

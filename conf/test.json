@@ -1,0 +1,14 @@
+{
+    "REPLICATIONS_PER_PARAM_SET" : 10,
+    "POPULATION_SIZES_STUDIED" : [100],
+    "INNOVATION_RATE" : [0.00001, 0.00005],
+    "NUMBER_OF_DIMENSIONS_OR_FEATURES" : [1,2,4],
+    "NUMBER_OF_TRAITS_PER_DIMENSION" : [8,16],
+    "SIMULATION_CUTOFF_TIME" : 3000000,
+    "INTERACTION_RULE_CLASS" : {"madsenlab.seriationct.rules.ConformistCopyingRule": 0.5, "madsenlab.seriationct.rules.AntiConformistCopyingRule": 0.5},
+    "POPULATION_STRUCTURE_CLASS" : "madsenlab.seriationct.population.FixedTraitStructurePopulation",
+    "INNOVATION_RULE_CLASS" : "madsenlab.seriationct.rules.InfiniteAllelesMutationRule",
+    "NETWORK_FACTORY_CLASS" : "madsenlab.seriationct.population.SquareLatticeFactory",
+    "TRAIT_FACTORY_CLASS" : "madsenlab.seriationct.traits.LocusAlleleTraitFactory"
+}
+
