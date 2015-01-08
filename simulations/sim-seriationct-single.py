@@ -34,7 +34,7 @@ def setup():
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--configuration", help="Configuration file for experiment", required=True)
-    parser.add_argument("--reps", help="Replicated populations per parameter set", default = 25)
+    parser.add_argument("--reps", help="Replicated populations per parameter set", type = int, default = 4)
     parser.add_argument("--networkmodel", help="Filename of the temporal network model for this simulation", required=True)
     parser.add_argument("--popsize", help="Population size", type = int, required=True)
     parser.add_argument("--numloci", help="Number of loci per individual", type = int, required=True)
@@ -73,7 +73,23 @@ def setup():
         simuOpt.setOptions(alleleType='long',optimized=True,quiet=True,numThreads = cores)
 
 
+def sampleNumAlleles(pop, param):
+    """Samples allele richness for all loci in a replicant population, and simply logs the richness by subpop and locus.
 
+        Mostly for prototyping purposes...
+
+    """
+    import simuPOP as sim
+    import simuPOP.sampling as sampling
+    (ssize, mutation, popsize,sim_id,numloci) = param
+    popID = pop.dvars().rep
+    gen = pop.dvars().gen
+    sample = sampling.drawRandomSample(pop, sizes=ssize,subPops=sim.ALL_AVAIL)
+    sim.stat(sample, alleleFreq=sim.ALL_AVAIL)
+    for locus in range(numloci):
+        numAlleles = len(sample.dvars().alleleFreq[locus].values())
+        log.info("subpop: %s ssize: %s richness: %s locus: %s ", popID,ssize,numAlleles,locus)
+    return True
 
 
 
@@ -103,8 +119,8 @@ def main():
         ],
         matingScheme = sim.RandomSelection(),
         postOps = [sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
-                    # sim.PyOperator(func=data.sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
-                    #                step=sampling_interval,begin=time_start_stats),
+                    sim.PyOperator(func=sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
+                                    step=1000,begin=1000),
                     # sim.PyOperator(func=data.sampleTraitCounts, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
                     #                step=sampling_interval,begin=time_start_stats),
                     # sim.PyOperator(func=data.censusTraitCounts, param=(innovation_rate, config.popsize,sim_id,config.numloci),
