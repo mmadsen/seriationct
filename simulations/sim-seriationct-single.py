@@ -47,7 +47,6 @@ def setup():
 
     config = parser.parse_args()
 
-
     sim_id = uuid.uuid4().urn
     script = __file__
 
@@ -81,14 +80,16 @@ def sampleNumAlleles(pop, param):
     """
     import simuPOP as sim
     import simuPOP.sampling as sampling
-    (ssize, mutation, popsize,sim_id,numloci) = param
-    popID = pop.dvars().rep
+    (ssize, mutation,popsize,sim_id,numloci) = param
+    rep = pop.dvars().rep
     gen = pop.dvars().gen
-    sample = sampling.drawRandomSample(pop, sizes=ssize,subPops=sim.ALL_AVAIL)
-    sim.stat(sample, alleleFreq=sim.ALL_AVAIL)
-    for locus in range(numloci):
-        numAlleles = len(sample.dvars().alleleFreq[locus].values())
-        log.info("subpop: %s ssize: %s richness: %s locus: %s ", popID,ssize,numAlleles,locus)
+    subpops = pop.subPopNames()
+    for sp_name in subpops:
+        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
+        sim.stat(sample, alleleFreq=sim.ALL_AVAIL)
+        for locus in range(numloci):
+            numAlleles = len(sample.dvars().alleleFreq[locus].values())
+            log.info("replicate: %s subpop: %s  ssize: %s locus: %s richness: %s ", rep, sp_name,ssize,locus,numAlleles)
     return True
 
 
@@ -101,6 +102,11 @@ def main():
     log.debug("config: %s" , config)
 
 
+    # test purposes
+    num_subpops = 2
+    popsize_list = [config.popsize] * num_subpops
+    subpop_names = [str(i) for i in xrange(0, num_subpops)]
+    log.debug("subpopulation names: %s", subpop_names)
 
     initial_distribution = ctu.constructUniformAllelicDistribution(config.maxinittraits)
     log.debug("Initial allelic distribution: %s", initial_distribution)
@@ -109,7 +115,7 @@ def main():
     log.debug("Per-locus innov rate within populations: %s", innovation_rate)
 
 
-    pop = sim.Population(size=config.popsize, ploidy=1, loci=config.numloci)
+    pop = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci)
     simu = sim.Simulator(pop, rep=config.reps)
 
     simu.evolve(
@@ -119,7 +125,7 @@ def main():
         ],
         matingScheme = sim.RandomSelection(),
         postOps = [sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
-                    sim.PyOperator(func=sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
+                    sim.PyOperator(func=sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci), subPops = sim.ALL_AVAIL,
                                     step=1000,begin=1000),
                     # sim.PyOperator(func=data.sampleTraitCounts, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
                     #                step=sampling_interval,begin=time_start_stats),
