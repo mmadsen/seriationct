@@ -20,6 +20,7 @@ import ctpy.utils as ctu
 import pytransmission.popgen as pypopgen
 from time import time
 import uuid
+import pprint as pp
 
 MAXALLELES = 1000000000
 
@@ -89,10 +90,54 @@ def sampleNumAlleles(pop, param):
         sim.stat(sample, alleleFreq=sim.ALL_AVAIL)
         for locus in range(numloci):
             numAlleles = len(sample.dvars().alleleFreq[locus].values())
-            log.info("replicate: %s subpop: %s  ssize: %s locus: %s richness: %s ", rep, sp_name,ssize,locus,numAlleles)
+            log.info("simulation_id: %s gen: %s replicate: %s subpop: %s  ssize: %s locus: %s richness: %s ", sim_id, gen, rep, sp_name,ssize,locus,numAlleles)
     return True
 
 
+
+# def sampleIndividuals(pop, param):
+#     import simuPOP as sim
+#     import simuPOP.sampling as sampling
+#     (ssize, mutation, popsize, sim_id, num_loci) = param
+#     popID = pop.dvars().rep
+#     gen = pop.dvars().gen
+#     subpops = pop.subPopNames()
+#     samplelist = []
+#
+#     for sp_name in subpops:
+#         sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
+#
+#         for idx in range(ssize):
+#             genotype_list = list(sample.individual(idx).genotype())
+#             indiv = dict(sampletime = gen, subpop=sp_name, replicate = popID, id=idx, genotype=genotype_list)
+#             samplelist.append(indiv)
+#
+#     log.debug("individual samples: %s", samplelist)
+#
+#     return True
+
+def sampleIndividuals(pop, param):
+    import simuPOP as sim
+    import simuPOP.sampling as sampling
+    (ssize, mutation, popsize, sim_id, num_loci) = param
+    popID = pop.dvars().rep
+    gen = pop.dvars().gen
+    subpops = pop.subPopNames()
+    samplelist = []
+
+    for sp_name in subpops:
+        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
+        genotype_samples = []
+        for idx in range(ssize):
+            s = list(sample.individual(idx).genotype())
+            genotype_samples.append(s)
+
+        sample = dict(sampletime = gen, subpop=sp_name, replicate = popID, genotype=genotype_samples)
+        samplelist.append(sample)
+
+    log.debug("individual samples: %s", pp.pprint(samplelist))
+
+    return True
 
 
 def main():
@@ -103,7 +148,7 @@ def main():
 
 
     # test purposes
-    num_subpops = 2
+    num_subpops = 25
     popsize_list = [config.popsize] * num_subpops
     subpop_names = [str(i) for i in xrange(0, num_subpops)]
     log.debug("subpopulation names: %s", subpop_names)
@@ -125,7 +170,7 @@ def main():
         ],
         matingScheme = sim.RandomSelection(),
         postOps = [sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
-                    sim.PyOperator(func=sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci), subPops = sim.ALL_AVAIL,
+                    sim.PyOperator(func=sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
                                     step=1000,begin=1000),
                     # sim.PyOperator(func=data.sampleTraitCounts, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
                     #                step=sampling_interval,begin=time_start_stats),
@@ -133,16 +178,11 @@ def main():
                     #                step=sampling_interval,begin=time_start_stats),
                     # sim.PyOperator(func=data.censusNumAlleles, param=(innovation_rate, config.popsize,sim_id,config.numloci),
                     #                step=sampling_interval,begin=time_start_stats),
-                    # sim.PyOperator(func=data.sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id,config.numloci),
-                    #                step=sampling_interval, begin=time_start_stats),
+                    sim.PyOperator(func=sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
+                                    step=1000, begin=1000),
                ],
         gen = config.simlength,
     )
-
-
-
-
-
 
 
     endtime = time()
