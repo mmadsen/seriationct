@@ -10,8 +10,6 @@ Description here
 
 from ming import Session, Field, schema
 from ming.declarative import Document
-import simuPOP as sim
-import simuPOP.sampling as sampling
 from seriationct.data.dbutils import generate_collection_id
 
 
@@ -69,6 +67,55 @@ def _get_collection_id():
 #         simulation_run_id=sim_id
 #     )).m.insert()
 #     return True
+
+
+def storeClassFrequencySamples(sim_id, gen, rep, ssize, popsize, mut, sample_list):
+    """
+    Stores multiple class frequency samples.  The sample list is a list of dicts,
+    each of which has the form: {subpop: str, crichness: int, cfreq: dict}
+    """
+    for sample in sample_list:
+        storeClassFrequencySample(sim_id, gen, rep, sample['subpop'], ssize, popsize, mut, sample['crichness'], sample['cfreq'] )
+
+    return True
+
+
+def storeClassFrequencySample(sim_id, gen, rep, subpop, ssize, popsize, mut, crichness, cfreq):
+    ClassFrequencySampleUnaveraged(
+        dict(
+            simulation_run_id = sim_id,
+            simulation_time = gen,
+            replication = rep,
+            subpop = subpop,
+            sample_size = ssize,
+            population_size = popsize,
+            mutation_rate = mut,
+            class_richness = crichness,
+            class_freq = cfreq
+
+        )
+    ).m.insert()
+    return True
+
+class ClassFrequencySampleUnaveraged(Document):
+
+
+    class __mongometa__:
+        session = Session.by_name(_get_dataobj_id())
+        name = 'classfreq_sample_unaveraged'
+
+    # metadata and parameters
+    _id = Field(schema.ObjectId)
+    simulation_run_id = Field(str)
+    simulation_time = Field(int)
+    replication = Field(int)
+    subpop = Field(str)
+    sample_size = Field(int)
+    population_size = Field(int)
+    mutation_rate = Field(float)
+    # observables
+    class_richness = Field(int)
+    class_freq = Field(schema.Anything)
 
 
 

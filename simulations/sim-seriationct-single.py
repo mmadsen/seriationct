@@ -14,19 +14,21 @@ convergence since it should be temporary with innovation_rateation/noise.
 import logging as log
 import ming
 import argparse
+import seriationct as sct
 import seriationct.data as data
-import seriationct.utils as utils
+import seriationct.sampling as sampling
 import ctpy.utils as ctu
 import pytransmission.popgen as pypopgen
 from time import time
 import uuid
 import pprint as pp
 
-MAXALLELES = 1000000000
 
 
-def setup():
-    global config, sim_id, script
+global config, sim_id, script
+
+def main():
+    MAXALLELES = 10000000
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", help="provide name for experiment", required=True)
@@ -42,113 +44,25 @@ def setup():
     parser.add_argument("--maxinittraits", help="Max initial number of traits per locus for initialization", type = int, required=True)
     parser.add_argument("--samplesize", help="Size of samples taken to calculate all statistics", type = int, required=True)
     parser.add_argument("--innovrate", help="Rate at which innovations occur in population", type = float, required=True)
-    parser.add_argument("--samplinginterval", help="Interval between samples, once sampling begins, defaults to 1M steps", default="1000000")
-    parser.add_argument("--samplingstarttime", help="Time at which sampling begins, defaults to 250K steps", default="250000")
+    parser.add_argument("--samplinginterval", help="Interval between samples, once sampling begins, defaults to 1M steps", type = long, default="1000000")
+    parser.add_argument("--samplingstarttime", help="Time at which sampling begins, defaults to 250K steps", type = long, default="250000")
     parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 2M steps", type = long, default="2000000")
 
-    config = parser.parse_args()
-
-    sim_id = uuid.uuid4().urn
-    script = __file__
-
-    if config.debug == '1':
-        log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
-    else:
-        log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
-
-    data.set_experiment_name(config.experiment)
-    data.set_database_hostname(config.dbhost)
-    data.set_database_port(config.dbport)
-    dbconfig = data.getMingConfiguration(data.modules)
-    ming.configure(**dbconfig)
-
-    # set up parallelism.  At the moment, this doesn't do anything on OSX
-    # but should provide parallelism on Linux across the replicates at least
-    cores = utils.get_parallel_cores(config.devel)
-    log.debug("Setting up %s cores for parallel simulation", cores)
-    import simuOpt
-    if(config.debug == 1):
-        simuOpt.setOptions(alleleType='long',optimized=True,quiet=False,numThreads = cores)
-    else:
-        simuOpt.setOptions(alleleType='long',optimized=True,quiet=True,numThreads = cores)
+    (config, sim_id, script) = sct.setup(parser)
 
 
-def sampleNumAlleles(pop, param):
-    """Samples allele richness for all loci in a replicant population, and simply logs the richness by subpop and locus.
+    log.info("config: %s", config)
 
-        Mostly for prototyping purposes...
-
-    """
     import simuPOP as sim
-    import simuPOP.sampling as sampling
-    (ssize, mutation,popsize,sim_id,numloci) = param
-    rep = pop.dvars().rep
-    gen = pop.dvars().gen
-    subpops = pop.subPopNames()
-    for sp_name in subpops:
-        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
-        sim.stat(sample, alleleFreq=sim.ALL_AVAIL)
-        for locus in range(numloci):
-            numAlleles = len(sample.dvars().alleleFreq[locus].values())
-            log.info("simulation_id: %s gen: %s replicate: %s subpop: %s  ssize: %s locus: %s richness: %s ", sim_id, gen, rep, sp_name,ssize,locus,numAlleles)
-    return True
 
 
-
-# def sampleIndividuals(pop, param):
-#     import simuPOP as sim
-#     import simuPOP.sampling as sampling
-#     (ssize, mutation, popsize, sim_id, num_loci) = param
-#     popID = pop.dvars().rep
-#     gen = pop.dvars().gen
-#     subpops = pop.subPopNames()
-#     samplelist = []
-#
-#     for sp_name in subpops:
-#         sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
-#
-#         for idx in range(ssize):
-#             genotype_list = list(sample.individual(idx).genotype())
-#             indiv = dict(sampletime = gen, subpop=sp_name, replicate = popID, id=idx, genotype=genotype_list)
-#             samplelist.append(indiv)
-#
-#     log.debug("individual samples: %s", samplelist)
-#
-#     return True
-
-def sampleIndividuals(pop, param):
-    import simuPOP as sim
-    import simuPOP.sampling as sampling
-    (ssize, mutation, popsize, sim_id, num_loci) = param
-    popID = pop.dvars().rep
-    gen = pop.dvars().gen
-    subpops = pop.subPopNames()
-    samplelist = []
-
-    for sp_name in subpops:
-        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
-        genotype_samples = []
-        for idx in range(ssize):
-            s = list(sample.individual(idx).genotype())
-            genotype_samples.append(s)
-
-        sample = dict(sampletime = gen, subpop=sp_name, replicate = popID, genotype=genotype_samples)
-        samplelist.append(sample)
-
-    log.debug("individual samples: %s", pp.pprint(samplelist))
-
-    return True
-
-
-def main():
-    import simuPOP as sim
     start = time()
     log.info("Starting simulation run %s",  sim_id)
     log.debug("config: %s" , config)
 
 
     # test purposes
-    num_subpops = 25
+    num_subpops = 10
     popsize_list = [config.popsize] * num_subpops
     subpop_names = [str(i) for i in xrange(0, num_subpops)]
     log.debug("subpopulation names: %s", subpop_names)
@@ -170,7 +84,7 @@ def main():
         ],
         matingScheme = sim.RandomSelection(),
         postOps = [sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
-                    sim.PyOperator(func=sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
+                    sim.PyOperator(func=sampling.sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
                                     step=1000,begin=1000),
                     # sim.PyOperator(func=data.sampleTraitCounts, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
                     #                step=sampling_interval,begin=time_start_stats),
@@ -178,20 +92,24 @@ def main():
                     #                step=sampling_interval,begin=time_start_stats),
                     # sim.PyOperator(func=data.censusNumAlleles, param=(innovation_rate, config.popsize,sim_id,config.numloci),
                     #                step=sampling_interval,begin=time_start_stats),
-                    sim.PyOperator(func=sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
-                                    step=1000, begin=1000),
+                    #sim.PyOperator(func=sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
+                    #                step=1000, begin=1000),
+                    sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies, param = (config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
+                                   step = 1, begin = 1000),
                ],
+        finalOps = sim.PyOperator(func=sampling.sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
+                                    step=1000, begin=1000),
         gen = config.simlength,
     )
 
 
     endtime = time()
     elapsed = endtime - start
+    log.info("simulation complete in %s seconds", elapsed)
     data.store_simulation_timing(sim_id,script,config.experiment,elapsed,config.simlength,config.popsize,config.networkmodel)
 
 
 
 if __name__ == "__main__":
-    setup()
     main()
 

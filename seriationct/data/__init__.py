@@ -9,6 +9,7 @@ Description here
 """
 from dbutils import *
 from simulation_timing import SimulationTiming, store_simulation_timing
+from sample_deme import ClassFrequencySampleUnaveraged, storeClassFrequencySample, storeClassFrequencySamples
 
 
 # the following *should* be overridden by command line processing, even by defaults.
@@ -24,5 +25,5 @@ experiment_name = "test"
 # of the data object being stored.  Ming configuration is then automatic so that simulation simulations need
 # include only two lines which are fully generic.
 
-modules = [simulation_timing]
+modules = [simulation_timing, sample_deme]
 
