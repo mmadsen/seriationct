@@ -29,9 +29,13 @@ import math
 from random import choice
 
 ## setup
+xNode={}
+yNode={}
+nodeNames=[]
+edgeDistance={}
 
 def setup():
-    global args, config, simconfig
+    global args
     parser = argparse.ArgumentParser()
     parser.add_argument("--type", help="specify output file type (gml, vna, etc.). Default = gml. ", default="gml")
     parser.add_argument("--debug", help="turn on debugging output")
@@ -41,7 +45,7 @@ def setup():
     parser.add_argument("--configuration", help="Path to configuration file")
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
     parser.add_argument("--model", choices=['grid-distance','grid-hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
-
+    parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','mst'], default='minmax')
     args = parser.parse_args()
 
     if args.debug == 1:
@@ -58,6 +62,12 @@ def setup():
 
 
 def create_vertices():
+    global nodeNames
+    global nodeX
+    global nodeY
+    nodeNames=[]
+    nodeX={}
+    nodeY={}
     net = nx.Graph(name=args.model, is_directed=False)
     xcoord=0
     ycoord=0
@@ -65,6 +75,9 @@ def create_vertices():
         for xc in range(1,int(args.y)):
             name="assemblage-"+str(xc)+"-"+str(yc)
             net.add_node(name,label=name,xcoord=xc, ycoord=yc)
+            nodeNames.append(name)
+            nodeX[name]=xc
+            nodeY[name]=yc
     return net
 
 def create_slices(graph):
@@ -82,11 +95,7 @@ def create_slices(graph):
             possible_nodes = set(graph.nodes())
             possible_nodes.difference_update(chosen_node)    # remove the first node and all its neighbours from the candidates
 
-            for n,d in graph.nodes_iter(data=True):
-                if d['label']==chosen_node:
-                    xcoord=d['xcoord']
-                    ycoord=d['ycoord']
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=xcoord, ycoord=ycoord)
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
 
         slices.append(newnet)
     return slices
@@ -101,6 +110,8 @@ def saveGraph(graph):
     nx.write_gml(graph, args.filename+".gml")
 
 def wire_networks(slices):
+    global edgeDistance
+    edgeDistance={}
     wired_slices=[]
     for slice in slices:
         for n,d in slice.nodes_iter(data=True):
@@ -119,11 +130,67 @@ def wire_networks(slices):
                 if distance>0:  # and distance<=mindistance and is_there_a_path(slice,from_node,neighbor)==False:
                     neighbor=d1['label']
                     #mindistance=distance
+                    key=from_node+"*"+neighbor
+                    edgeDistance[key]=distance
                     slice.add_edge(from_node,neighbor,from_node=from_node,to_node=neighbor,distance=distance,weight=1/distance)
 
-        min_spanning_tree= nx.minimum_spanning_tree(slice,weight='distance')
-        wired_slices.append(min_spanning_tree)
+        #now trim the network
+        if args.tree == 'mst':
+            tree= nx.minimum_spanning_tree(slice,weight='distance')
+        else:
+            tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
+
+        wired_slices.append(tree)
+
     return wired_slices
+
+
+ # from a "summed" graph, create a "min max" solution - but use weights not counts
+def createMinMaxGraphByWeight( **kwargs):
+    ## first need to find the pairs with the maximum occurrence, then we work down from there until all of the
+    ## nodes are included
+    ## the weight
+    weight = kwargs.get('weight', "weight")
+    input_graph = kwargs.get('input_graph')
+
+    output_graph = nx.Graph(is_directed=False)
+
+    print xNode
+    ## first add all of the nodes
+    for name in input_graph.nodes():
+        output_graph.add_node(name, name=name, label=name, xcoord=xNode[name],ycoord=yNode[name])
+
+    pairsHash={}
+
+    for e in input_graph.edges_iter():
+        d = input_graph.get_edge_data(*e)
+        fromAssemblage = e[0]
+        toAssemblage = e[1]
+        key = fromAssemblage+"*"+toAssemblage
+        value = input_graph[fromAssemblage][toAssemblage]['weight']
+        pairsHash[key]=value
+
+    for key, value in sorted(pairsHash.iteritems(), key=operator.itemgetter(1), reverse=True ):
+        ass1, ass2 = key.split("*")
+        edgesToAdd={}
+        if nx.has_path(output_graph, ass1, ass2) == False:
+            edgesToAdd[key]=value
+             ## check to see if any other pairs NOT already represented that have the same value
+            for p in pairsHash:
+                if pairsHash[p] == value:
+                    k1,k2 = p.split("*")
+                    if nx.has_path(output_graph, k1,k2) == False:
+                        edgesToAdd[p]=pairsHash[p]
+            ## now add all of the edges that are the same value if they dont already exist as paths
+            for newEdge in edgesToAdd:
+                a1,a2 = newEdge.split("*")
+                key=a1+"*"+a2
+                distance=edgeDistance[key]
+                weight=1/distance
+                if weight in [0,None,False]:
+                    weight=0.000000000001
+                output_graph.add_path([a1, a2], distance=distance, weight=weight)
+    return output_graph
 
 def calculate_distance(x1,y1,x2,y2):
     return math.sqrt((int(x1)-int(x2))**2 + (int(y1)-int(y2))**2)
