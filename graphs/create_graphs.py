@@ -128,9 +128,11 @@ def wire_networks(slices):
                 if distance>0:  # and distance<=mindistance and is_there_a_path(slice,from_node,neighbor)==False:
                     neighbor=d1['label']
                     #mindistance=distance
-                    key=from_node+"*"+neighbor
-                    edgeDistance[key]=distance
-                    slice.add_edge(from_node,neighbor,from_node=from_node,to_node=neighbor,distance=distance,weight=1/distance)
+                    key1=from_node+"*"+neighbor
+                    key2=neighbor+"*"+from_node
+                    edgeDistance[key1]=distance
+                    edgeDistance[key2]=distance
+                    slice.add_edge(from_node,neighbor,name=key1,from_node=from_node,to_node=neighbor,distance=distance,weight=1/distance)
 
         #now trim the network
         if args.tree == 'mst':
@@ -153,7 +155,6 @@ def createMinMaxGraphByWeight( **kwargs):
 
     output_graph = nx.Graph(is_directed=False)
 
-    print nodeX
     ## first add all of the nodes
     for name in input_graph.nodes():
         output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
@@ -198,6 +199,21 @@ def is_there_a_path(G, _from, _to):
         return True
     else:
         return False
+
+def get_attribute_from_node(graph, nodename, attribute):
+    hashOfNodes={}
+    listOfNames=nx.get_node_attribute(graph,'label')
+    listOfAttributes=nx.get_node_attributes(graph,attribute)
+    hashOfNodes = dict(zip(listOfNames, listOfAttributes))
+    return hashOfNodes[nodename]
+
+def get_attribute_from_edge(graph, edgename, attribute):
+    hashOfEdges={}
+    listOfNames=nx.get_edge_attribute(graph,'name')
+    listOfAttributes=nx.get_get_attributes(graph,attribute)
+    hashOfNodes = dict(zip(listOfNames, listOfAttributes))
+    return hashOfEdges[edgename]
+
 
 if __name__ == "__main__":
 
