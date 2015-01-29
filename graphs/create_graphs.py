@@ -121,7 +121,7 @@ def wire_networks(slices):
                     #mindistance=distance
                     slice.add_edge(from_node,neighbor,from_node=from_node,to_node=neighbor,distance=distance,weight=1/distance)
 
-        min_spanning_tree= nx.minimum_spanning_tree(slice,weight='weight')
+        min_spanning_tree= nx.minimum_spanning_tree(slice,weight='distance')
         wired_slices.append(min_spanning_tree)
     return wired_slices
 
