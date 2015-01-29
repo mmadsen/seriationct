@@ -44,6 +44,7 @@ def setup():
     parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','mst'], default='minmax')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
+    parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. values are 0-1. For example. 0.5 for 50%", default=0.20)
     args = parser.parse_args()
 
     if args.debug == 1:
@@ -81,18 +82,34 @@ def create_slices(graph):
     number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
     slices=[]
     possible_nodes = set(graph.nodes())
-    for ns in range(0,int(args.slices)):
-        slice = nodes[-1*number_per_slice:]
-        newnet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
-        num=0
-        possible_nodes = set(graph.nodes())
-        for node in range(0,number_per_slice):
-            chosen_node = choice(list(possible_nodes))                  # pick a random node
-            possible_nodes = set(graph.nodes())
-            possible_nodes.difference_update(chosen_node)    # remove the first node and all its neighbours from the candidates
-
+    slice = nodes[-1*number_per_slice:]
+    ## first slice
+    newnet = nx.Graph(name=args.model+"-1", is_directed=False)
+    num=0
+    current_nodes=set()
+    possible_nodes = set(graph.nodes())
+    for node in range(0,number_per_slice):
+        chosen_node = choice(list(possible_nodes))                  # pick a random node
+        #possible_nodes = set(graph.nodes())
+        possible_nodes.difference_update(chosen_node)               # remove the  node
+        newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
+        current_nodes.update(chosen_node)
+    slices.append(newnet)
+    ## next n slices
+    for ns in range(2,int(args.slices)):
+        newnet.graph['name']=args.model+"-"+str(ns)
+        # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
+        nodes_to_remove= int(len(current_nodes)*args.overlap)# nodes to remove
+        for r in range(0,nodes_to_remove):
+            chosen_node_to_remove = choice(newnet.nodes())
+            newnet.remove_node(chosen_node_to_remove)
+            current_nodes.difference_update(chosen_node_to_remove)
+        nodes_to_add = nodes_to_remove
+        for r in range(0,nodes_to_add):
+            chosen_node = choice(list(possible_nodes))
+            possible_nodes.difference_update(chosen_node)
             newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
-
+            current_nodes.update(chosen_node)
         slices.append(newnet)
     return slices
 
