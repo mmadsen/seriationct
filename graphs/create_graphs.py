@@ -20,6 +20,7 @@ import argparse
 import csv
 import os
 import logging as log
+import operator
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,11 +29,10 @@ import random
 import math
 from random import choice
 
-## setup
-xNode={}
-yNode={}
-nodeNames=[]
-edgeDistance={}
+
+
+
+
 
 def setup():
     global args
@@ -62,9 +62,7 @@ def setup():
 
 
 def create_vertices():
-    global nodeNames
-    global nodeX
-    global nodeY
+    global nodeNames, nodeX, nodeY
     nodeNames=[]
     nodeX={}
     nodeY={}
@@ -155,10 +153,10 @@ def createMinMaxGraphByWeight( **kwargs):
 
     output_graph = nx.Graph(is_directed=False)
 
-    print xNode
+    print nodeX
     ## first add all of the nodes
     for name in input_graph.nodes():
-        output_graph.add_node(name, name=name, label=name, xcoord=xNode[name],ycoord=yNode[name])
+        output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
 
     pairsHash={}
 
@@ -202,6 +200,7 @@ def is_there_a_path(G, _from, _to):
         return False
 
 if __name__ == "__main__":
+
     graph = setup()
     slices = create_slices(graph)
     wired_slices=wire_networks(slices)
