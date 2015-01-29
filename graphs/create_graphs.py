@@ -11,6 +11,8 @@ Takes some input information and produces a series of .gml files.
 
  create_graphs.py --type gml --filename root_file_name  --number 25 --model grid
 
+    for example:
+    python create_graphs.py --filename test --model grid-distance --slices 5
 """
 
 import networkx as nx
@@ -23,7 +25,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pprint as pp
 import random
-from sklearn.neighbors import NearestNeighbors
+import math
+from random import choice
 
 ## setup
 
@@ -33,8 +36,8 @@ def setup():
     parser.add_argument("--type", help="specify output file type (gml, vna, etc.). Default = gml. ", default="gml")
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--filename", help="filename for output", default="graph", required=True)
-    parser.add_argument("--x", help="number of assemblages tall to generate", default=10)
-    parser.add_argument("--y", help="number of assemblages wide to generate", default=10)
+    parser.add_argument("--x", help="number of assemblages tall to generate", default=20)
+    parser.add_argument("--y", help="number of assemblages wide to generate", default=20)
     parser.add_argument("--configuration", help="Path to configuration file")
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
     parser.add_argument("--model", choices=['grid-distance','grid-hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
@@ -58,64 +61,84 @@ def create_vertices():
     net = nx.Graph(name=args.model, is_directed=False)
     xcoord=0
     ycoord=0
-    for x in range(1,int(args.x)):
-        for y in range(1,int(args.y)):
-            name="assemblage-"+str(x)+"/"+str(y)
-            net.add_node(name,label=name,xcoord=xcoord, ycoord=ycoord)
-            if x>0 and x%args.x<>0:
-                xcoord += args.x
-            if y>0 and y%args.y==0:
-                ycoord += args.y
-                xcoord = 0
+    for yc in range(1,int(args.x)):
+        for xc in range(1,int(args.y)):
+            name="assemblage-"+str(xc)+"-"+str(yc)
+            net.add_node(name,label=name,xcoord=xc, ycoord=yc)
     return net
 
 def create_slices(graph):
     nodes = graph.nodes()
-    number_per_slice=int((args.x*args.y)/args.slices)
+    number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
     slices=[]
-    print nodes
-    for ns in range(0,args.slices):
+    possible_nodes = set(graph.nodes())
+    for ns in range(0,int(args.slices)):
         slice = nodes[-1*number_per_slice:]
         newnet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
         num=0
+        possible_nodes = set(graph.nodes())
         for node in range(0,number_per_slice):
+            chosen_node = choice(list(possible_nodes))                  # pick a random node
+            possible_nodes = set(graph.nodes())
+            possible_nodes.difference_update(chosen_node)    # remove the first node and all its neighbours from the candidates
+
             for n,d in graph.nodes_iter(data=True):
-                if d['label']==nodes[node]:
-                    newnet.add_node(d['label'],label=d['label'],xcoord=d['xcoord'], ycoord=d['ycoord'])
-                    graph.remove_node(d['label'])
+                if d['label']==chosen_node:
+                    xcoord=d['xcoord']
+                    ycoord=d['ycoord']
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=xcoord, ycoord=ycoord)
+
         slices.append(newnet)
     return slices
 
-def save_slices(slices):
+def save_slices(wired_slices):
     n=0
-    for sl in slices:
+    for sl in wired_slices:
         n += 1
-        nx.write_gml(graph, args.filename+"-"+str(n)+".gml")
+        nx.write_gml(sl, args.filename+"-"+str(n)+".gml")
 
 def saveGraph(graph):
     nx.write_gml(graph, args.filename+".gml")
 
-def sample_gen(n, forbid):
-    state = dict()
-    track = dict()
-    for (i, o) in enumerate(forbid):
-        x = track.get(o, o)
-        t = state.get(n-i-1, n-i-1)
-        state[x] = t
-        track[t] = x
-        state.pop(n-i-1, None)
-        track.pop(o, None)
-    del track
-    for remaining in xrange(n-len(forbid), 0, -1):
-        i = random.randrange(remaining)
-        yield state.get(i, i)
-        state[i] = state.get(remaining - 1, remaining - 1)
-        state.pop(remaining - 1, None)
+def wire_networks(slices):
+    wired_slices=[]
+    for slice in slices:
+        for n,d in slice.nodes_iter(data=True):
+            from_node = d['label']
+            #from_node_id = d['id']
+            x1=d['xcoord']
+            y1=d['ycoord']
+            mindistance=10000000000
+            neighbor=from_node ## set this to be the same node initially
+            ## now find the node that is closest
+            for n1,d1 in slice.nodes_iter(data=True):
+                testx=d1['xcoord']
+                testy=d1['ycoord']
+
+                distance=calculate_distance(x1,y1,testx,testy)
+                if distance>0:  # and distance<=mindistance and is_there_a_path(slice,from_node,neighbor)==False:
+                    neighbor=d1['label']
+                    #mindistance=distance
+                    slice.add_edge(from_node,neighbor,from_node=from_node,to_node=neighbor,distance=distance,weight=1/distance)
+
+        min_spanning_tree= nx.minimum_spanning_tree(slice,weight='weight')
+        wired_slices.append(min_spanning_tree)
+    return wired_slices
+
+def calculate_distance(x1,y1,x2,y2):
+    return math.sqrt((int(x1)-int(x2))**2 + (int(y1)-int(y2))**2)
+
+def is_there_a_path(G, _from, _to):
+    if nx.bidirectional_dijkstra(G,_from, _to):
+        return True
+    else:
+        return False
 
 if __name__ == "__main__":
     graph = setup()
     slices = create_slices(graph)
-    save_slices(slices)
+    wired_slices=wire_networks(slices)
+    save_slices(wired_slices)
 
 
 
