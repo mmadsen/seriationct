@@ -30,10 +30,6 @@ import math
 from random import choice
 
 
-
-
-
-
 def setup():
     global args
     parser = argparse.ArgumentParser()
@@ -46,6 +42,8 @@ def setup():
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
     parser.add_argument("--model", choices=['grid-distance','grid-hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
     parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','mst'], default='minmax')
+    parser.add_argument("--graphs", help="create plots of networks", default=True)
+    parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
     args = parser.parse_args()
 
     if args.debug == 1:
@@ -201,25 +199,37 @@ def is_there_a_path(G, _from, _to):
         return False
 
 def get_attribute_from_node(graph, nodename, attribute):
-    hashOfNodes={}
-    listOfNames=nx.get_node_attribute(graph,'label')
     listOfAttributes=nx.get_node_attributes(graph,attribute)
-    hashOfNodes = dict(zip(listOfNames, listOfAttributes))
-    return hashOfNodes[nodename]
+    return listOfAttributes[nodename]
 
 def get_attribute_from_edge(graph, edgename, attribute):
-    hashOfEdges={}
-    listOfNames=nx.get_edge_attribute(graph,'name')
     listOfAttributes=nx.get_get_attributes(graph,attribute)
-    hashOfNodes = dict(zip(listOfNames, listOfAttributes))
-    return hashOfEdges[edgename]
+    return listOfAttributes[edgename]
 
+def plot_slices(wired_slices):
+    i=0
+    for slice in wired_slices:
+
+        pos={}
+        for label in slice.nodes():
+            x = get_attribute_from_node(slice,label,'xcoord')
+            y = get_attribute_from_node(slice,label,'ycoord')
+            pos[label]=(x,y)
+        nx.draw_networkx(slice,pos,node_size=20,node_color='red')
+        title="Slice-"+str(i)
+        plt.title(title)
+        i+=1
+        plt.savefig(title+".png", dpi=250)
+        if args.graphshow == True:
+            plt.show()
 
 if __name__ == "__main__":
 
     graph = setup()
     slices = create_slices(graph)
     wired_slices=wire_networks(slices)
+    if args.graphs == True:
+        plot_slices(wired_slices)
     save_slices(wired_slices)
 
 
