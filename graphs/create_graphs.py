@@ -96,20 +96,27 @@ def create_slices(graph):
         current_nodes.update(chosen_node)
     slices.append(newnet)
     ## next n slices
-    for ns in range(2,int(args.slices)):
+    for ns in range(2,int(args.slices)+1):
         newnet.graph['name']=args.model+"-"+str(ns)
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
-        nodes_to_remove= int(len(current_nodes)*args.overlap)# nodes to remove
+        num_current_nodes=len(list(current_nodes))
+        nodes_to_remove= int(float(num_current_nodes) * float(args.overlap))# nodes to remove
         for r in range(0,nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
             newnet.remove_node(chosen_node_to_remove)
+            #print "removing node: ", chosen_node_to_remove
             current_nodes.difference_update(chosen_node_to_remove)
         nodes_to_add = nodes_to_remove
         for r in range(0,nodes_to_add):
             chosen_node = choice(list(possible_nodes))
             possible_nodes.difference_update(chosen_node)
             newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
+            #print "adding node: ", chosen_node
             current_nodes.update(chosen_node)
+        updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
+        updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
+        newwirednet = createMinMaxGraphByWeight(input_graph=updatedNet, weight='weight')  #new tree
+        newnet = newwirednet.copy() ## copy back to newnet
         slices.append(newnet)
     return slices
 
