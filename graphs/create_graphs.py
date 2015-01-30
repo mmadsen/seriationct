@@ -110,8 +110,10 @@ def create_slices(graph):
         nodes_to_remove= int(float(num_current_nodes) * float(args.overlap))# nodes to remove
         for r in range(0,nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
+            #print "chosen node to remove: ", chosen_node_to_remove
+            #print "newnet had ", len(newnet.nodes())
             newnet.remove_node(chosen_node_to_remove)
-            #print "removing node: ", chosen_node_to_remove
+            #print "now newnet has ", len(newnet.nodes())
             current_nodes.difference_update(chosen_node_to_remove)
         nodes_to_add = nodes_to_remove
         for r in range(0,nodes_to_add):
@@ -121,6 +123,8 @@ def create_slices(graph):
             #print "adding node: ", chosen_node
             current_nodes.update(chosen_node)
         updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
+        #for n in newnet.nodes():
+        #    updatedNet.add_node(n, label=n,xcoord=nodeX[n], ycoord=nodeY[n])
         updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
         if args.tree == 'mst':
             newwirednet= nx.minimum_spanning_tree(updatedNet,weight='distance')
@@ -269,7 +273,7 @@ def plot_slices(wired_slices):
             x = get_attribute_from_node(slice,label,'xcoord')
             y = get_attribute_from_node(slice,label,'ycoord')
             pos[label]=(x,y)
-        nx.draw_networkx(slice,pos,node_size=20,node_color='red')
+        nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False)
         title="Slice-"+str(i)
         plt.title(title)
         i+=1
