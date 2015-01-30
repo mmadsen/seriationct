@@ -33,7 +33,7 @@ import math
 from random import choice
 import itertools
 import sys
-from subprocess import call
+import os
 
 
 def setup():
@@ -258,7 +258,7 @@ def get_attribute_from_edge(graph, edgename, attribute):
     return listOfAttributes[edgename]
 
 def create_movie():
-    call("ffmpeg -f image2 -r 1/5 -i Slice-%d.png -vcodec mpeg4 -y movie.mp4")
+    os.system("ffmpeg -f image2 -r 1/5 -i Slice-%d.png -vcodec mpeg4 -y movie.mp4")
 
 def plot_slices(wired_slices):
     i=0
@@ -274,7 +274,7 @@ def plot_slices(wired_slices):
         plt.title(title)
         i+=1
         plt.savefig(title+".png", dpi=250)
-        if args.graphshow == True:
+        if args.graphshow == 1:
             plt.show()
 
 if __name__ == "__main__":
