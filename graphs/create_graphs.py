@@ -32,6 +32,8 @@ import random
 import math
 from random import choice
 import itertools
+import sys
+from subprocess import call
 
 
 def setup():
@@ -49,6 +51,7 @@ def setup():
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
     parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. values are 0-1. For example. 0.5 for 50%", default=0.20)
+    parser.add_argument("--movie", help="make a movie from png slices.", default=True)
     args = parser.parse_args()
 
     if args.debug == 1:
@@ -254,6 +257,9 @@ def get_attribute_from_edge(graph, edgename, attribute):
     listOfAttributes=nx.get_get_attributes(graph,attribute)
     return listOfAttributes[edgename]
 
+def create_movie():
+    call("ffmpeg -f image2 -r 1/5 -i Slice-%d.png -vcodec mpeg4 -y movie.mp4")
+
 def plot_slices(wired_slices):
     i=0
     for slice in wired_slices:
@@ -278,6 +284,8 @@ if __name__ == "__main__":
     wired_slices=wire_networks(slices)
     if args.graphs == True:
         plot_slices(wired_slices)
+        if args.movie==True:
+            create_movie()
     save_slices(wired_slices)
 
 
