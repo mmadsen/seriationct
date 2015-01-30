@@ -49,7 +49,7 @@ def setup():
     parser.add_argument("--model", choices=['grid-distance','grid-hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
     parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','complete','mst'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
-    parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
+    parser.add_argument("--graphshow", help="show plots in runtime.", default=False)
     parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. values are 0-1. For example. 0.5 for 50%", default=0.20)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
     args = parser.parse_args()
