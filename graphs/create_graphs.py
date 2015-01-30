@@ -11,8 +11,11 @@ Takes some input information and produces a series of .gml files.
 
  create_graphs.py --type gml --filename root_file_name  --number 25 --model grid
 
+
     for example:
     python create_graphs.py --filename test --model grid-distance --slices 5
+    python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree complete
+    python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree minmax
 """
 
 import networkx as nx
@@ -28,6 +31,7 @@ import pprint as pp
 import random
 import math
 from random import choice
+import itertools
 
 
 def setup():
@@ -41,7 +45,7 @@ def setup():
     parser.add_argument("--configuration", help="Path to configuration file")
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
     parser.add_argument("--model", choices=['grid-distance','grid-hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
-    parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','mst'], default='minmax')
+    parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','complete','mst'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
     parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. values are 0-1. For example. 0.5 for 50%", default=0.20)
@@ -115,7 +119,13 @@ def create_slices(graph):
             current_nodes.update(chosen_node)
         updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
         updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
-        newwirednet = createMinMaxGraphByWeight(input_graph=updatedNet, weight='weight')  #new tree
+        if args.tree == 'mst':
+            newwirednet= nx.minimum_spanning_tree(updatedNet,weight='distance')
+        elif args.tree == 'complete':
+            newwirednet = createCompleteGraphByDistance(input_graph=updatedNet,weight='distance')
+        else:
+            newwirednet = createMinMaxGraphByWeight(input_graph=updatedNet, weight='weight')
+
         newnet = newwirednet.copy() ## copy back to newnet
         slices.append(newnet)
     return slices
@@ -159,13 +169,27 @@ def wire_networks(slices):
         #now trim the network
         if args.tree == 'mst':
             tree= nx.minimum_spanning_tree(slice,weight='distance')
+        elif args.tree == 'complete':
+            tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
         else:
             tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
 
         wired_slices.append(tree)
-
     return wired_slices
 
+def createCompleteGraphByDistance( **kwargs):
+    graph=kwargs.get('input_graph')
+    weight=kwargs.get('weight')
+    nodes = graph.nodes()
+    newnet = nx.Graph(is_directed=False)
+    newnet.add_nodes_from(graph.nodes(data=True)) ## copy just the nodes
+    edges=itertools.combinations(nodes,2)
+    for e in edges:
+        distance = calculate_distance(nodeX[e[0]],nodeY[e[0]],nodeX[e[1]],nodeY[e[1]] )
+        key1=e[0]+"*"+e[1]
+        key2=e[1]+"*"+e[0]
+        newnet.add_edge(e[0],e[1],name=key1, from_node=e[0], to_node=e[1], distance=distance,weight=1/distance)
+    return newnet
 
  # from a "summed" graph, create a "min max" solution - but use weights not counts
 def createMinMaxGraphByWeight( **kwargs):
