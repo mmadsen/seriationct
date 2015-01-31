@@ -136,11 +136,28 @@ def save_slices(wired_slices):
 def saveGraph(graph):
     nx.write_gml(graph, args.filename+".gml")
 
+def calc_sum_distance(slice):
+    sumDistance = 0
+    for n,d in slice.nodes_iter(data=True):
+            from_node = d['label']
+            #from_node_id = d['id']
+            x1=d['xcoord']
+            y1=d['ycoord']
+            for n1,d1 in slice.nodes_iter(data=True):
+                testx=d1['xcoord']
+                testy=d1['ycoord']
+                distance=calculate_distance(x1,y1,testx,testy)
+                if distance>0:
+                    sumDistance += distance
+    return sumDistance
+
+
 def wire_networks(slices):
     global edgeDistance
     edgeDistance={}
     wired_slices=[]
     for slice in slices:
+        sumDistance=calc_sum_distance(slice)
         for n,d in slice.nodes_iter(data=True):
             from_node = d['label']
             #from_node_id = d['id']
@@ -149,10 +166,11 @@ def wire_networks(slices):
             mindistance=10000000000
             neighbor=from_node ## set this to be the same node initially
             ## now find the node that is closest
+
+
             for n1,d1 in slice.nodes_iter(data=True):
                 testx=d1['xcoord']
                 testy=d1['ycoord']
-
 
                 distance=calculate_distance(x1,y1,testx,testy)
                 if distance>0:  # and distance<=mindistance and is_there_a_path(slice,from_node,neighbor)==False:
@@ -161,8 +179,11 @@ def wire_networks(slices):
                     key1=from_node+"*"+neighbor
                     key2=neighbor+"*"+from_node
                     edgeDistance[key1]=distance
-                    edgeDistance[key2]=distance
-                    slice.add_edge(from_node,neighbor,name=key1,from_node=from_node,to_node=neighbor,distance=distance,weight=1/distance)
+                    normalized_weight = distance/sumDistance
+
+                    slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
+                                   name=key1,from_node=from_node,to_node=neighbor,
+                                   distance=distance,weight=1/distance)
 
         #create the network the network
         if args.tree == 'mst':
@@ -184,11 +205,16 @@ def createCompleteGraphByDistance( **kwargs):
     newnet = nx.Graph(is_directed=False)
     newnet.add_nodes_from(graph.nodes(data=True)) ## copy just the nodes
     edges=itertools.combinations(nodes,2)
+    sumDistance=calc_sum_distance(graph)
+
     for e in edges:
         distance = calculate_distance(nodeX[e[0]],nodeY[e[0]],nodeX[e[1]],nodeY[e[1]] )
         key1=e[0]+"*"+e[1]
         key2=e[1]+"*"+e[0]
-        newnet.add_edge(e[0],e[1],name=key1, from_node=e[0], to_node=e[1], distance=distance,weight=1/distance)
+        normalized_weight = distance/sumDistance
+        newnet.add_edge(e[0],e[1],name=key1,
+                        normalized_weight=normalized_weight,
+                        from_node=e[0], to_node=e[1], distance=distance,weight=1/distance)
     return newnet
 
  # from a "summed" graph, create a "min max" solution - but use weights not counts
@@ -198,6 +224,7 @@ def createMinMaxGraphByWeight( **kwargs):
     ## the weight
     weight = kwargs.get('weight', "weight")
     input_graph = kwargs.get('input_graph')
+    sumDistance = calc_sum_distance(input_graph)
 
     output_graph = nx.Graph(is_directed=False)
 
@@ -232,9 +259,11 @@ def createMinMaxGraphByWeight( **kwargs):
                 key=a1+"*"+a2
                 distance=edgeDistance[key]
                 weight=1/distance
+                normalized_weight=distance/sumDistance
                 if weight in [0,None,False]:
                     weight=0.000000000001
-                output_graph.add_path([a1, a2], distance=distance, weight=weight)
+                output_graph.add_path([a1, a2], normalized_weight=normalized_weight,
+                                      distance=distance, weight=weight)
     return output_graph
 
 def calculate_distance(x1,y1,x2,y2):
