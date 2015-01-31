@@ -256,7 +256,8 @@ def get_attribute_from_edge(graph, edgename, attribute):
 
 def create_movie():
     filename = args.filename+".mp4"
-    cmd = "ffmpeg -f image2 -r 1/5 -i Slice-%d.png -vcodec mpeg4 -y "
+    slicename = args.filename + "Slice-%d.png"
+    cmd = "ffmpeg -f image2 -r 1/5 -i " + slicename + " -vcodec mpeg4 -y "
     cmd += filename
     os.system(cmd)
 
