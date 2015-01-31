@@ -255,7 +255,10 @@ def get_attribute_from_edge(graph, edgename, attribute):
     return listOfAttributes[edgename]
 
 def create_movie():
-    os.system("ffmpeg -f image2 -r 1/5 -i Slice-%d.png -vcodec mpeg4 -y movie.mp4")
+    filename = args.filename+".mp4"
+    cmd = "ffmpeg -f image2 -r 1/5 -i Slice-%d.png -vcodec mpeg4 -y "
+    cmd += filename
+    os.system(cmd)
 
 def plot_slices(wired_slices):
     i=0
@@ -267,7 +270,7 @@ def plot_slices(wired_slices):
             y = get_attribute_from_node(slice,label,'ycoord')
             pos[label]=(x,y)
         nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False)
-        title="Slice-"+str(i)
+        title=args.filename + "Slice-"+str(i)
         plt.title(title)
         i+=1
         plt.savefig(title+".png", dpi=250)
