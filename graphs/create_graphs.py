@@ -149,7 +149,7 @@ def calc_sum_distance(slice):
                 distance=calculate_distance(x1,y1,testx,testy)
                 if distance>0:
                     sumDistance += distance
-    return sumDistance
+    return sumDistance/2 # since the distances are measured both ways, the actual sum distance is half the total
 
 
 def wire_networks(slices):
