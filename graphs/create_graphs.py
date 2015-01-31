@@ -49,7 +49,7 @@ def setup():
     parser.add_argument("--model", choices=['grid-distance','grid-hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
     parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','complete','mst'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
-    parser.add_argument("--graphshow", help="show plots in runtime.", default=False)
+    parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
     parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. values are 0-1. For example. 0.5 for 50%", default=0.20)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
     args = parser.parse_args()
@@ -85,56 +85,46 @@ def create_vertices():
     return net
 
 def create_slices(graph):
-    nodes = graph.nodes()
     number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
     slices=[]
-    possible_nodes = set(graph.nodes())
-    slice = nodes[-1*number_per_slice:]
     ## first slice
     newnet = nx.Graph(name=args.model+"-1", is_directed=False)
-    num=0
     current_nodes=set()
-    possible_nodes = set(graph.nodes())
-    for node in range(0,number_per_slice):
-        chosen_node = choice(list(possible_nodes))                  # pick a random node
-        #possible_nodes = set(graph.nodes())
-        possible_nodes.difference_update(chosen_node)               # remove the  node
-        newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
-        current_nodes.update(chosen_node)
+    possible_nodes = set(graph.nodes())                             # set of all nodes that are possible
+    for node in range(0,number_per_slice):   # select N number of nodes
+        chosen_node = choice(list(possible_nodes))                  # pick a random node from the list of possibilities (all)
+        possible_nodes.difference_update(chosen_node)               # remove the  node from the possible choices
+        newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
+        current_nodes.update(chosen_node)                           # update set of possible nodes
     slices.append(newnet)
+
     ## next n slices
     for ns in range(2,int(args.slices)+1):
         newnet.graph['name']=args.model+"-"+str(ns)
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
-        nodes_to_remove= int(float(num_current_nodes) * float(args.overlap))# nodes to remove
-        for r in range(0,nodes_to_remove):
+        num_nodes_to_remove= int(float(num_current_nodes) * float(args.overlap))# nodes to remove
+        for r in range(0,num_nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
             #print "chosen node to remove: ", chosen_node_to_remove
             #print "newnet had ", len(newnet.nodes())
             newnet.remove_node(chosen_node_to_remove)
+            possible_nodes.difference_update(chosen_node_to_remove)
             #print "now newnet has ", len(newnet.nodes())
             current_nodes.difference_update(chosen_node_to_remove)
-        nodes_to_add = nodes_to_remove
-        for r in range(0,nodes_to_add):
+        num_nodes_to_add = num_nodes_to_remove
+
+        for r in range(0,num_nodes_to_add):
             chosen_node = choice(list(possible_nodes))
             possible_nodes.difference_update(chosen_node)
             newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
             #print "adding node: ", chosen_node
             current_nodes.update(chosen_node)
+        ## now create a new graph
         updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
-        #for n in newnet.nodes():
-        #    updatedNet.add_node(n, label=n,xcoord=nodeX[n], ycoord=nodeY[n])
         updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
-        if args.tree == 'mst':
-            newwirednet= nx.minimum_spanning_tree(updatedNet,weight='distance')
-        elif args.tree == 'complete':
-            newwirednet = createCompleteGraphByDistance(input_graph=updatedNet,weight='distance')
-        else:
-            newwirednet = createMinMaxGraphByWeight(input_graph=updatedNet, weight='weight')
-
-        newnet = newwirednet.copy() ## copy back to newnet
-        slices.append(newnet)
+        newnet = updatedNet.copy() ## copy back to newnet
+        slices.append(newnet)  ## note these are just nodes, not edges yet. (next step)
     return slices
 
 def save_slices(wired_slices):
@@ -163,6 +153,7 @@ def wire_networks(slices):
                 testx=d1['xcoord']
                 testy=d1['ycoord']
 
+
                 distance=calculate_distance(x1,y1,testx,testy)
                 if distance>0:  # and distance<=mindistance and is_there_a_path(slice,from_node,neighbor)==False:
                     neighbor=d1['label']
@@ -173,7 +164,7 @@ def wire_networks(slices):
                     edgeDistance[key2]=distance
                     slice.add_edge(from_node,neighbor,name=key1,from_node=from_node,to_node=neighbor,distance=distance,weight=1/distance)
 
-        #now trim the network
+        #create the network the network
         if args.tree == 'mst':
             tree= nx.minimum_spanning_tree(slice,weight='distance')
         elif args.tree == 'complete':
@@ -182,7 +173,9 @@ def wire_networks(slices):
             tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
 
         wired_slices.append(tree)
+
     return wired_slices
+
 
 def createCompleteGraphByDistance( **kwargs):
     graph=kwargs.get('input_graph')
@@ -291,7 +284,17 @@ if __name__ == "__main__":
         if args.movie==True:
             create_movie()
     save_slices(wired_slices)
-
+    '''
+    R=wired_slices[0].copy()
+    R.remove_nodes_from(n for n in wired_slices[0] if n in wired_slices[1])
+    pos={}
+    for label in R.nodes():
+        x = get_attribute_from_node(R,label,'xcoord')
+        y = get_attribute_from_node(R,label,'ycoord')
+        pos[label]=(x,y)
+    nx.draw_networkx(R,pos,node_size=20,node_color='red', with_labels=False)
+    plt.show()
+    '''
 
 
 
