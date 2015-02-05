@@ -53,7 +53,16 @@ def main():
 
     log.info("config: %s", config)
 
+    ### NOTE ###
+    ###
+    ### the simuPOP module is deliberately imported here because we need to process the
+    ### command line arguments first, to understand which version of the simuPOP module (e.g.,
+    ### long allele representation, etc, to import, and because we need to figure out how
+    ### many cores the machine has, etc., to set it up for parallel processing.  If we import
+    ### at the top of the file as normal, the imports happen before any code is executed,
+    ### and we can't set those options.  DO NOT move these imports out of setup and main.
     import simuPOP as sim
+    import simuPOP.demography as demo
 
 
     start = time()
@@ -68,34 +77,27 @@ def main():
     log.debug("subpopulation names: %s", subpop_names)
 
     initial_distribution = ctu.constructUniformAllelicDistribution(config.maxinittraits)
-    log.debug("Initial allelic distribution: %s", initial_distribution)
+    log.debug("Initial allelic distribution (for each locus): %s", initial_distribution)
 
     innovation_rate = pypopgen.wf_mutation_rate_from_theta(config.popsize, config.innovrate)
     log.debug("Per-locus innov rate within populations: %s", innovation_rate)
 
 
-    pop = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci)
+    pop = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci, infoFields = ["migrate_to"])
     simu = sim.Simulator(pop, rep=config.reps)
 
     simu.evolve(
         initOps = sim.InitGenotype(freq=initial_distribution),
         preOps = [
             sim.PyOperator(func=ctu.logGenerationCount, param=(), step=100, reps=0),
+            sim.Migrator(rate = demo.migrIslandRates(0.1,num_subpops))
         ],
         matingScheme = sim.RandomSelection(),
         postOps = [sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
-                    sim.PyOperator(func=sampling.sampleNumAlleles, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
-                                    step=1000,begin=1000),
-                    # sim.PyOperator(func=data.sampleTraitCounts, param=(config.samplesize, innovation_rate, config.popsize,sim_id,config.numloci),
-                    #                step=sampling_interval,begin=time_start_stats),
-                    # sim.PyOperator(func=data.censusTraitCounts, param=(innovation_rate, config.popsize,sim_id,config.numloci),
-                    #                step=sampling_interval,begin=time_start_stats),
-                    # sim.PyOperator(func=data.censusNumAlleles, param=(innovation_rate, config.popsize,sim_id,config.numloci),
-                    #                step=sampling_interval,begin=time_start_stats),
-                    #sim.PyOperator(func=sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
-                    #                step=1000, begin=1000),
                     sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies, param = (config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
                                    step = 1, begin = 1000),
+                    sim.Stat(popSize = True, step = 100, begin = 1000),
+                    sim.PyEval(r'"gen %d, rep %d  %s\n" % (gen, rep, subPopSize)', step = 100, begin = 1000),
                ],
         finalOps = sim.PyOperator(func=sampling.sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
                                     step=1000, begin=1000),
