@@ -83,14 +83,7 @@ def main():
     log.debug("Per-locus innov rate within populations: %s", innovation_rate)
 
 
-    # Process the temporal network model for subpopulations
-    #
-
-
-
-
-
-    pop = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci, infoFields = "migrate_to")
+    pop = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci, infoFields = ["migrate_to"])
     simu = sim.Simulator(pop, rep=config.reps)
 
     simu.evolve(
@@ -103,8 +96,8 @@ def main():
         postOps = [sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
                     sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies, param = (config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
                                    step = 1, begin = 1000),
-                    #sim.Stat(popSize = True, step = 100, begin = 1000),
-                    #sim.PyEval(r'"gen %d, rep %d  %s\n" % (gen, rep, subPopSize)', step = 100, begin = 1000),
+                    sim.Stat(popSize = True, step = 100, begin = 1000),
+                    sim.PyEval(r'"gen %d, rep %d  %s\n" % (gen, rep, subPopSize)', step = 100, begin = 1000),
                ],
         finalOps = sim.PyOperator(func=sampling.sampleIndividuals, param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci), subPops = sim.ALL_AVAIL,
                                     step=1000, begin=1000),

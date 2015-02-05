@@ -7,3 +7,4 @@
 Description here
 
 """
+from temporal_network import TemporalNetwork
