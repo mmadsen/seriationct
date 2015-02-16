@@ -16,6 +16,8 @@ Takes some input information and produces a series of .gml files.
     python create_graphs.py --filename test --model grid-distance --slices 5
     python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree complete
     python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree minmax
+
+
 """
 
 import networkx as nx
@@ -50,7 +52,7 @@ def setup():
     parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','complete','mst'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
-    parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. values are 0-1. For example. 0.5 for 50%", default=0.20)
+    parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
     args = parser.parse_args()
 
@@ -89,29 +91,30 @@ def create_slices(graph):
     slices=[]
     ## first slice
     newnet = nx.Graph(name=args.model+"-1", is_directed=False)
-    current_nodes=set()
-    possible_nodes = set(graph.nodes())                             # set of all nodes that are possible
+    current_nodes=set([])
+    possible_nodes = set(list(graph.nodes()))                             # set of all nodes that are possible
     for node in range(0,number_per_slice):   # select N number of nodes
         chosen_node = choice(list(possible_nodes))                  # pick a random node from the list of possibilities (all)
-        possible_nodes.difference_update(chosen_node)               # remove the  node from the possible choices
+        possible_nodes.difference_update([chosen_node])               # remove the  node from the possible choices
         newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
-        current_nodes.update(chosen_node)                           # update set of possible nodes
+        current_nodes.update([chosen_node])                           # update set of possible nodes
     slices.append(newnet)
-
+    #print current_nodes
     ## next n slices
     for ns in range(2,int(args.slices)+1):
         newnet.graph['name']=args.model+"-"+str(ns)
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
-        num_nodes_to_remove= int(float(num_current_nodes) * float(args.overlap))# nodes to remove
+        num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))+1# nodes to remove
+
         for r in range(0,num_nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
             #print "chosen node to remove: ", chosen_node_to_remove
             #print "newnet had ", len(newnet.nodes())
             newnet.remove_node(chosen_node_to_remove)
-            possible_nodes.difference_update(chosen_node_to_remove)
+            possible_nodes.difference_update([chosen_node_to_remove])
             #print "now newnet has ", len(newnet.nodes())
-            current_nodes.difference_update(chosen_node_to_remove)
+            current_nodes.difference_update([chosen_node_to_remove])
         num_nodes_to_add = num_nodes_to_remove
 
         for r in range(0,num_nodes_to_add):
@@ -119,7 +122,7 @@ def create_slices(graph):
             possible_nodes.difference_update(chosen_node)
             newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
             #print "adding node: ", chosen_node
-            current_nodes.update(chosen_node)
+            current_nodes.update([chosen_node])
         ## now create a new graph
         updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
         updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
