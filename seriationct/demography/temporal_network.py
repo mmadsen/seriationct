@@ -8,7 +8,13 @@ Description here
 
 """
 import networkx as nx
+import os
+import sys
+import glob
+import re
+import math
 import simuPOP as sim
+import logging as log
 
 class TemporalNetwork(object):
     """
@@ -27,23 +33,144 @@ class TemporalNetwork(object):
     subpopulation is removed from the population.
     """
 
-    def __init__(self, file_list=[], sim_length=0, initial_size=0, info_fields=[]):
+    def __init__(self, networkmodel_path=None, simulation_id=None, sim_length=0, burn_in_time=0, initial_subpop_size = 0):
         """
-        :param file_list: List of full paths to a set of GML files
+        :param networkmodel_path: List of full paths to a set of GML files
         :param sim_length: Number of generations to run the simulation
-        :param initial_size: List of initial subpopulation sizes for populations present at time 0
-        :param info_fields:
-        :param ops:
         :return:
         """
         #BaseMetapopulationModel.__init__(self, numGens = sim_length, initSize = initial_size, infoFields = info_fields, ops = ops)
-        self.file_list = file_list
+        self.network_path = networkmodel_path
         self.sim_length = sim_length
-        self.init_size = initial_size
-        self.info_fields = info_fields
+        self.info_fields = 'migrate_to'
+        self.sim_id = simulation_id
+        self.burn_in_time = burn_in_time
+        self.init_subpop_size = initial_subpop_size
 
-        # normally this will be inferred from the NetworkX objects
-        self.sub_pops = 2
+        self.time_to_network_map = {}
+        self.time_to_sliceid_map = {}
+        self.sliceid_to_time_map = {}
+        self.times = []
+
+        # This will be set when we examine the network model
+        self.sub_pops = 0
+
+        self.subpopulation_names = []
+
+        # Parse the GML files and create a list of NetworkX objects
+        self._parse_network_model()
+
+        # Determine the order and time of network slices
+        self._calculate_graph_schedule()
+
+        # Determine the initial population configuration
+        self._calculate_initial_population_configuration()
+
+
+
+    def _parse_network_model(self):
+        """
+        Given a directory, sequentially read GML files with a naming spec <name>-<integer>.gml
+        and construct a sequence of NetworkX graphs from the GML files
+        """
+        self.network_slices = dict()
+
+        try:
+            os.chdir(self.network_path)
+        except:
+            log.error("Cannot change directories to %s, exiting simulation run %s", self.network_path, self.sim_id)
+            sys.exit(1)
+
+        file_list = glob.glob("*.gml")
+
+        for filename in file_list:
+            m = re.match('\w+\-(\d+)\.gml', filename)
+            file_number = m.group(1)
+            log.debug("Parsing GML file %s:  file %s", filename, file_number)
+
+            slice = nx.read_gml(filename, relabel=False)
+            self.network_slices[file_number] = slice
+
+
+
+
+
+    def _calculate_graph_schedule(self):
+        """
+        Calculates the times at which each network slice is applied.  At the moment, slices are
+        applied evenly after burnin is removed.
+        """
+        sampled_time = self.sim_length - self.burn_in_time
+        log.debug("Evolution occurs over %s generations after %s generations burn-in time", sampled_time, self.burn_in_time)
+        self.slice_interval = int(math.ceil(sampled_time / len(self.network_slices)))
+        log.debug("Slices will be applied at intervals of %s generations", self.slice_interval)
+
+        # assign each slice to a starting generation, starting once burn in time has elapsed
+        slice_time = self.burn_in_time
+        for slice_id, slice in self.network_slices.items():
+            self.time_to_network_map[slice_time] = slice
+            self.time_to_sliceid_map[slice_time] = slice_id
+            self.sliceid_to_time_map[slice_id] = slice_time
+            self.times.append(slice_time)
+            # advance the time by the slice interval
+            slice_time += self.slice_interval
+
+
+        log.debug("Map of slice_id to time: %s", self.sliceid_to_time_map)
+
+
+    def _calculate_initial_population_configuration(self):
+        # num subpops is just the number of vertices in the first graph slice.
+        first_time = min(self.times)
+        first_slice = self.time_to_network_map[first_time]
+        self.sub_pops = first_slice.number_of_nodes()
+        log.debug("Number of initial subpopulations: %s", self.sub_pops)
+
+        # subpoplation names
+        self.subpopulation_names =  [d["label"] for n,d in first_slice.nodes_iter(data=True)]
+        log.debug("subpouplation names: %s", self.subpopulation_names)
+
+
+    def _is_change_time(self, gen):
+        return gen in self.time_to_network_map
+
+
+    def _calculate_slice_actions(self):
+        """
+
+
+        """
+        pass
+
+
+
+
+
+
+    def _get_graph_for_time(self, time):
+        """
+        Returns networkx Graph object for the state of the temporal network at the specified time
+        :param time:
+        :return:
+        """
+        index = None
+
+        for t in self.times:
+            if time > t:
+                index = t
+            elif time <= t and index != None:
+                break
+            else:
+                continue
+
+        # handle the zero equality case
+        if time == 0:
+            index = 0
+
+        log.debug("snapshot time for index %s is: %s", time, index)
+
+        return
+
 
 
 
@@ -52,30 +179,35 @@ class TemporalNetwork(object):
         return self.info_fields
 
     def get_initial_size(self):
-        return self.init_size
+        return [self.init_subpop_size] * self.sub_pops
 
-    def get_sim_length(self):
-        return self.sim_length
+    def get_subpopulation_names(self):
+        return self.subpopulation_names
 
 
-    def migrate(self, pop):
-        """
-        Given the population and a tuple of parameters (importantly, the generation time), returns
-        a migration matrix
 
-        :param pop:
-        :param param:
-        :return:
-        """
-        #gen = pop.dvars().gen
-        sim.migrate(pop, rate=[[0, 0.1], [0.1, 0]])
-        return True
 
 
     def __call__(self, pop):
-        # Call the migrator given the current population structure
-        self.migrate(pop)
+        """
+        Main public interface to this demography model.  When the model object is called in every time step,
+        this method determines whether a new network slice is now active.  If so, the requisite changes
+        to subpopulations are made (adding/deleting subpopulations), and then the new migration matrix is
+        applied.
 
-        # If there is a change to population structure this tick, redo the population sizes
-        # for the moment, we just return the same sub population sizes
-        return pop.subPopSizes()
+        After migration, the stat function is called to inventory the subpopulation sizes, which are then
+        returned since they're handed to the RandomSelection mating operator.
+
+        If a new network slice is not active, the migration matrix from the previous step is applied again,
+        and the new subpopulation sizes are returns to the RandomSelection mating operator as before.
+
+        :return: A list of the subpopulation sizes for each subpopulation
+        """
+        gen = pop.dvars().gen
+        if(self._is_change_time(gen)):
+            pass
+        else:
+            sim.migrate(pop, self._cached_migration_matrix)
+            sim.stat(pop, popSize=True)
+            return pop.subPopSizes()
+

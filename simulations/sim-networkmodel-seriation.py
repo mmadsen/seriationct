@@ -12,6 +12,7 @@ convergence since it should be temporary with innovation_rateation/noise.
 
 import logging as log
 from time import time
+import math
 
 import argparse
 import ctpy.utils as ctu
@@ -39,18 +40,17 @@ def main():
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--reps", help="Replicated populations per parameter set", type=int, default=4)
-    parser.add_argument("--networkmodel", help="Filename of the temporal network model for this simulation",
+    parser.add_argument("--networkmodel", help="Path of a directory containing GML files representing the temporal network model for this simulation",
                         required=True)
     parser.add_argument("--numloci", help="Number of loci per individual", type=int, required=True)
     parser.add_argument("--maxinittraits", help="Max initial number of traits per locus for initialization", type=int,
                         required=True)
     parser.add_argument("--samplesize", help="Size of samples taken to calculate all statistics", type=int,
                         required=True)
-    parser.add_argument("--innovrate", help="Rate at which innovations occur in population", type=float, required=True)
-    parser.add_argument("--samplingstarttime", help="Time at which sampling begins, defaults to 250K steps", type=long,
-                        default="250000")
-    parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 2M steps",
+    parser.add_argument("--innovrate", help="Rate at which innovations occur in population in scale-free theta units", type=float, required=True)
+    parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 3000 generations",
                         type=long, default="3000")
+    parser.add_argument("--popsize", help="Initial size of population for each community in the model", type=int, required=True)
 
     (config, sim_id, script) = sct.setup(parser)
 
@@ -65,36 +65,43 @@ def main():
     ### at the top of the file as normal, the imports happen before any code is executed,
     ### and we can't set those options.  DO NOT move these imports out of setup and main.
     import simuPOP as sim
-    import simuPOP.demography as demo
     import seriationct.demography as sdemo
 
     start = time()
     log.info("Starting simulation run %s", sim_id)
     log.debug("config: %s", config)
 
+    # Calculate the burn in time
 
-    # test purposes
-    num_subpops = 2
-    popsize = 1000
-    popsize_list = [popsize] * num_subpops
-    subpop_names = [str(i) for i in xrange(0, num_subpops)]
-    log.debug("subpopulation names: %s", subpop_names)
+    tmp = (9.2 * config.popsize) / (config.innovrate + 1.0) # this is conservative given the original constant is for the diploid process
+    burn_time =  int(math.ceil(tmp / 1000.0)) * 1000
+    log.info("Minimum burn in time given popsize and theta: %s", burn_time)
+    # TODO  perhaps round the burnin time to the nearest 100 or 1000?
 
     initial_distribution = ctu.constructUniformAllelicDistribution(config.maxinittraits)
     log.debug("Initial allelic distribution (for each locus): %s", initial_distribution)
 
-    innovation_rate = pypopgen.wf_mutation_rate_from_theta(popsize, config.innovrate)
+    innovation_rate = pypopgen.wf_mutation_rate_from_theta(config.popsize, config.innovrate)
     log.debug("Per-locus innov rate within populations: %s", innovation_rate)
 
 
-    # Process the temporal network model for subpopulations
-    #
-    network_snapshots = None
-    networkmodel = sdemo.TemporalNetwork(file_list=network_snapshots, sim_length=config.simlength, initial_size=popsize_list, info_fields='migrate_to')
+    # Construct a demographic model from a collection of network slices which represent a temporal network
+    # of changing subpopulations and interaction strengths.  This object is Callable, and simply is handed
+    # to the mating function which applies it during the copying process
+    networkmodel = sdemo.TemporalNetwork(networkmodel_path=config.networkmodel,simulation_id=sim_id,sim_length=config.simlength,burn_in_time=burn_time,initial_subpop_size=config.popsize)
 
-
+    # The regional network model defines both of these, in order to configure an initial population for evolution
+    # Construct the initial population
+    popsize_list = networkmodel.get_initial_size()
+    subpop_names = networkmodel.get_subpopulation_names()
     population = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci, infoFields=['migrate_to'])
+
+    # We are going to evolve the same population over several replicates, in order to measure how stochastic variation
+    # effects the measured copying process.
     simu = sim.Simulator(population, rep=config.reps)
+
+
+    # Start the simulation and evolve the population, taking samples after the burn-in time has elapsed
 
     simu.evolve(
         initOps=sim.InitGenotype(freq=initial_distribution),
@@ -104,24 +111,18 @@ def main():
         matingScheme=sim.RandomSelection(subPopSize=networkmodel),
         postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
                  sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies,
-                                param=(config.samplesize, config.innovrate, popsize, sim_id, config.numloci),
+                                param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci),
                                 subPops=sim.ALL_AVAIL,
-                                step=1, begin=1000),
-                 sim.Stat(popSize=True, step=100, begin=100),
-                 sim.PyEval(r'"gen %d, rep %d  %s\n" % (gen, rep, subPopSize)', step=100, begin=100),
+                                step=1, begin=burn_time),
 
         ],
-        # finalOps=sim.PyOperator(func=sampling.sampleIndividuals,
-        #                         param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci),
-        #                         subPops=sim.ALL_AVAIL,
-        #                         step=1000, begin=1000),
-        gen=networkmodel.get_sim_length(),
+        gen=config.simlength,
     )
 
     endtime = time()
     elapsed = endtime - start
     log.info("simulation complete in %s seconds", elapsed)
-    data.store_simulation_timing(sim_id, script, config.experiment, elapsed, config.simlength, popsize,
+    data.store_simulation_timing(sim_id, script, config.experiment, elapsed, config.simlength, config.popsize,
                                  config.networkmodel)
 
 
