@@ -61,12 +61,12 @@ class TemporalNetwork(object):
         self._parse_network_model()
 
         # Determine the order and time of network slices
-        self._calculate_graph_schedule()
+        self._assign_slice_times()
 
         # Determine the initial population configuration
         self._calculate_initial_population_configuration()
 
-
+    ############### Private Initialization Methods ###############
 
     def _parse_network_model(self):
         """
@@ -91,11 +91,7 @@ class TemporalNetwork(object):
             slice = nx.read_gml(filename, relabel=False)
             self.network_slices[file_number] = slice
 
-
-
-
-
-    def _calculate_graph_schedule(self):
+    def _assign_slice_times(self):
         """
         Calculates the times at which each network slice is applied.  At the moment, slices are
         applied evenly after burnin is removed.
@@ -131,27 +127,51 @@ class TemporalNetwork(object):
         log.debug("subpouplation names: %s", self.subpopulation_names)
 
 
+    ############### Private Methods for Call() Interface ###############
+
     def _is_change_time(self, gen):
         return gen in self.time_to_network_map
 
 
-    def _calculate_slice_actions(self):
+    def _get_added_deleted_subpops_for_time(self, time):
         """
+        Using the slice relevant to a time index, and the previous network slice,
+        calculates the nodes added in the current slice, and deleted from the previous
+        slice.  These lists are given as "label" attributes since these uniquely
+        identify subpopulations in the simuPOP framework (the subpopulation ID's can
+        change).
 
+        The two lists are returned as a two member tuple with the addition list first,
+        and the deletion list second.
 
         """
-        pass
+        sid_cur = self._get_sliceid_for_time(time)
+        sid_prev = self._get_previous_sliceid_for_time(time)
+
+        g_cur = self.time_to_network_map[self.sliceid_to_time_map[sid_cur]]
+        g_prev = self.time_to_network_map[self.sliceid_to_time_map[sid_prev]]
+
+        nodes_cur = g_cur.nodes()
+        nodes_prev = g_prev.nodes()
+
+        added_subpops = [self._get_node_label(g_cur, id) for id in list(set(nodes_cur)-set(nodes_prev))]
+        deleted_subpops = [self._get_node_label(g_prev, id) for id in list(set(nodes_prev)-set(nodes_cur))]
+
+        log.debug("time: %s add subpop: %s", time, added_subpops)
+        log.debug("time: %s del subpop: %s", time, deleted_subpops)
+
+        return (added_subpops, deleted_subpops)
 
 
+    def _get_node_label(self,g, id):
+        return g.node[id]["label"]
 
 
-
-
-    def _get_graph_for_time(self, time):
+    def _get_sliceid_for_time(self, time):
         """
         Returns networkx Graph object for the state of the temporal network at the specified time
         :param time:
-        :return:
+        :return: Graph object
         """
         index = None
 
@@ -165,14 +185,37 @@ class TemporalNetwork(object):
 
         # handle the zero equality case
         if time == 0:
-            index = 0
+            index = min(self.times)
 
-        log.debug("snapshot time for index %s is: %s", time, index)
+        sliceid = self.time_to_sliceid_map[time]
 
-        return
+        log.debug("slice id for requested time %s is: %s", time, sliceid)
+
+        return sliceid
+
+    def _get_previous_sliceid_for_time(self, time):
+        """
+        Returns networkx Graph object for the state of the temporal network just prior to the
+        specified time.  This is useful in conjunction with _get_slice_for_time to calculate
+        the added and deleted vertices at a given time index.
+        :param time:
+        :return: Graph object
+        """
+        current_sliceid = self._get_sliceid_for_time(time)
+
+        # handle the case where we're on the first slice
+        if current_sliceid == 1:
+            sliceid = 1
+        else:
+            sliceid = current_sliceid - 1
+
+        log.debug("previous slice id for requested time %s is: %s", time, sliceid)
+
+    def _get_updated_migration_matrix_for_time(self, time):
+        pass
 
 
-
+    ###################### Public API #####################
 
 
     def get_info_fields(self):
@@ -183,8 +226,6 @@ class TemporalNetwork(object):
 
     def get_subpopulation_names(self):
         return self.subpopulation_names
-
-
 
 
 
@@ -207,7 +248,20 @@ class TemporalNetwork(object):
         if(self._is_change_time(gen)):
             pass
         else:
-            sim.migrate(pop, self._cached_migration_matrix)
-            sim.stat(pop, popSize=True)
-            return pop.subPopSizes()
+            # switch to a new network slice, first handling added and deleted subpops
+            # then calculate a new migration matrix
+            # then migrate according to the new matrix
+            (added_subpops, deleted_subpops) = self._get_added_deleted_subpops_for_time(gen)
+
+            # delete subpopulations
+
+            # add new subpopulations
+
+            # update the migration matrix
+            self._cached_migration_matrix = self._get_updated_migration_matrix_for_time(gen)
+
+        # execute migration and then return the new subpopulation sizes to the mating operator
+        sim.migrate(pop, self._cached_migration_matrix)
+        sim.stat(pop, popSize=True)
+        return pop.subPopSizes()
 

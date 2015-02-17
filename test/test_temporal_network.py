@@ -17,10 +17,9 @@ import tempfile
 
 log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
-class ParallelTest(unittest.TestCase):
+class TemporalNetworkTest(unittest.TestCase):
 
-
-    def test_calculate_schedule(self):
+    def test_read_networkmodel(self):
         network_model_dir = "data/gmltest"
 
         net_model = demo.TemporalNetwork(networkmodel_path=network_model_dir,
@@ -34,7 +33,8 @@ class ParallelTest(unittest.TestCase):
 
         init_population_sizes = net_model.get_initial_size()
         log.info("init_pop_sizes: %s", init_population_sizes)
-
+        names = net_model.get_subpopulation_names()
+        log.info("initial subpop names: %s", names)
 
         self.assertEqual(init_population_sizes, expected)
 
