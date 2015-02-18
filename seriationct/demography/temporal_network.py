@@ -15,6 +15,7 @@ import re
 import math
 import simuPOP as sim
 import logging as log
+import random
 
 class TemporalNetwork(object):
     """
@@ -122,8 +123,8 @@ class TemporalNetwork(object):
         self.sub_pops = first_slice.number_of_nodes()
         log.debug("Number of initial subpopulations: %s", self.sub_pops)
 
-        # subpoplation names
-        self.subpopulation_names =  [d["label"] for n,d in first_slice.nodes_iter(data=True)]
+        # subpoplation names - have to switch them to plain strings from unicode or simuPOP won't use them as subpop names
+        self.subpopulation_names =  [d["label"].encode('utf-8', 'ignore') for n,d in first_slice.nodes_iter(data=True)]
         log.debug("subpouplation names: %s", self.subpopulation_names)
 
 
@@ -211,6 +212,33 @@ class TemporalNetwork(object):
 
         log.debug("previous slice id for requested time %s is: %s", time, sliceid)
 
+
+    def _get_origin_subpop_for_new_subpopulation(self,time,newpop):
+        """
+        Given the name/label of a new subpopulation, this finds the networkx node id
+        of the new subpopulation,
+        """
+        g_cur = self.time_to_network_map[self.sliceid_to_time_map[self._get_sliceid_for_time(time)]]
+        g_prev = self.time_to_network_map[self.sliceid_to_time_map[self._get_previous_sliceid_for_time(time)]]
+        newpop_nodeid = None
+
+        for n,d in g_cur.nodes_iter(data=True):
+            if d["label"] == newpop:
+                newpop_nodeid = n
+
+        newpop_neighbors = g_cur.neighbors(newpop_nodeid)
+        preexisting_neighbors = []
+        for n in newpop_neighbors:
+            if n in g_prev:
+                preexisting_neighbors.append(n)
+
+        log.debug("new subpop neighbors: %s pre-existing neighbors: %s", newpop_neighbors, preexisting_neighbors)
+
+        random_neighbor_id = random.choice(preexisting_neighbors)
+        random_neighbor_label = self._get_node_label(g_cur, random_neighbor_id)
+        return (random_neighbor_id, random_neighbor_label)
+
+
     def _get_updated_migration_matrix_for_time(self, time):
         pass
 
@@ -254,8 +282,18 @@ class TemporalNetwork(object):
             (added_subpops, deleted_subpops) = self._get_added_deleted_subpops_for_time(gen)
 
             # delete subpopulations
+            for sp in deleted_subpops:
+                pop.removeSubPops(pop.subPopByName(sp))
 
             # add new subpopulations
+            for sp in added_subpops:
+                (origin_sp, origin_sp_name) = self._get_origin_subpop_for_new_subpopulation(gen,sp)
+                pop.splitSubPop(origin_sp, [0.5, 0.5], names=[origin_sp_name, sp])
+                log.debug("origin subpopulation %s splitting to form %s and %s", origin_sp_name, origin_sp_name, sp)
+                # make sure all subpopulations are the same size, sampling from existing individuals with replacement
+                numpops = pop.numSubPops()
+                sizes = [self.init_subpop_size] * numpops
+                pop.resize(sizes, propagate=True)
 
             # update the migration matrix
             self._cached_migration_matrix = self._get_updated_migration_matrix_for_time(gen)
