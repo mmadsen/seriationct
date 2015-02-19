@@ -14,6 +14,7 @@ import glob
 import re
 import math
 import simuPOP as sim
+from simuPOP.utils import migrIslandRates
 import logging as log
 import random
 
@@ -53,6 +54,10 @@ class TemporalNetwork(object):
         self.sliceid_to_time_map = {}
         self.times = []
 
+
+        ## TODO:  REMOVE AFTER CALCULATING A REAL MIGRATION MATRIX
+        self._cached_migration_matrix = None
+
         # This will be set when we examine the network model
         self.sub_pops = 0
 
@@ -76,21 +81,19 @@ class TemporalNetwork(object):
         """
         self.network_slices = dict()
 
-        try:
-            os.chdir(self.network_path)
-        except:
-            log.error("Cannot change directories to %s, exiting simulation run %s", self.network_path, self.sim_id)
-            sys.exit(1)
-
-        file_list = glob.glob("*.gml")
+        file_list = []
+        for file in os.listdir(self.network_path):
+            if file.endswith(".gml"):
+                file_list.append(file)
 
         for filename in file_list:
             m = re.match('\w+\-(\d+)\.gml', filename)
             file_number = m.group(1)
-            log.debug("Parsing GML file %s:  file %s", filename, file_number)
-
-            slice = nx.read_gml(filename, relabel=False)
+            log.info("Parsing GML file %s:  file number %s", filename, file_number)
+            full_fname = self.network_path + "/" + filename
+            slice = nx.read_gml(full_fname, relabel=False)
             self.network_slices[file_number] = slice
+
 
     def _assign_slice_times(self):
         """
@@ -104,7 +107,8 @@ class TemporalNetwork(object):
 
         # assign each slice to a starting generation, starting once burn in time has elapsed
         slice_time = self.burn_in_time
-        for slice_id, slice in self.network_slices.items():
+        for slice_id in sorted(self.network_slices.keys()):
+            slice = self.network_slices[slice_id]
             self.time_to_network_map[slice_time] = slice
             self.time_to_sliceid_map[slice_time] = slice_id
             self.sliceid_to_time_map[slice_id] = slice_time
@@ -131,7 +135,7 @@ class TemporalNetwork(object):
     ############### Private Methods for Call() Interface ###############
 
     def _is_change_time(self, gen):
-        return gen in self.time_to_network_map
+        return gen in self.times
 
 
     def _get_added_deleted_subpops_for_time(self, time):
@@ -149,6 +153,8 @@ class TemporalNetwork(object):
         sid_cur = self._get_sliceid_for_time(time)
         sid_prev = self._get_previous_sliceid_for_time(time)
 
+        log.info("time: %s sid cur: %s  sid prev: %s", time, sid_cur, sid_prev)
+
         g_cur = self.time_to_network_map[self.sliceid_to_time_map[sid_cur]]
         g_prev = self.time_to_network_map[self.sliceid_to_time_map[sid_prev]]
 
@@ -158,14 +164,14 @@ class TemporalNetwork(object):
         added_subpops = [self._get_node_label(g_cur, id) for id in list(set(nodes_cur)-set(nodes_prev))]
         deleted_subpops = [self._get_node_label(g_prev, id) for id in list(set(nodes_prev)-set(nodes_cur))]
 
-        log.debug("time: %s add subpop: %s", time, added_subpops)
-        log.debug("time: %s del subpop: %s", time, deleted_subpops)
+        log.info("time: %s add subpop: %s", time, added_subpops)
+        log.info("time: %s del subpop: %s", time, deleted_subpops)
 
         return (added_subpops, deleted_subpops)
 
 
     def _get_node_label(self,g, id):
-        return g.node[id]["label"]
+        return g.node[id]["label"].encode('utf-8', 'ignore')
 
 
     def _get_sliceid_for_time(self, time):
@@ -176,23 +182,33 @@ class TemporalNetwork(object):
         """
         index = None
 
-        for t in self.times:
-            if time > t:
-                index = t
-            elif time <= t and index != None:
+        # Case 1:  does time == one of the actual change points?
+        if time in self.times:
+            log.info("time %s is time of actual slice", time)
+            return self.time_to_sliceid_map[time]
+
+        # Case 2:  does time < the smallest of the change point times?
+        if time <= min(self.times):
+            return min(self.times)
+
+        # Case 3:  does time > the largest of the change point times?
+        if time > max(self.times):
+            return max(self.times)
+
+        # Case 3:  does time fit between a pair of the change points?
+        first = 0
+        second = 1
+        length = len(self.times)
+
+        while(length > 0):
+            if self.times[first] <= time <= self.times[second]:
+                index = self.times[first]
+                log.info("(%s <= %s <= %s)", self.times[first], time, self.times[second])
                 break
-            else:
-                continue
+            first += 1
+            second += 1
 
-        # handle the zero equality case
-        if time == 0:
-            index = min(self.times)
-
-        sliceid = self.time_to_sliceid_map[time]
-
-        log.debug("slice id for requested time %s is: %s", time, sliceid)
-
-        return sliceid
+        return self.time_to_sliceid_map[index]
 
     def _get_previous_sliceid_for_time(self, time):
         """
@@ -204,13 +220,16 @@ class TemporalNetwork(object):
         """
         current_sliceid = self._get_sliceid_for_time(time)
 
-        # handle the case where we're on the first slice
-        if current_sliceid == 1:
-            sliceid = 1
-        else:
-            sliceid = current_sliceid - 1
+        #log.info("current sliceid: %s", current_sliceid)
 
-        log.debug("previous slice id for requested time %s is: %s", time, sliceid)
+        # handle the case where we're on the first slice
+        if current_sliceid == '1':
+            sliceid = '1'
+        else:
+            sliceid = str(int(current_sliceid) - 1)
+
+        #log.info("previous slice id for requested time %s is: %s", time, sliceid)
+        return sliceid
 
 
     def _get_origin_subpop_for_new_subpopulation(self,time,newpop):
@@ -232,7 +251,7 @@ class TemporalNetwork(object):
             if n in g_prev:
                 preexisting_neighbors.append(n)
 
-        log.debug("new subpop neighbors: %s pre-existing neighbors: %s", newpop_neighbors, preexisting_neighbors)
+        log.info("new subpop neighbors: %s pre-existing neighbors: %s", newpop_neighbors, preexisting_neighbors)
 
         random_neighbor_id = random.choice(preexisting_neighbors)
         random_neighbor_label = self._get_node_label(g_cur, random_neighbor_id)
@@ -255,6 +274,8 @@ class TemporalNetwork(object):
     def get_subpopulation_names(self):
         return self.subpopulation_names
 
+    def get_subpopulation_sizes(self):
+        return self.subpop_sizes
 
 
     def __call__(self, pop):
@@ -273,7 +294,7 @@ class TemporalNetwork(object):
         :return: A list of the subpopulation sizes for each subpopulation
         """
         gen = pop.dvars().gen
-        if(self._is_change_time(gen)):
+        if(self._is_change_time(gen) == False):
             pass
         else:
             # switch to a new network slice, first handling added and deleted subpops
@@ -283,15 +304,17 @@ class TemporalNetwork(object):
 
             # delete subpopulations
             for sp in deleted_subpops:
+                log.info("deleting subpopulation %s", sp)
                 pop.removeSubPops(pop.subPopByName(sp))
 
             # add new subpopulations
             for sp in added_subpops:
+                log.info("adding subpopulation %s", sp)
                 (origin_sp, origin_sp_name) = self._get_origin_subpop_for_new_subpopulation(gen,sp)
                 pop.splitSubPop(origin_sp, [0.5, 0.5], names=[origin_sp_name, sp])
                 log.debug("origin subpopulation %s splitting to form %s and %s", origin_sp_name, origin_sp_name, sp)
                 # make sure all subpopulations are the same size, sampling from existing individuals with replacement
-                numpops = pop.numSubPops()
+                numpops = pop.numSubPop()
                 sizes = [self.init_subpop_size] * numpops
                 pop.resize(sizes, propagate=True)
 
@@ -299,7 +322,13 @@ class TemporalNetwork(object):
             self._cached_migration_matrix = self._get_updated_migration_matrix_for_time(gen)
 
         # execute migration and then return the new subpopulation sizes to the mating operator
+        # TODO:  Temporary!!
+        self._cached_migration_matrix = migrIslandRates(0.1, pop.numSubPop())
         sim.migrate(pop, self._cached_migration_matrix)
         sim.stat(pop, popSize=True)
+        # cache the new subpopulation names and sizes for debug and logging purposes
+        # before returning them to the calling function
+        self.subpopulation_names = pop.subPopNames()
+        self.subpop_sizes = pop.subPopSizes()
         return pop.subPopSizes()
 
