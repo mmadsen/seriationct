@@ -22,7 +22,7 @@ class TemporalNetworkTest(unittest.TestCase):
 
     def setUp(self):
         network_model_dir = "data/gmltest"
-        self.end_sim = 40
+        self.end_sim = 60
 
         self.net_model = demo.TemporalNetwork(networkmodel_path=network_model_dir,
                                          simulation_id="19387578394",

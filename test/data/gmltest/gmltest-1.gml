@@ -2,19 +2,19 @@ graph [
   is_directed 0
   node [
     id 0
-    label "0"
+    label "assemblage-0"
     xcoord 5
     ycoord 1
   ]
   node [
     id 1
-    label "1"
+    label "assemblage-1"
     xcoord 9
     ycoord 4
   ]
   node [
     id 2
-    label "2"
+    label "assemblage-2"
     xcoord 8
     ycoord 9
   ]
