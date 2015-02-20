@@ -160,8 +160,12 @@ class TemporalNetwork(object):
         nodes_cur = g_cur.nodes()
         nodes_prev = g_prev.nodes()
 
-        added_subpops = [self._get_node_label(g_cur, id) for id in list(set(nodes_cur)-set(nodes_prev))]
-        deleted_subpops = [self._get_node_label(g_prev, id) for id in list(set(nodes_prev)-set(nodes_cur))]
+        node_labels_cur = [self._get_node_label(g_cur, id) for id in nodes_cur]
+        node_labels_prev = [self._get_node_label(g_prev, id) for id in nodes_prev]
+
+
+        added_subpops = list(set(node_labels_cur)-set(node_labels_prev))
+        deleted_subpops = list(set(node_labels_prev)-set(node_labels_cur))
 
         log.debug("time: %s add subpop: %s del subpop: %s", time, added_subpops, deleted_subpops)
 
@@ -307,7 +311,8 @@ class TemporalNetwork(object):
             pass
         else:
             slice_for_time = self.time_to_sliceid_map[gen]
-            log.info("========= Processing network slice %s =============", slice_for_time)
+            log.info("========= Processing network slice %s at time %s =============", slice_for_time, gen)
+            log.debug("time: %s starting subpop names: %s", gen, pop.subPopNames())
             # switch to a new network slice, first handling added and deleted subpops
             # then calculate a new migration matrix
             # then migrate according to the new matrix
