@@ -17,11 +17,14 @@ import argparse
 import ctpy.utils as ctu
 import pytransmission.popgen as pypopgen
 import simuOpt
+import math
 
 import seriationct as sct
+import seriationct.demography as demo
 import seriationct.data as data
 import seriationct.sampling as sampling
 import seriationct.utils as utils
+import simuPOP as sim
 
 simuOpt.setOptions(alleleType='long', optimized=True, quiet=False, numThreads=utils.get_parallel_cores(dev_flag=True))
 
@@ -35,98 +38,45 @@ def main():
     MAXALLELES = 10000000
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", help="provide name for experiment", required=True)
     parser.add_argument("--debug", help="turn on debugging output")
-    parser.add_argument("--devel", help="Use only half of the available CPU cores", type=int, default=1)
-    parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
-    parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
-    parser.add_argument("--configuration", help="Configuration file for experiment", required=True)
-    parser.add_argument("--reps", help="Replicated populations per parameter set", type=int, default=4)
     parser.add_argument("--networkmodel", help="Filename of the temporal network model for this simulation",
                         required=True)
-    parser.add_argument("--popsize", help="Population size", type=int, required=True)
-    parser.add_argument("--numloci", help="Number of loci per individual", type=int, required=True)
-    parser.add_argument("--maxinittraits", help="Max initial number of traits per locus for initialization", type=int,
-                        required=True)
-    parser.add_argument("--samplesize", help="Size of samples taken to calculate all statistics", type=int,
-                        required=True)
-    parser.add_argument("--innovrate", help="Rate at which innovations occur in population", type=float, required=True)
-    parser.add_argument("--samplinginterval",
-                        help="Interval between samples, once sampling begins, defaults to 1M steps", type=long,
-                        default="1000000")
-    parser.add_argument("--samplingstarttime", help="Time at which sampling begins, defaults to 250K steps", type=long,
-                        default="250000")
-    parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 2M steps",
-                        type=long, default="2000000")
+    parser.add_argument("--popsize", help="Population size for each subpopulation", type=int, required=True)
+    parser.add_argument("--simlength", help="Time at which simulation and sampling end",type=long, default="3000")
+    parser.add_argument("--innovrate", help="Rate at which innovations occur in population in scale-free theta units", type=float, required=True)
+    parser.add_argument("--experiment", help="provide name for experiment", required=True)
+    parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
+    parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
+    parser.add_argument("--devel", help="Use only half of the available CPU cores", type=int, default=1)
 
     (config, sim_id, script) = sct.setup(parser)
 
     log.info("config: %s", config)
 
-    ### NOTE ###
-    ###
-    ### the simuPOP module is deliberately imported here because we need to process the
-    ### command line arguments first, to understand which version of the simuPOP module (e.g.,
-    ### long allele representation, etc, to import, and because we need to figure out how
-    ### many cores the machine has, etc., to set it up for parallel processing.  If we import
-    ### at the top of the file as normal, the imports happen before any code is executed,
-    ### and we can't set those options.  DO NOT move these imports out of setup and main.
-    import simuPOP as sim
-    from simuPOP.demography import *
+    tmp = (9.2 * config.popsize) / (config.innovrate + 1.0) # this is conservative given the original constant is for the diploid process
+    burn_time =  int(math.ceil(tmp / 1000.0)) * 1000
 
-    start = time()
-    log.info("Starting simulation run %s", sim_id)
-    log.debug("config: %s", config)
+    log.info("Explaining network model %s for popsize %s and innovation rate %s", config.networkmodel, config.popsize, config.innovrate)
 
 
-    # test purposes
-    num_subpops = 2
-    popsize_list = [config.popsize] * num_subpops
-    subpop_names = [str(i) for i in xrange(0, num_subpops)]
-    log.debug("subpopulation names: %s", subpop_names)
+    net_model = demo.TemporalNetwork(networkmodel_path=config.networkmodel,
+                                         simulation_id=sim_id,
+                                         sim_length=config.simlength,
+                                         burn_in_time=burn_time,
+                                         initial_subpop_size=config.popsize
+                                         )
 
-    initial_distribution = ctu.constructUniformAllelicDistribution(config.maxinittraits)
-    log.debug("Initial allelic distribution (for each locus): %s", initial_distribution)
+    pop = sim.Population(size = net_model.get_initial_size(), subPopNames = net_model.get_subpopulation_names(), infoFields=net_model.get_info_fields())
 
-    innovation_rate = pypopgen.wf_mutation_rate_from_theta(config.popsize, config.innovrate)
-    log.debug("Per-locus innov rate within populations: %s", innovation_rate)
+    log.info("network model has slices at %s", net_model.times)
+    for time in range(1,config.simlength):
+        pop.dvars().gen = time
+        net_model(pop)
+        if net_model.is_change_time(time):
+            log.info("time: %s subpop names: %s subpop sizes: %s", time, net_model.get_subpopulation_names(), net_model.get_subpopulation_sizes())
 
-
-    dmodel = ExponentialGrowthModel(T=1000, N0=[500, 500], r=[0.001, 0.0011],infoFields='migrate_to',ops=sim.Migrator(rate=[[0, 0.1], [0.1, 0]]))
-
-
-    population = sim.Population(size=dmodel.init_size, loci=1, ploidy=1,infoFields=dmodel.info_fields)
-    simu = sim.Simulator(population, rep=config.reps)
-
-    simu.evolve(
-        initOps=sim.InitGenotype(freq=initial_distribution),
-        preOps=[
-            sim.PyOperator(func=ctu.logGenerationCount, param=(), step=100, reps=0),
-            #sim.PyOperator(func=networkmodel.migrate(population))
-        ],
-        matingScheme=sim.RandomSelection(subPopSize=dmodel),
-        postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
-                 sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies,
-                                param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci),
-                                subPops=sim.ALL_AVAIL,
-                                step=1, begin=1000),
-                 sim.Stat(popSize=True, step=100, begin=100),
-                 sim.PyEval(r'"gen %d, rep %d  %s\n" % (gen, rep, subPopSize)', step=100, begin=100),
-
-        ],
-        #finalOps=sim.PyOperator(func=sampling.sampleIndividuals,
-                                # param=(config.samplesize, innovation_rate, config.popsize, sim_id, config.numloci),
-                                # subPops=sim.ALL_AVAIL,
-                                # step=1000, begin=1000),
-        gen=config.simlength,
-    )
-
-    endtime = time()
-    elapsed = endtime - start
-    log.info("simulation complete in %s seconds", elapsed)
-    data.store_simulation_timing(sim_id, script, config.experiment, elapsed, config.simlength, config.popsize,
-                                 config.networkmodel)
-
+        if time == config.simlength:
+            log.info("time: %s END of simulation")
 
 if __name__ == "__main__":
     main()

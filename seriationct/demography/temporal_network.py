@@ -134,8 +134,7 @@ class TemporalNetwork(object):
 
     ############### Private Methods for Call() Interface ###############
 
-    def _is_change_time(self, gen):
-        return gen in self.times
+
 
 
     def _get_added_deleted_subpops_for_time(self, time):
@@ -153,7 +152,7 @@ class TemporalNetwork(object):
         sid_cur = self._get_sliceid_for_time(time)
         sid_prev = self._get_previous_sliceid_for_time(time)
 
-        log.debug("time: %s sid cur: %s  sid prev: %s", time, sid_cur, sid_prev)
+        #log.debug("time: %s sid cur: %s  sid prev: %s", time, sid_cur, sid_prev)
 
         g_cur = self.time_to_network_map[self.sliceid_to_time_map[sid_cur]]
         g_prev = self.time_to_network_map[self.sliceid_to_time_map[sid_prev]]
@@ -272,6 +271,9 @@ class TemporalNetwork(object):
 
     ###################### Public API #####################
 
+    def is_change_time(self, gen):
+        return gen in self.times
+
     def get_info_fields(self):
         return self.info_fields
 
@@ -301,9 +303,11 @@ class TemporalNetwork(object):
         :return: A list of the subpopulation sizes for each subpopulation
         """
         gen = pop.dvars().gen
-        if(self._is_change_time(gen) == False):
+        if(self.is_change_time(gen) == False):
             pass
         else:
+            slice_for_time = self.time_to_sliceid_map[gen]
+            log.info("========= Processing network slice %s =============", slice_for_time)
             # switch to a new network slice, first handling added and deleted subpops
             # then calculate a new migration matrix
             # then migrate according to the new matrix
@@ -316,7 +320,7 @@ class TemporalNetwork(object):
                 #log.debug("pre-split subpopulations: %s", self._get_subpop_idname_map(pop))
 
                 pop.splitSubPop(origin_sp, [0.5, 0.5], names=[origin_sp_name, sp])
-                log.debug("origin subpopulation %s splitting to form %s and %s", origin_sp_name, origin_sp_name, sp)
+                log.debug("time %s: origin subpopulation %s splitting to form %s and %s", gen, origin_sp_name, origin_sp_name, sp)
                 # make sure all subpopulations are the same size, sampling from existing individuals with replacement
                 numpops = pop.numSubPop()
                 sizes = [self.init_subpop_size] * numpops
@@ -324,9 +328,8 @@ class TemporalNetwork(object):
 
             # delete subpopulations
             for sp in deleted_subpops:
-
                 sp_id = pop.subPopByName(sp)
-                log.debug("deleting subpopulation index %s name: %s", sp_id, sp)
+                log.debug("time %s: deleting subpopulation name: %s", gen, sp)
                 pop.removeSubPops(pop.subPopByName(sp))
 
             # update the migration matrix
@@ -341,7 +344,7 @@ class TemporalNetwork(object):
         sim.stat(pop, popSize=True)
         # cache the new subpopulation names and sizes for debug and logging purposes
         # before returning them to the calling function
-        self.subpopulation_names = self._get_subpop_idname_map(pop)
+        self.subpopulation_names = pop.subPopNames()
         self.subpop_sizes = pop.subPopSizes()
         return pop.subPopSizes()
 
