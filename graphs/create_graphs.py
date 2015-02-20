@@ -46,9 +46,11 @@ def setup():
     parser.add_argument("--filename", help="filename for output", default="graph", required=True)
     parser.add_argument("--x", help="number of assemblages tall to generate", default=20)
     parser.add_argument("--y", help="number of assemblages wide to generate", default=20)
+    parser.add_argument("--levels",help="number of levels in hierarchical model.", default=5)
+    parser.add_argument("--children",help="number of children per level.",default=5)
     parser.add_argument("--configuration", help="Path to configuration file")
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
-    parser.add_argument("--model", choices=['grid-distance','grid-hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
+    parser.add_argument("--model", choices=['grid-distance','hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
     parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','complete','mst'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
@@ -77,24 +79,51 @@ def create_vertices():
     net = nx.Graph(name=args.model, is_directed=False)
     xcoord=0
     ycoord=0
-    for yc in range(1,int(args.x)):
-        for xc in range(1,int(args.y)):
-            name="assemblage-"+str(xc)+"-"+str(yc)
-            net.add_node(name,label=name,xcoord=xc, ycoord=yc)
-            nodeNames.append(name)
-            nodeX[name]=xc
-            nodeY[name]=yc
+    spacefactor=5
+    if args.model=="grid-distance":
+        for yc in range(1,int(args.x)):
+            for xc in range(1,int(args.y)):
+                name="assemblage-"+str(xc)+"-"+str(yc)
+                net.add_node(name,label=name,xcoord=xc, ycoord=yc)
+                nodeNames.append(name)
+                nodeX[name]=xc
+                nodeY[name]=yc
+    else:
+        net.add_node("ROOT", label="ROOT" ,xcoord=int(args.children)*spacefactor/2, ycoord=0)
+        nodeX["ROOT"]=int(args.children)*spacefactor/2
+        nodeY["ROOT"]=0
+        for i in xrange(int(args.levels)):
+            for j in xrange(int(args.children)):
+                name = "Level_%i_%i" %(i,j)
+                net.add_node(name, level=name,xcoord=j*spacefactor, ycoord=i*spacefactor)
+                nodeX[name]=j*spacefactor
+                nodeY[name]=i*spacefactor
+                if i==0:
+                    net.add_edge("ROOT", "Level_%i_%i" % (i,j))
+                    previous_level = i
+                else:
+                    net.add_edge("Level_%i_%i" % (previous_level,j), name)
+                    previous_level = i
     return net
 
 def create_slices(graph):
-    number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
+    if args.model=="hierarchical":
+        number_per_slice=int((int(args.children)*int(args.levels))/int(args.slices))
+
+    else:
+        number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
+
     slices=[]
     ## first slice
     newnet = nx.Graph(name=args.model+"-1", is_directed=False)
     current_nodes=set([])
-    possible_nodes = set(list(graph.nodes()))                             # set of all nodes that are possible
+    possible_nodes = set(list(graph.nodes()))
+    possible_nodes.difference_update(["ROOT"])# set of all nodes that are possible
     for node in range(0,number_per_slice):   # select N number of nodes
-        chosen_node = choice(list(possible_nodes))                  # pick a random node from the list of possibilities (all)
+        list_of_nodes = list(possible_nodes)
+        #print list_of_nodes
+        random_selection =random.randint(1,len(list_of_nodes))
+        chosen_node = list_of_nodes[random_selection] # pick a random node from the list of possibilities (all)
         possible_nodes.difference_update([chosen_node])               # remove the  node from the possible choices
         newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
         current_nodes.update([chosen_node])                           # update set of possible nodes
@@ -187,19 +216,49 @@ def wire_networks(slices):
                     slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
                                    name=key1,from_node=from_node,to_node=neighbor,
                                    distance=distance,weight=1/distance)
-
-        #create the network the network
-        if args.tree == 'mst':
-            tree= nx.minimum_spanning_tree(slice,weight='distance')
-        elif args.tree == 'complete':
-            tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
+        if args.model=="hierarchical":
+            tree= wire_hierarchical(slice)
         else:
-            tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
+            #create the network the network
+            if args.tree == 'mst':
+                tree= nx.minimum_spanning_tree(slice,weight='distance')
+            elif args.tree == 'complete':
+                tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
+            else:
+                tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
 
         wired_slices.append(tree)
 
     return wired_slices
 
+def wire_hierarchical(input_graph):
+    sumDistance = calc_sum_distance(input_graph)
+    output_graph = nx.Graph(is_directed=False)
+    ## first add all of the nodes
+    for name in input_graph.nodes():
+        output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
+    spacefactor=5
+    output_graph.add_node("ROOT",name="ROOT",label="ROOT",xcoord=int(args.children)*spacefactor/2, ycoord=0)
+    pairsHash={}
+    for yc in range(1,int(args.x)):
+        for xc in range(1,int(args.y)):
+            if yc==1:
+                if nodeX["Level_%i_%i" %(xc,yc)] is not None:
+                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(xc,yc)],nodeY["Level_%i_%i" %(xc,yc)] )
+                    normalized_weight = distance/sumDistance
+                    output_graph.add_edge("ROOT","Level_%i_%i" %(xc,yc),
+                                          normalized_weight=normalized_weight,
+                                          distance=distance,weight=1/distance)
+                    previous_level=1
+            else:
+                if nodeX["Level_%i_%i" %(xc,yc)] is not None:
+                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(xc,yc)],nodeY["Level_%i_%i" %(xc,yc)] )
+                    normalized_weight = distance/sumDistance
+                    output_graph.add_edge("Level_%i_%i"%(previous_level,xc),"Level_%i_%i"%(yc,xc),
+                                        normalized_weight=normalized_weight,
+                                          distance=distance,weight=1/distance)
+                    previous_level=yc
+    return output_graph
 
 def createCompleteGraphByDistance( **kwargs):
     graph=kwargs.get('input_graph')
@@ -278,7 +337,8 @@ def is_there_a_path(G, _from, _to):
     else:
         return False
 
-def get_attribute_from_node(graph, nodename, attribute):
+def get_attribute_from_node( nodename, attribute):
+    global graph
     listOfAttributes=nx.get_node_attributes(graph,attribute)
     return listOfAttributes[nodename]
 
@@ -299,8 +359,8 @@ def plot_slices(wired_slices):
 
         pos={}
         for label in slice.nodes():
-            x = get_attribute_from_node(slice,label,'xcoord')
-            y = get_attribute_from_node(slice,label,'ycoord')
+            x = get_attribute_from_node(label,'xcoord')
+            y = get_attribute_from_node(label,'ycoord')
             pos[label]=(x,y)
         nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False)
         title=args.filename + "Slice-"+str(i)
