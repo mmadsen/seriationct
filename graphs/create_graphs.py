@@ -122,11 +122,15 @@ def create_slices(graph):
     for node in range(0,number_per_slice):   # select N number of nodes
         list_of_nodes = list(possible_nodes)
         #print list_of_nodes
+
         random_selection =random.randint(1,len(list_of_nodes))
-        chosen_node = list_of_nodes[random_selection] # pick a random node from the list of possibilities (all)
-        possible_nodes.difference_update([chosen_node])               # remove the  node from the possible choices
-        newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
-        current_nodes.update([chosen_node])                           # update set of possible nodes
+        try:
+            chosen_node = list_of_nodes[random_selection] # pick a random node from the list of possibilities (all)
+            possible_nodes.difference_update([chosen_node])               # remove the  node from the possible choices
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
+            current_nodes.update([chosen_node])
+        except:
+            pass# update set of possible nodes
     slices.append(newnet)
     #print current_nodes
     ## next n slices
@@ -240,24 +244,33 @@ def wire_hierarchical(input_graph):
     spacefactor=5
     output_graph.add_node("ROOT",name="ROOT",label="ROOT",xcoord=int(args.children)*spacefactor/2, ycoord=0)
     pairsHash={}
-    for yc in range(1,int(args.x)):
-        for xc in range(1,int(args.y)):
+    list_of_nodes=input_graph.nodes()
+    for yc in range(1,int(args.levels)):
+        for xc in range(1,int(args.children)):
             if yc==1:
-                if nodeX["Level_%i_%i" %(xc,yc)] is not None:
+                node_name="Level_%i_%i" % (xc,yc)
+                try:
+                    node = list_of_nodes.index("Level_%i_%i" % (xc,yc))
+
                     distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(xc,yc)],nodeY["Level_%i_%i" %(xc,yc)] )
                     normalized_weight = distance/sumDistance
                     output_graph.add_edge("ROOT","Level_%i_%i" %(xc,yc),
                                           normalized_weight=normalized_weight,
                                           distance=distance,weight=1/distance)
                     previous_level=1
+                except:
+                    pass
             else:
-                if nodeX["Level_%i_%i" %(xc,yc)] is not None:
+                try:
+                    node = list_of_nodes.index("Level_%i_%i" % (xc,yc))
                     distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(xc,yc)],nodeY["Level_%i_%i" %(xc,yc)] )
                     normalized_weight = distance/sumDistance
                     output_graph.add_edge("Level_%i_%i"%(previous_level,xc),"Level_%i_%i"%(yc,xc),
                                         normalized_weight=normalized_weight,
                                           distance=distance,weight=1/distance)
                     previous_level=yc
+                except:
+                    pass
     return output_graph
 
 def createCompleteGraphByDistance( **kwargs):
