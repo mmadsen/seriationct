@@ -8,6 +8,7 @@ Description here
 
 """
 import networkx as nx
+import numpy as np
 import os
 import sys
 import glob
@@ -72,6 +73,9 @@ class TemporalNetwork(object):
         # Determine the initial population configuration
         self._calculate_initial_population_configuration()
 
+        # prime the migration matrix
+        self._cached_migration_matrix = self._calculate_migration_matrix(min(self.times))
+
     ############### Private Initialization Methods ###############
 
     def _parse_network_model(self):
@@ -86,8 +90,10 @@ class TemporalNetwork(object):
             if file.endswith(".gml"):
                 file_list.append(file)
 
+        log.debug("file list: %s", file_list)
+
         for filename in file_list:
-            m = re.match('\w+\-(\d+)\.gml', filename)
+            m = re.search('(?!\-)(\d+)\.gml', filename)
             file_number = m.group(1)
             log.debug("Parsing GML file %s:  file number %s", filename, file_number)
             full_fname = self.network_path + "/" + filename
@@ -166,8 +172,6 @@ class TemporalNetwork(object):
 
         added_subpops = list(set(node_labels_cur)-set(node_labels_prev))
         deleted_subpops = list(set(node_labels_prev)-set(node_labels_cur))
-
-        log.debug("time: %s add subpop: %s del subpop: %s", time, added_subpops, deleted_subpops)
 
         return (added_subpops, deleted_subpops)
 
@@ -273,6 +277,20 @@ class TemporalNetwork(object):
         return name_id_map
 
 
+    def _calculate_migration_matrix(self, time):
+        # this should be a parameter for the simulation, but get it running
+        r = 0.3
+        g_cur = self.time_to_network_map[self.sliceid_to_time_map[self._get_sliceid_for_time(time)]]
+        g_mat = nx.to_numpy_matrix(g_cur)
+        g_eye = np.eye(np.shape(g_mat)[0])
+        g_mat_scaled = r * g_mat
+
+        migration = (g_mat_scaled + g_eye) / np.sum((g_mat_scaled + g_eye), axis=0)
+        return migration.tolist()
+
+
+
+
     ###################### Public API #####################
 
     def is_change_time(self, gen):
@@ -311,7 +329,7 @@ class TemporalNetwork(object):
             pass
         else:
             slice_for_time = self.time_to_sliceid_map[gen]
-            log.info("========= Processing network slice %s at time %s =============", slice_for_time, gen)
+            log.debug("========= Processing network slice %s at time %s =============", slice_for_time, gen)
             log.debug("time: %s starting subpop names: %s", gen, pop.subPopNames())
             # switch to a new network slice, first handling added and deleted subpops
             # then calculate a new migration matrix
@@ -319,37 +337,36 @@ class TemporalNetwork(object):
             (added_subpops, deleted_subpops) = self._get_added_deleted_subpops_for_time(gen)
 
             # add new subpopulations
+            log.debug("time %s adding subpops: %s", gen, added_subpops)
             for sp in added_subpops:
                 (origin_sp, origin_sp_name) = self._get_origin_subpop_for_new_subpopulation(gen,pop,sp)
 
                 #log.debug("pre-split subpopulations: %s", self._get_subpop_idname_map(pop))
 
                 pop.splitSubPop(origin_sp, [0.5, 0.5], names=[origin_sp_name, sp])
-                log.debug("time %s: origin subpopulation %s splitting to form %s and %s", gen, origin_sp_name, origin_sp_name, sp)
+                log.debug("time %s: subpop %s splitting to form %s and %s", gen, origin_sp_name, origin_sp_name, sp)
                 # make sure all subpopulations are the same size, sampling from existing individuals with replacement
                 numpops = pop.numSubPop()
                 sizes = [self.init_subpop_size] * numpops
                 pop.resize(sizes, propagate=True)
 
             # delete subpopulations
+            log.debug("time %s deleting subpops: %s", gen, deleted_subpops)
             for sp in deleted_subpops:
                 sp_id = pop.subPopByName(sp)
-                log.debug("time %s: deleting subpopulation name: %s", gen, sp)
                 pop.removeSubPops(pop.subPopByName(sp))
 
             # update the migration matrix
-            self._cached_migration_matrix = self._get_updated_migration_matrix_for_time(gen)
+            self._cached_migration_matrix = self._calculate_migration_matrix(gen)
 
-        # execute migration and then return the new subpopulation sizes to the mating operator
-        # TODO:  Temporary!!
-        self._cached_migration_matrix = migrIslandRates(0.1, pop.numSubPop())
+            log.debug("time %s migr matrix: %s", gen, self._cached_migration_matrix)
 
 
         sim.migrate(pop, self._cached_migration_matrix)
         sim.stat(pop, popSize=True)
         # cache the new subpopulation names and sizes for debug and logging purposes
         # before returning them to the calling function
-        self.subpopulation_names = pop.subPopNames()
+        self.subpopulation_names = sorted(pop.subPopNames())
         self.subpop_sizes = pop.subPopSizes()
         return pop.subPopSizes()
 

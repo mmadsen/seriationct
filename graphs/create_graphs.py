@@ -185,8 +185,9 @@ def wire_networks(slices):
                     normalized_weight = distance/sumDistance
 
                     slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
+                                   unnormalized_weight = 1/distance,
                                    name=key1,from_node=from_node,to_node=neighbor,
-                                   distance=distance,weight=1/distance)
+                                   distance=distance,weight=normalized_weight)
 
         #create the network the network
         if args.tree == 'mst':
@@ -217,7 +218,8 @@ def createCompleteGraphByDistance( **kwargs):
         normalized_weight = distance/sumDistance
         newnet.add_edge(e[0],e[1],name=key1,
                         normalized_weight=normalized_weight,
-                        from_node=e[0], to_node=e[1], distance=distance,weight=1/distance)
+                        unnormalized_weight=1/distance,
+                        from_node=e[0], to_node=e[1], distance=distance,weight=normalized_weight)
     return newnet
 
  # from a "summed" graph, create a "min max" solution - but use weights not counts
@@ -265,8 +267,8 @@ def createMinMaxGraphByWeight( **kwargs):
                 normalized_weight=distance/sumDistance
                 if weight in [0,None,False]:
                     weight=0.000000000001
-                output_graph.add_path([a1, a2], normalized_weight=normalized_weight,
-                                      distance=distance, weight=weight)
+                output_graph.add_path([a1, a2], normalized_weight=normalized_weight,unnormalized_weight=weight,
+                                      distance=distance, weight=normalized_weight)
     return output_graph
 
 def calculate_distance(x1,y1,x2,y2):
