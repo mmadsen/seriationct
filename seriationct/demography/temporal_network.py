@@ -36,7 +36,13 @@ class TemporalNetwork(object):
     subpopulation is removed from the population.
     """
 
-    def __init__(self, networkmodel_path=None, simulation_id=None, sim_length=0, burn_in_time=0, initial_subpop_size = 0):
+    def __init__(self,
+                 networkmodel_path=None,
+                 simulation_id=None,
+                 sim_length=0,
+                 burn_in_time=0,
+                 initial_subpop_size = 0,
+                 migrationfraction = 0.2):
         """
         :param networkmodel_path: List of full paths to a set of GML files
         :param sim_length: Number of generations to run the simulation
@@ -49,6 +55,7 @@ class TemporalNetwork(object):
         self.sim_id = simulation_id
         self.burn_in_time = burn_in_time
         self.init_subpop_size = initial_subpop_size
+        self.migration_fraction = migrationfraction
 
         self.time_to_network_map = {}
         self.time_to_sliceid_map = {}
@@ -278,12 +285,11 @@ class TemporalNetwork(object):
 
 
     def _calculate_migration_matrix(self, time):
-        # this should be a parameter for the simulation, but get it running
-        r = 0.3
+        # this should be a parameter for the simulation, but get it runnin
         g_cur = self.time_to_network_map[self.sliceid_to_time_map[self._get_sliceid_for_time(time)]]
         g_mat = nx.to_numpy_matrix(g_cur)
         g_eye = np.eye(np.shape(g_mat)[0])
-        g_mat_scaled = r * g_mat
+        g_mat_scaled = self.migration_fraction * g_mat
 
         migration = (g_mat_scaled + g_eye) / np.sum((g_mat_scaled + g_eye), axis=0)
         return migration.tolist()
@@ -330,7 +336,7 @@ class TemporalNetwork(object):
         else:
             slice_for_time = self.time_to_sliceid_map[gen]
             log.debug("========= Processing network slice %s at time %s =============", slice_for_time, gen)
-            log.debug("time: %s starting subpop names: %s", gen, pop.subPopNames())
+            log.debug("time: %s starting subpop names: %s", gen, sorted(pop.subPopNames()))
             # switch to a new network slice, first handling added and deleted subpops
             # then calculate a new migration matrix
             # then migrate according to the new matrix

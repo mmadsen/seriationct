@@ -51,6 +51,7 @@ def main():
     parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 3000 generations",
                         type=long, default="3000")
     parser.add_argument("--popsize", help="Initial size of population for each community in the model", type=int, required=True)
+    parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, required=True, default=0.2)
 
     (config, sim_id, script) = sct.setup(parser)
 
@@ -88,7 +89,12 @@ def main():
     # Construct a demographic model from a collection of network slices which represent a temporal network
     # of changing subpopulations and interaction strengths.  This object is Callable, and simply is handed
     # to the mating function which applies it during the copying process
-    networkmodel = sdemo.TemporalNetwork(networkmodel_path=config.networkmodel,simulation_id=sim_id,sim_length=config.simlength,burn_in_time=burn_time,initial_subpop_size=config.popsize)
+    networkmodel = sdemo.TemporalNetwork(networkmodel_path=config.networkmodel,
+                                         simulation_id=sim_id,
+                                         sim_length=config.simlength,
+                                         burn_in_time=burn_time,
+                                         initial_subpop_size=config.popsize,
+                                         migrationfraction=config.migrationfraction)
 
     # The regional network model defines both of these, in order to configure an initial population for evolution
     # Construct the initial population

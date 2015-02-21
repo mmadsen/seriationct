@@ -36,6 +36,7 @@ global config, sim_id, script
 
 def main():
     MAXALLELES = 10000000
+    subpop_history_map = dict()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", help="turn on debugging output")
@@ -48,6 +49,7 @@ def main():
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--devel", help="Use only half of the available CPU cores", type=int, default=1)
+    parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, required=True, default=0.2)
 
     (config, sim_id, script) = sct.setup(parser)
 
@@ -60,11 +62,12 @@ def main():
 
 
     net_model = demo.TemporalNetwork(networkmodel_path=config.networkmodel,
-                                         simulation_id=sim_id,
-                                         sim_length=config.simlength,
-                                         burn_in_time=burn_time,
-                                         initial_subpop_size=config.popsize
-                                         )
+                                     simulation_id=sim_id,
+                                     sim_length=config.simlength,
+                                     burn_in_time=burn_time,
+                                     initial_subpop_size=config.popsize,
+                                     migrationfraction=config.migrationfraction
+                                     )
 
     pop = sim.Population(size = net_model.get_initial_size(), subPopNames = net_model.get_subpopulation_names(), infoFields=net_model.get_info_fields())
 
