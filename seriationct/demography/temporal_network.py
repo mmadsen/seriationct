@@ -62,8 +62,9 @@ class TemporalNetwork(object):
         self.sliceid_to_time_map = {}
         self.times = []
 
+        self.node_origin_time = dict()
+        self.node_exit_time = dict()
 
-        ## TODO:  REMOVE AFTER CALCULATING A REAL MIGRATION MATRIX
         self._cached_migration_matrix = None
 
         # This will be set when we examine the network model
@@ -179,6 +180,14 @@ class TemporalNetwork(object):
 
         added_subpops = list(set(node_labels_cur)-set(node_labels_prev))
         deleted_subpops = list(set(node_labels_prev)-set(node_labels_cur))
+
+
+        # now do tracking of origin and exit times for assemblage durations
+        for sp in added_subpops:
+            self.node_origin_time[sp] = time
+
+        for sp in deleted_subpops:
+            self.node_exit_time[sp] = time
 
         return (added_subpops, deleted_subpops)
 
@@ -314,6 +323,15 @@ class TemporalNetwork(object):
     def get_subpopulation_sizes(self):
         return self.subpop_sizes
 
+    def get_subpopulation_durations(self):
+        """
+        Returns a map with subpopulation name as key, and duration as value.  Burn-in time is NOT
+        included in the duration, so the durations are relative to the simlength - burnin.
+        """
+        duration = dict()
+        for sp in self.node_exit_time:
+            duration[sp] = int(self.node_exit_time[sp]) - int(self.node_origin_time[sp])
+        return duration
 
     def __call__(self, pop):
         """
@@ -331,7 +349,27 @@ class TemporalNetwork(object):
         :return: A list of the subpopulation sizes for each subpopulation
         """
         gen = pop.dvars().gen
-        if(self.is_change_time(gen) == False):
+
+
+        # At the first time slice, start tracking duration for assemblages that exist at min(self.times)
+        # which is also the end of the burn-in time
+        # After this point, further changes are recorded as nodes are added/deleted
+        if gen == min(self.times):
+            starting_subpops = pop.subPopNames()
+            for subpop in starting_subpops:
+                self.node_origin_time[subpop] = min(self.times)
+
+        # At the very end of the simulation, after the last slice time, we finish off the
+        # duration times of assemblages that exist at sim_length.
+        if gen == self.sim_length:
+            ending_subpops = pop.subPopNames()
+            for subpop in ending_subpops:
+                self.node_exit_time[subpop] = self.sim_length
+
+
+        ######### Do the per tick processing ##########
+
+        if self.is_change_time(gen) == False:
             pass
         else:
             slice_for_time = self.time_to_sliceid_map[gen]

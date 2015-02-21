@@ -58,6 +58,9 @@ def main():
     tmp = (9.2 * config.popsize) / (config.innovrate + 1.0) # this is conservative given the original constant is for the diploid process
     burn_time =  int(math.ceil(tmp / 1000.0)) * 1000
 
+    log.info("Burn-in time: %s", burn_time)
+
+
     log.info("Explaining network model %s for popsize %s and innovation rate %s", config.networkmodel, config.popsize, config.innovrate)
 
 
@@ -73,14 +76,18 @@ def main():
 
     log.info("network model has slices at %s", net_model.times)
     log.info("Initial migration matrix: %s", net_model._cached_migration_matrix)
-    for time in range(1,config.simlength):
+    for time in range(1,config.simlength+1):
         pop.dvars().gen = time
         net_model(pop)
         if net_model.is_change_time(time):
             log.info("time: %s subpop names: %s subpop sizes: %s", time, net_model.get_subpopulation_names(), net_model.get_subpopulation_sizes())
 
         if time == config.simlength:
-            log.info("time: %s END of simulation")
+
+            sp_durations = net_model.get_subpopulation_durations()
+            log.info("subpop durations: %s", sp_durations)
+
+            log.info("time: %s END of simulation", time)
 
 if __name__ == "__main__":
     main()
