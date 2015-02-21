@@ -331,6 +331,7 @@ class TemporalNetwork(object):
         duration = dict()
         for sp in self.node_exit_time:
             duration[sp] = int(self.node_exit_time[sp]) - int(self.node_origin_time[sp])
+            #log.debug("duration sp %s: %s - from %s to %s", sp, duration[sp], self.node_origin_time[sp], self.node_exit_time[sp])
         return duration
 
     def __call__(self, pop):
