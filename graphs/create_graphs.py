@@ -16,8 +16,8 @@ Takes some input information and produces a series of .gml files.
     python create_graphs.py --filename test --model grid-distance --slices 5
     python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree complete
     python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree minmax
-
-
+    python create_graphs.py --filename test --model hierarchical --slices 5 --levels 10 --children 10 --tree minmax
+    python create_graphs.py --filename test --model hierarchical --slices 5 --levels 10 --children 10 --tree complete
 """
 
 import networkx as nx
@@ -72,14 +72,14 @@ def setup():
 
 
 def create_vertices():
-    global nodeNames, nodeX, nodeY
+    global nodeNames, nodeX, nodeY, spacefactor
     nodeNames=[]
     nodeX={}
     nodeY={}
+    spacefactor=1
     net = nx.Graph(name=args.model, is_directed=False)
     xcoord=0
     ycoord=0
-    spacefactor=5
     if args.model=="grid-distance":
         for yc in range(1,int(args.x)):
             for xc in range(1,int(args.y)):
@@ -89,16 +89,16 @@ def create_vertices():
                 nodeX[name]=xc
                 nodeY[name]=yc
     else:
-        net.add_node("ROOT", label="ROOT" ,xcoord=int(args.children)*spacefactor/2, ycoord=0)
+        net.add_node("ROOT", label="ROOT" ,xcoord=0, ycoord=0)
         nodeX["ROOT"]=int(args.children)*spacefactor/2
         nodeY["ROOT"]=0
-        for i in xrange(int(args.levels)):
-            for j in xrange(int(args.children)):
+        for i in range(1,int(args.levels)):
+            for j in range(1,int(args.children)):
                 name = "Level_%i_%i" %(i,j)
                 net.add_node(name, level=name,xcoord=j*spacefactor, ycoord=i*spacefactor)
                 nodeX[name]=j*spacefactor
                 nodeY[name]=i*spacefactor
-                if i==0:
+                if i==1:
                     net.add_edge("ROOT", "Level_%i_%i" % (i,j))
                     previous_level = i
                 else:
@@ -217,9 +217,9 @@ def wire_networks(slices):
                     edgeDistance[key1]=distance
                     normalized_weight = distance/sumDistance
 
-                    slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
-                                   name=key1,from_node=from_node,to_node=neighbor,
-                                   distance=distance,weight=1/distance)
+                    #slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
+                    #               name=key1,from_node=from_node,to_node=neighbor,
+                    #               distance=distance,weight=1/distance)
         if args.model=="hierarchical":
             tree= wire_hierarchical(slice)
         else:
@@ -236,25 +236,28 @@ def wire_networks(slices):
     return wired_slices
 
 def wire_hierarchical(input_graph):
+    global spacefactor
     sumDistance = calc_sum_distance(input_graph)
     output_graph = nx.Graph(is_directed=False)
     ## first add all of the nodes
     for name in input_graph.nodes():
         output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
-    spacefactor=5
-    output_graph.add_node("ROOT",name="ROOT",label="ROOT",xcoord=int(args.children)*spacefactor/2, ycoord=0)
+        print "adding node ", name, " to output graph"
+    output_graph.add_node("ROOT",name="ROOT",label="ROOT",xcoord=0, ycoord=0)
     pairsHash={}
     list_of_nodes=input_graph.nodes()
-    for yc in range(1,int(args.levels)):
+    for yc in range(0,int(args.levels)):
         for xc in range(1,int(args.children)):
             if yc==1:
-                node_name="Level_%i_%i" % (xc,yc)
+                node_name="Level_%i_%i" % (yc,xc)
                 try:
-                    node = list_of_nodes.index("Level_%i_%i" % (xc,yc))
+                    node = list_of_nodes.index("Level_%i_%i" % (yc,xc))
 
-                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(xc,yc)],nodeY["Level_%i_%i" %(xc,yc)] )
+                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(yc,xc)],nodeY["Level_%i_%i" %(yc,xc)] )
                     normalized_weight = distance/sumDistance
-                    output_graph.add_edge("ROOT","Level_%i_%i" %(xc,yc),
+
+                    print "adding edge from ROOT to ", "Level_%i_%i" %(yc,xc)
+                    output_graph.add_edge("ROOT","Level_%i_%i" %(yc,xc),
                                           normalized_weight=normalized_weight,
                                           distance=distance,weight=1/distance)
                     previous_level=1
@@ -262,9 +265,10 @@ def wire_hierarchical(input_graph):
                     pass
             else:
                 try:
-                    node = list_of_nodes.index("Level_%i_%i" % (xc,yc))
-                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(xc,yc)],nodeY["Level_%i_%i" %(xc,yc)] )
+                    node = list_of_nodes.index("Level_%i_%i" % (yc,xc))
+                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(yc,xc)],nodeY["Level_%i_%i" %(yc,xc)] )
                     normalized_weight = distance/sumDistance
+                    print "adding edge from ","Level_%i_%i"%(previous_level,xc), " to ", "Level_%i_%i" %(yc,xc)
                     output_graph.add_edge("Level_%i_%i"%(previous_level,xc),"Level_%i_%i"%(yc,xc),
                                         normalized_weight=normalized_weight,
                                           distance=distance,weight=1/distance)
