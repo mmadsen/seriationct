@@ -35,18 +35,20 @@ def _get_collection_id():
 
 
 
-def store_simulation_timing(sim_id,script,exp,elapsed,length,popsize,netmodel):
+def store_simulation_metadata(sim_id,script,exp,elapsed,length,sampledlength,popsize,netmodel,durations):
     """Stores the parameters and metadata for a simulation run in the database.
 
     """
-    SimulationTiming(dict(
+    SimulationMetadata(dict(
         script_filename = script,
         simulation_run_id = sim_id,
         experiment_name = exp,
         elapsed_time = elapsed,
         run_length = length,
+        sampled_length = sampledlength,
         popsize = popsize,
-        networkmodel = netmodel
+        networkmodel = netmodel,
+        subpopulation_durations = durations
     )).m.insert()
     return True
 
@@ -63,11 +65,11 @@ def columns_to_export_for_analysis():
     return cols
 
 
-class SimulationTiming(Document):
+class SimulationMetadata(Document):
 
     class __mongometa__:
         session = Session.by_name(_get_dataobj_id())
-        name = 'simulation_timing'
+        name = 'simulation_metadata'
 
     _id = Field(schema.ObjectId)
     script_filename = Field(str)
@@ -75,8 +77,10 @@ class SimulationTiming(Document):
     experiment_name = Field(str)
     elapsed_time = Field(float)
     run_length = Field(int)
+    sampled_length = Field(int)
     popsize = Field(int)
     networkmodel = Field(str)
+    subpopulation_durations = Field(schema.Anything)
 
 
 

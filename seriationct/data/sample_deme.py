@@ -19,7 +19,7 @@ def _get_dataobj_id():
     """
         Returns the short handle used for this data object in Ming configuration
     """
-    return 'simulations'
+    return 'sample_deme'
 
 def _get_collection_id():
     """

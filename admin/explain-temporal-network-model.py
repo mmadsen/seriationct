@@ -53,11 +53,7 @@ def main():
 
     (config, sim_id, script) = sct.setup(parser)
 
-    log.info("config: %s", config)
-
-    tmp = (9.2 * config.popsize) / (config.innovrate + 1.0) # this is conservative given the original constant is for the diploid process
-    burn_time =  int(math.ceil(tmp / 1000.0)) * 1000
-
+    burn_time = utils.simulation_burnin_time(config.popsize, config.innovrate)
     log.info("Burn-in time: %s", burn_time)
 
 

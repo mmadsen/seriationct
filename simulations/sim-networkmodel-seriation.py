@@ -74,10 +74,8 @@ def main():
 
     # Calculate the burn in time
 
-    tmp = (9.2 * config.popsize) / (config.innovrate + 1.0) # this is conservative given the original constant is for the diploid process
-    burn_time =  int(math.ceil(tmp / 1000.0)) * 1000
+    burn_time = utils.simulation_burnin_time(config.popsize, config.innovrate)
     log.info("Minimum burn in time given popsize and theta: %s", burn_time)
-    # TODO  perhaps round the burnin time to the nearest 100 or 1000?
 
     initial_distribution = ctu.constructUniformAllelicDistribution(config.maxinittraits)
     log.debug("Initial allelic distribution (for each locus): %s", initial_distribution)
@@ -98,9 +96,11 @@ def main():
 
     # The regional network model defines both of these, in order to configure an initial population for evolution
     # Construct the initial population
-    popsize_list = networkmodel.get_initial_size()
-    subpop_names = networkmodel.get_subpopulation_names()
-    population = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci, infoFields=['migrate_to'])
+    population = sim.Population(size=networkmodel.get_initial_size(),
+                                subPopNames = networkmodel.get_subpopulation_names(),
+                                ploidy=1,
+                                loci=config.numloci,
+                                infoFields=networkmodel.get_info_fields())
 
     # We are going to evolve the same population over several replicates, in order to measure how stochastic variation
     # effects the measured copying process.
@@ -114,7 +114,7 @@ def main():
         preOps=[
             sim.PyOperator(func=ctu.logGenerationCount, param=(), step=100, reps=0)
         ],
-        matingScheme=sim.RandomSelection(subPopSize=networkmodel),
+        matingScheme=sim.RandomSelection(subPopSize=networkmodel()),
         postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
                  sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies,
                                 param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci),
@@ -128,8 +128,9 @@ def main():
     endtime = time()
     elapsed = endtime - start
     log.info("simulation complete in %s seconds", elapsed)
-    data.store_simulation_timing(sim_id, script, config.experiment, elapsed, config.simlength, config.popsize,
-                                 config.networkmodel)
+    sampled_length = int(config.simlength) - burn_time
+    data.store_simulation_metadata(sim_id, script, config.experiment, elapsed, config.simlength, sampled_length, config.popsize,
+                                 config.networkmodel,networkmodel.get_subpopulation_durations())
 
 
 if __name__ == "__main__":
