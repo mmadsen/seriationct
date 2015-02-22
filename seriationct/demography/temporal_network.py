@@ -349,7 +349,10 @@ class TemporalNetwork(object):
 
         :return: A list of the subpopulation sizes for each subpopulation
         """
-        gen = pop.dvars().gen
+        if 'gen' not in pop.vars():
+            gen = 0
+        else:
+            gen = pop.dvars().gen
 
 
         # At the first time slice, start tracking duration for assemblages that exist at min(self.times)

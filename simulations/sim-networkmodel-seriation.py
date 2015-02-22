@@ -66,7 +66,7 @@ def main():
     ### at the top of the file as normal, the imports happen before any code is executed,
     ### and we can't set those options.  DO NOT move these imports out of setup and main.
     import simuPOP as sim
-    import seriationct.demography as sdemo
+    import seriationct.demography as demo
 
     start = time()
     log.info("Starting simulation run %s", sim_id)
@@ -87,7 +87,7 @@ def main():
     # Construct a demographic model from a collection of network slices which represent a temporal network
     # of changing subpopulations and interaction strengths.  This object is Callable, and simply is handed
     # to the mating function which applies it during the copying process
-    networkmodel = sdemo.TemporalNetwork(networkmodel_path=config.networkmodel,
+    networkmodel = demo.TemporalNetwork(networkmodel_path=config.networkmodel,
                                          simulation_id=sim_id,
                                          sim_length=config.simlength,
                                          burn_in_time=burn_time,
@@ -96,25 +96,22 @@ def main():
 
     # The regional network model defines both of these, in order to configure an initial population for evolution
     # Construct the initial population
-    population = sim.Population(size=networkmodel.get_initial_size(),
-                                subPopNames = networkmodel.get_subpopulation_names(),
-                                ploidy=1,
-                                loci=config.numloci,
-                                infoFields=networkmodel.get_info_fields())
+
+    pop = sim.Population(size = networkmodel.get_initial_size(), subPopNames = networkmodel.get_subpopulation_names(), infoFields=networkmodel.get_info_fields(), ploidy=1, loci=config.numloci)
+
+    log.info("population sizes: %s names: %s", pop.subPopSizes(), pop.subPopNames())
 
     # We are going to evolve the same population over several replicates, in order to measure how stochastic variation
     # effects the measured copying process.
-    simu = sim.Simulator(population, rep=config.reps)
-
+    simu = sim.Simulator(pop, rep=config.reps)
 
     # Start the simulation and evolve the population, taking samples after the burn-in time has elapsed
-
     simu.evolve(
         initOps=sim.InitGenotype(freq=initial_distribution),
         preOps=[
             sim.PyOperator(func=ctu.logGenerationCount, param=(), step=100, reps=0)
         ],
-        matingScheme=sim.RandomSelection(subPopSize=networkmodel()),
+        matingScheme=sim.RandomSelection(subPopSize=networkmodel),
         postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
                  sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies,
                                 param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci),
