@@ -94,16 +94,16 @@ def create_vertices():
         nodeY["ROOT"]=0
         for i in range(1,int(args.levels)):
             for j in range(1,int(args.children)):
-                name = "Level_%i_%i" %(i,j)
+                name = "Level_%i_%i" %(j,i)
                 net.add_node(name, level=name,xcoord=j*spacefactor, ycoord=i*spacefactor)
                 nodeX[name]=j*spacefactor
                 nodeY[name]=i*spacefactor
                 if i==1:
-                    net.add_edge("ROOT", "Level_%i_%i" % (i,j))
-                    previous_level = i
+                    net.add_edge("ROOT", "Level_%i_%i" % (j,i))
+                    previous_level = 1
                 else:
                     net.add_edge("Level_%i_%i" % (previous_level,j), name)
-                    previous_level = i
+                    previous_level = j
     return net
 
 def create_slices(graph):
@@ -227,7 +227,7 @@ def wire_networks(slices):
             tree= nx.minimum_spanning_tree(slice,weight='distance')
         elif args.tree == 'complete':
             tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
-                                   distance=distance,weight=1/distance)
+                    #               distance=distance,weight=1/distance)
                     #slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
                     #               name=key1,from_node=from_node,to_node=neighbor,
                     #               distance=distance,weight=1/distance)
