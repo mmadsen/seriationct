@@ -15,7 +15,6 @@ from time import time
 import math
 
 import argparse
-import ctpy.utils as ctu
 import pytransmission.popgen as pypopgen
 import simuOpt
 
@@ -77,7 +76,7 @@ def main():
     burn_time = utils.simulation_burnin_time(config.popsize, config.innovrate)
     log.info("Minimum burn in time given popsize and theta: %s", burn_time)
 
-    initial_distribution = ctu.constructUniformAllelicDistribution(config.maxinittraits)
+    initial_distribution = pypopgen.constructUniformAllelicDistribution(config.maxinittraits)
     log.debug("Initial allelic distribution (for each locus): %s", initial_distribution)
 
     innovation_rate = pypopgen.wf_mutation_rate_from_theta(config.popsize, config.innovrate)
@@ -97,7 +96,11 @@ def main():
     # The regional network model defines both of these, in order to configure an initial population for evolution
     # Construct the initial population
 
-    pop = sim.Population(size = networkmodel.get_initial_size(), subPopNames = networkmodel.get_subpopulation_names(), infoFields=networkmodel.get_info_fields(), ploidy=1, loci=config.numloci)
+    pop = sim.Population(size = networkmodel.get_initial_size(),
+                         subPopNames = networkmodel.get_subpopulation_names(),
+                         infoFields=networkmodel.get_info_fields(),
+                         ploidy=1,
+                         loci=config.numloci)
 
     log.info("population sizes: %s names: %s", pop.subPopSizes(), pop.subPopNames())
 
@@ -109,7 +112,7 @@ def main():
     simu.evolve(
         initOps=sim.InitGenotype(freq=initial_distribution),
         preOps=[
-            sim.PyOperator(func=ctu.logGenerationCount, param=(), step=100, reps=0)
+            sim.PyOperator(func=sampling.logGenerationCount, param=(), step=100, reps=0)
         ],
         matingScheme=sim.RandomSelection(subPopSize=networkmodel),
         postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),

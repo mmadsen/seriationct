@@ -11,6 +11,25 @@ Description here
 import logging as log
 import pprint as pp
 import seriationct.data as data
+from slatkin import montecarlo
+
+def logGenerationCount(pop, param):
+        """Operator for logging the generation count using simuPOP's PyOperator hook.
+
+        Args:
+
+            implicitly called with a Population object by simuPOP, requires no other arguments
+
+        Returns:
+
+            Boolean true (required of all PyOperator methods)
+
+    """
+
+        gen = pop.dvars().gen
+        log.info("Generation: %s", gen)
+        return True
+
 
 def sampleNumAlleles(pop, param):
     """Samples allele richness for all loci in a replicant population, and simply logs the richness by subpop and locus.
@@ -71,11 +90,12 @@ def sampleAlleleAndGenotypeFrequencies(pop, param):
 
     for sp_name in subpops:
         sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
-        sim.stat(sample, haploFreq = range(0, num_loci))
+        sim.stat(sample, haploFreq = range(0, num_loci), vars=['haploFreq', 'haploNum'])
         sim.stat(sample, alleleFreq = sim.ALL_AVAIL)
 
         keys = sample.dvars().haploFreq.keys()
         haplotype_map = sample.dvars().haploFreq[keys[0]]
+        haplotype_count_map = sample.dvars().haploNum[keys[0]]
         num_classes = len(haplotype_map)
 
         #log.debug("gen: %s replicate: %s subpop: %s numclasses: %s class freq: %s", gen, popID, sp_name, num_classes, haplotype_map)
@@ -87,7 +107,17 @@ def sampleAlleleAndGenotypeFrequencies(pop, param):
             class_freq[key] = v
         #log.debug("class_freq packed: %s", class_freq)
 
-        sample = dict(subpop = sp_name, crichness = num_classes, cfreq = class_freq)
+        class_count = dict()
+        for k,v in haplotype_count_map.items():
+            key = '-'.join(str(x) for x in k)
+            class_count[key] = v
+
+        # count_vals = sorted( [int(val) for val in class_count.values()] )
+        #
+        # (prob, theta) = montecarlo(100000, count_vals, len(count_vals))
+        # #log.debug("slatkin test for class counts - prob:  %s  theta: %s ", prob, theta)
+
+        sample = dict(subpop = sp_name, crichness = num_classes, cfreq = class_freq, ccount = class_count)
         sample_list.append(sample)
 
 

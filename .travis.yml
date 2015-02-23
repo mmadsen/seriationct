@@ -3,7 +3,8 @@ python:
   - "2.7"
 # command to install dependencies
 before_install:
-  # nothing yet
+  - sudo apt-get install swig
+  - ./install-slatkin-tools.sh
 install:
   - "pip install ."
   - "pip install -r requirements.txt"

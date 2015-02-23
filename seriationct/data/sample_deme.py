@@ -75,12 +75,12 @@ def storeClassFrequencySamples(sim_id, gen, rep, ssize, popsize, mut, sample_lis
     each of which has the form: {subpop: str, crichness: int, cfreq: dict}
     """
     for sample in sample_list:
-        storeClassFrequencySample(sim_id, gen, rep, sample['subpop'], ssize, popsize, mut, sample['crichness'], sample['cfreq'] )
+        storeClassFrequencySample(sim_id, gen, rep, sample['subpop'], ssize, popsize, mut, sample['crichness'], sample['cfreq'], sample['ccount'] )
 
     return True
 
 
-def storeClassFrequencySample(sim_id, gen, rep, subpop, ssize, popsize, mut, crichness, cfreq):
+def storeClassFrequencySample(sim_id, gen, rep, subpop, ssize, popsize, mut, crichness, cfreq, ccount):
     ClassFrequencySampleUnaveraged(
         dict(
             simulation_run_id = sim_id,
@@ -91,7 +91,9 @@ def storeClassFrequencySample(sim_id, gen, rep, subpop, ssize, popsize, mut, cri
             population_size = popsize,
             mutation_rate = mut,
             class_richness = crichness,
-            class_freq = cfreq
+            class_freq = cfreq,
+            class_count = ccount
+            #class_slatkin_prob = slatkin_prob
 
         )
     ).m.insert()
@@ -102,7 +104,7 @@ class ClassFrequencySampleUnaveraged(Document):
 
     class __mongometa__:
         session = Session.by_name(_get_dataobj_id())
-        name = 'classfreq_sample_unaveraged'
+        name = 'seriationct_sample_unaveraged'
 
     # metadata and parameters
     _id = Field(schema.ObjectId)
@@ -116,6 +118,8 @@ class ClassFrequencySampleUnaveraged(Document):
     # observables
     class_richness = Field(int)
     class_freq = Field(schema.Anything)
+    class_count = Field(schema.Anything)
+    #class_slatkin_prob = Field(float)
 
 
 
