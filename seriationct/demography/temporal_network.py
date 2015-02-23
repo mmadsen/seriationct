@@ -289,13 +289,12 @@ class TemporalNetwork(object):
 
 
     def _calculate_migration_matrix(self, time):
-        # this should be a parameter for the simulation, but get it runnin
         g_cur = self.time_to_network_map[self.sliceid_to_time_map[self._get_sliceid_for_time(time)]]
         g_mat = nx.to_numpy_matrix(g_cur)
 
         # get the column totals
-        ctot = np.sum(g_mat, axis = 0)
-        scaled = (g_mat / ctot) * self.migration_fraction
+        rtot = np.sum(g_mat, axis = 1)
+        scaled = (g_mat / rtot) * self.migration_fraction
         diag = np.eye(np.shape(g_mat)[0]) * (1.0 - self.migration_fraction)
         g_mat_scaled = diag + scaled
 
