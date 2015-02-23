@@ -5,6 +5,7 @@ python:
 before_install:
   - sudo apt-get install swig
   - ./install-slatkin-tools.sh
+  - ./install-simupop-for-travis.sh
 install:
   - "pip install ."
   - "pip install -r requirements.txt"

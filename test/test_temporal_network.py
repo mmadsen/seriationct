@@ -15,6 +15,7 @@ import seriationct.demography as demo
 import simuPOP as sim
 import os
 import tempfile
+import argparse
 
 log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
