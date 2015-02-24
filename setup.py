@@ -19,7 +19,6 @@ setup(name="seriationct",
         'seriationct.sampling'
       ],
       scripts = [
-          'admin/seriationct-planner.py',
           'admin/seriationct-runbuilder.py',
           'analytics/seriationct-export-data.py',
           'simulations/sim-networkmodel-seriation.py',
