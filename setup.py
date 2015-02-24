@@ -14,13 +14,15 @@ setup(name="seriationct",
       packages = [
         'seriationct',
         'seriationct.data',
-        'seriationct.utils'
+        'seriationct.utils',
+        'seriationct.demography',
+        'seriationct.sampling'
       ],
       scripts = [
           'admin/seriationct-planner.py',
           'admin/seriationct-runbuilder.py',
           'analytics/seriationct-export-data.py',
-          'simulations/sim-seriationct-single.py',
+          'simulations/sim-networkmodel-seriation.py',
       ],
       author='Mark E. Madsen',
       author_email='mark@madsenlab.org',
