@@ -10,7 +10,6 @@ Description here
 
 import logging as log
 import unittest
-import seriationct.utils as utils
 import seriationct.demography as demo
 import simuPOP as sim
 import os

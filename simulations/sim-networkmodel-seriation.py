@@ -13,12 +13,14 @@ convergence since it should be temporary with innovation_rateation/noise.
 import logging as log
 from time import time
 import math
-
+import sys
 import argparse
 import pytransmission.popgen as pypopgen
 import simuOpt
 import uuid
 import ming
+import numpy.random as npr
+import random
 import seriationct.data as data
 import seriationct.sampling as sampling
 import seriationct.utils as utils
@@ -58,6 +60,7 @@ def setup(parser):
     return (config,sim_id,script)
 
 def main():
+    start = time()
     MAXALLELES = 10000000
 
     parser = argparse.ArgumentParser()
@@ -79,6 +82,7 @@ def main():
                         type=long, default="3000")
     parser.add_argument("--popsize", help="Initial size of population for each community in the model", type=int, required=True)
     parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, required=True, default=0.2)
+    parser.add_argument("--seed", type=int, help="Seed for random generators to ensure replicability")
 
     (config, sim_id, script) = setup(parser)
 
@@ -95,9 +99,16 @@ def main():
     import simuPOP as sim
     import seriationct.demography as demo
 
-    start = time()
     log.info("Starting simulation run %s", sim_id)
     log.debug("config: %s", config)
+    if config.seed is None:
+        log.info("No random seed given, allowing RNGs to initialize with random seed")
+    else:
+        log.debug("Seeding RNGs with seed: %s", config.seed)
+        npr.seed(config.seed)
+        random.seed(config.seed)
+
+    full_command_line = " ".join(sys.argv)
 
     # Calculate the burn in time
 
@@ -145,7 +156,7 @@ def main():
         matingScheme=sim.RandomSelection(subPopSize=networkmodel),
         postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
                  sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies,
-                                param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci),
+                                param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci, script, full_command_line, config.seed),
                                 subPops=sim.ALL_AVAIL,
                                 step=1, begin=burn_time),
 

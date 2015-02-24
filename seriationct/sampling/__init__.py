@@ -30,59 +30,59 @@ def logGenerationCount(pop, param):
         log.info("Generation: %s", gen)
         return True
 
-
-def sampleNumAlleles(pop, param):
-    """Samples allele richness for all loci in a replicant population, and simply logs the richness by subpop and locus.
-
-        Mostly for prototyping purposes...
-
-    """
-    import simuPOP as sim
-    import simuPOP.sampling as sampling
-    (ssize, mutation,popsize,sim_id,numloci) = param
-    rep = pop.dvars().rep
-    gen = pop.dvars().gen
-    subpops = pop.subPopNames()
-    for sp_name in subpops:
-        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
-        sim.stat(sample, alleleFreq=sim.ALL_AVAIL)
-        for locus in range(numloci):
-            numAlleles = len(sample.dvars().alleleFreq[locus].values())
-            #log.debug("simulation_id: %s gen: %s replicate: %s subpop: %s  ssize: %s locus: %s richness: %s ", sim_id, gen, rep, sp_name,ssize,locus,numAlleles)
-
-    return True
-
-
-
-def sampleIndividuals(pop, param):
-    import simuPOP as sim
-    import simuPOP.sampling as sampling
-    (ssize, mutation, popsize, sim_id, num_loci) = param
-    popID = pop.dvars().rep
-    gen = pop.dvars().gen
-    subpops = pop.subPopNames()
-    samplelist = []
-
-    for sp_name in subpops:
-        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
-        genotype_samples = []
-        for idx in range(ssize):
-            s = list(sample.individual(idx).genotype())
-            genotype_samples.append(s)
-
-        sample = dict(sampletime = gen, subpop=sp_name, replicate = popID, genotype=genotype_samples)
-        samplelist.append(sample)
-
-    #log.debug("individual samples: %s", samplelist)
-
-    return True
+#
+# def sampleNumAlleles(pop, param):
+#     """Samples allele richness for all loci in a replicant population, and simply logs the richness by subpop and locus.
+#
+#         Mostly for prototyping purposes...
+#
+#     """
+#     import simuPOP as sim
+#     import simuPOP.sampling as sampling
+#     (ssize, mutation,popsize,sim_id,numloci) = param
+#     rep = pop.dvars().rep
+#     gen = pop.dvars().gen
+#     subpops = pop.subPopNames()
+#     for sp_name in subpops:
+#         sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
+#         sim.stat(sample, alleleFreq=sim.ALL_AVAIL)
+#         for locus in range(numloci):
+#             numAlleles = len(sample.dvars().alleleFreq[locus].values())
+#             #log.debug("simulation_id: %s gen: %s replicate: %s subpop: %s  ssize: %s locus: %s richness: %s ", sim_id, gen, rep, sp_name,ssize,locus,numAlleles)
+#
+#     return True
+#
+#
+#
+# def sampleIndividuals(pop, param):
+#     import simuPOP as sim
+#     import simuPOP.sampling as sampling
+#     (ssize, mutation, popsize, sim_id, num_loci) = param
+#     popID = pop.dvars().rep
+#     gen = pop.dvars().gen
+#     subpops = pop.subPopNames()
+#     samplelist = []
+#
+#     for sp_name in subpops:
+#         sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
+#         genotype_samples = []
+#         for idx in range(ssize):
+#             s = list(sample.individual(idx).genotype())
+#             genotype_samples.append(s)
+#
+#         sample = dict(sampletime = gen, subpop=sp_name, replicate = popID, genotype=genotype_samples)
+#         samplelist.append(sample)
+#
+#     #log.debug("individual samples: %s", samplelist)
+#
+#     return True
 
 
 def sampleAlleleAndGenotypeFrequencies(pop, param):
     import simuPOP as sim
     import simuPOP.sampling as sampling
-    (ssize, mutation, popsize, sim_id, num_loci) = param
-    popID = pop.dvars().rep
+    (ssize, mutation, popsize, sim_id, num_loci, fname, fcli, seed) = param
+    rep = pop.dvars().rep
     gen = pop.dvars().gen
     subpops = pop.subPopNames()
     sample_list = list()
@@ -121,5 +121,5 @@ def sampleAlleleAndGenotypeFrequencies(pop, param):
         sample_list.append(sample)
 
 
-    data.storeClassFrequencySamples(sim_id,gen,popID,ssize,popsize,mutation,sample_list)
+    data.storeClassFrequencySamples(sim_id,gen,rep,fname,fcli,seed,ssize,popsize,mutation,sample_list)
     return True
