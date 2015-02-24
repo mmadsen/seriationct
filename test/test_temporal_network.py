@@ -21,7 +21,7 @@ log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s'
 class TemporalNetworkTest(unittest.TestCase):
 
     def setUp(self):
-        network_model_dir = "data/gmltest"
+        network_model_dir = "test/data/gmltest.zip"
         self.end_sim = 60
 
         self.net_model = demo.TemporalNetwork(networkmodel_path=network_model_dir,
