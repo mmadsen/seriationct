@@ -16,6 +16,7 @@ import ctmixtures.utils as utils
 import numpy.random as npr
 import json
 import uuid
+import os
 
 
 def generate_randomized_simulation(seed, net_model):
@@ -106,7 +107,7 @@ def setup():
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--parallelism", help="Number of separate job lists to create", default="4")
-    parser.add_argument("--numsims", type=int, help="Number of simulations to generate across network models by random prior sampling (should be a multiple of the number of network models)", default=100)
+    parser.add_argument("--numsims", type=int, help="Number of simulations to generate across network models by random prior sampling (should be a multiple of the number of network models)")
     parser.add_argument("--networkmodels", help="Path to directory with compressed temporal network models", required=True)
     parser.add_argument("--simprefix", help="Full path prefix to the simulation executable (optional)")
 
@@ -120,7 +121,7 @@ def setup():
     else:
         log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
-    log.info("Generating simulation commands for experiment: %s", args.experiment, args.model)
+    log.info("Generating simulation commands for experiment: %s", args.experiment)
 
 
 
@@ -150,7 +151,11 @@ def main():
     # so that we distribute network models across the randomly chosen priors
     network_model_files = []
 
-    # read
+    for file in os.listdir(args.networkmodels):
+        if file.endswith(".zip"):
+            full_filepath = args.networkmodels + "/" + file
+            network_model_files.append(full_filepath)
+            log.info("Network model found: %s", full_filepath)
 
     network_model_cycle = itertools.cycle(network_model_files)
 
@@ -158,12 +163,13 @@ def main():
     for i in xrange(0, args.numsims):
 
         # give us a random seed that will fit in a 64 bit long integer
-        seed = npr.randint(1,2**62)
+        seed = npr.randint(1,2**31)
 
         net_model = network_model_cycle.next()
         cmd = generate_randomized_simulation(seed, net_model)
 
         fc = file_cycle.next()
+        log.debug("cmd: %s", cmd)
         fc.write(cmd)
 
 

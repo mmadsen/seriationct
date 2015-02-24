@@ -45,12 +45,6 @@ def setup(parser):
     else:
         log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
-    data.set_experiment_name(config.experiment)
-    data.set_database_hostname(config.dbhost)
-    data.set_database_port(config.dbport)
-    dbconfig = data.getMingConfiguration(data.modules)
-    ming.configure(**dbconfig)
-
     # set up parallelism.  At the moment, this doesn't do anything on OSX
     # but should provide parallelism on Linux across the replicates at least
     cores = utils.get_parallel_cores(config.devel)
