@@ -70,7 +70,7 @@ def main():
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--reps", help="Replicated populations per parameter set", type=int, default=4)
-    parser.add_argument("--networkmodel", help="Path of a directory containing GML files representing the temporal network model for this simulation",
+    parser.add_argument("--networkmodel", help="Path of a zipfile containing GML files representing the temporal network model for this simulation",
                         required=True)
     parser.add_argument("--numloci", help="Number of loci per individual", type=int, required=True)
     parser.add_argument("--maxinittraits", help="Max initial number of traits per locus for initialization", type=int,

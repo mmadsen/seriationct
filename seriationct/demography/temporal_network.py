@@ -18,6 +18,7 @@ import simuPOP as sim
 from simuPOP.utils import migrIslandRates
 import logging as log
 import random
+import zipfile
 
 class TemporalNetwork(object):
     """
@@ -93,20 +94,34 @@ class TemporalNetwork(object):
         """
         self.network_slices = dict()
 
-        file_list = []
-        for file in os.listdir(self.network_path):
-            if file.endswith(".gml"):
-                file_list.append(file)
+        # file_list = []
+        # for file in os.listdir(self.network_path):
+        #     if file.endswith(".gml"):
+        #         file_list.append(file)
+        #
+        # log.debug("file list: %s", file_list)
+        #
+        # for filename in file_list:
+        #     m = re.search('(?!\-)(\d+)\.gml', filename)
+        #     file_number = m.group(1)
+        #     log.debug("Parsing GML file %s:  file number %s", filename, file_number)
+        #     full_fname = self.network_path + "/" + filename
+        #     slice = nx.read_gml(full_fname, relabel=False)
+        #     self.network_slices[file_number] = slice
 
-        log.debug("file list: %s", file_list)
 
-        for filename in file_list:
-            m = re.search('(?!\-)(\d+)\.gml', filename)
+        zf = zipfile.ZipFile(self.network_path, 'r')
+
+        for file in [f for f in zf.namelist() if f.endswith(".gml")]:
+            m = re.search('(?!\-)(\d+)\.gml', file)
             file_number = m.group(1)
-            log.debug("Parsing GML file %s:  file number %s", filename, file_number)
-            full_fname = self.network_path + "/" + filename
-            slice = nx.read_gml(full_fname, relabel=False)
+            log.debug("Parsing GML file %s:  file number %s", file, file_number)
+
+            gml = zf.read(file)
+            slice = nx.parse_gml(gml)
             self.network_slices[file_number] = slice
+
+
 
 
     def _assign_slice_times(self):
