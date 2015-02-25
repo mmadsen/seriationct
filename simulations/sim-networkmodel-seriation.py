@@ -13,13 +13,14 @@ convergence since it should be temporary with innovation_rateation/noise.
 import logging as log
 from time import time
 import math
-
+import sys
 import argparse
-import ctpy.utils as ctu
 import pytransmission.popgen as pypopgen
 import simuOpt
-
-import seriationct as sct
+import uuid
+import ming
+import numpy.random as npr
+import random
 import seriationct.data as data
 import seriationct.sampling as sampling
 import seriationct.utils as utils
@@ -28,9 +29,38 @@ simuOpt.setOptions(alleleType='long', optimized=True, quiet=False, numThreads=ut
 
 global config, sim_id, script
 
+def setup(parser):
+    config = parser.parse_args()
 
+    sim_id = uuid.uuid4().urn
+    script = __file__
+
+    if config.debug == '1':
+        log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
+    else:
+        log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+
+    data.set_experiment_name(config.experiment)
+    data.set_database_hostname(config.dbhost)
+    data.set_database_port(config.dbport)
+    dbconfig = data.getMingConfiguration(data.modules)
+    ming.configure(**dbconfig)
+
+    # set up parallelism.  At the moment, this doesn't do anything on OSX
+    # but should provide parallelism on Linux across the replicates at least
+    cores = utils.get_parallel_cores(config.devel)
+    log.debug("Setting up %s cores for parallel simulation", cores)
+
+    import simuOpt
+    if(config.debug == 1):
+        simuOpt.setOptions(alleleType='long',optimized=True,quiet=False,numThreads = cores)
+    else:
+        simuOpt.setOptions(alleleType='long',optimized=True,quiet=True,numThreads = cores)
+
+    return (config,sim_id,script)
 
 def main():
+    start = time()
     MAXALLELES = 10000000
 
     parser = argparse.ArgumentParser()
@@ -40,7 +70,7 @@ def main():
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--reps", help="Replicated populations per parameter set", type=int, default=4)
-    parser.add_argument("--networkmodel", help="Path of a directory containing GML files representing the temporal network model for this simulation",
+    parser.add_argument("--networkmodel", help="Path of a zipfile containing GML files representing the temporal network model for this simulation",
                         required=True)
     parser.add_argument("--numloci", help="Number of loci per individual", type=int, required=True)
     parser.add_argument("--maxinittraits", help="Max initial number of traits per locus for initialization", type=int,
@@ -51,8 +81,10 @@ def main():
     parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 3000 generations",
                         type=long, default="3000")
     parser.add_argument("--popsize", help="Initial size of population for each community in the model", type=int, required=True)
+    parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, required=True, default=0.2)
+    parser.add_argument("--seed", type=int, help="Seed for random generators to ensure replicability")
 
-    (config, sim_id, script) = sct.setup(parser)
+    (config, sim_id, script) = setup(parser)
 
     log.info("config: %s", config)
 
@@ -65,20 +97,25 @@ def main():
     ### at the top of the file as normal, the imports happen before any code is executed,
     ### and we can't set those options.  DO NOT move these imports out of setup and main.
     import simuPOP as sim
-    import seriationct.demography as sdemo
+    import seriationct.demography as demo
 
-    start = time()
     log.info("Starting simulation run %s", sim_id)
     log.debug("config: %s", config)
+    if config.seed is None:
+        log.info("No random seed given, allowing RNGs to initialize with random seed")
+    else:
+        log.debug("Seeding RNGs with seed: %s", config.seed)
+        npr.seed(config.seed)
+        random.seed(config.seed)
+
+    full_command_line = " ".join(sys.argv)
 
     # Calculate the burn in time
 
-    tmp = (9.2 * config.popsize) / (config.innovrate + 1.0) # this is conservative given the original constant is for the diploid process
-    burn_time =  int(math.ceil(tmp / 1000.0)) * 1000
+    burn_time = utils.simulation_burnin_time(config.popsize, config.innovrate)
     log.info("Minimum burn in time given popsize and theta: %s", burn_time)
-    # TODO  perhaps round the burnin time to the nearest 100 or 1000?
 
-    initial_distribution = ctu.constructUniformAllelicDistribution(config.maxinittraits)
+    initial_distribution = pypopgen.constructUniformAllelicDistribution(config.maxinittraits)
     log.debug("Initial allelic distribution (for each locus): %s", initial_distribution)
 
     innovation_rate = pypopgen.wf_mutation_rate_from_theta(config.popsize, config.innovrate)
@@ -88,30 +125,38 @@ def main():
     # Construct a demographic model from a collection of network slices which represent a temporal network
     # of changing subpopulations and interaction strengths.  This object is Callable, and simply is handed
     # to the mating function which applies it during the copying process
-    networkmodel = sdemo.TemporalNetwork(networkmodel_path=config.networkmodel,simulation_id=sim_id,sim_length=config.simlength,burn_in_time=burn_time,initial_subpop_size=config.popsize)
+    networkmodel = demo.TemporalNetwork(networkmodel_path=config.networkmodel,
+                                         simulation_id=sim_id,
+                                         sim_length=config.simlength,
+                                         burn_in_time=burn_time,
+                                         initial_subpop_size=config.popsize,
+                                         migrationfraction=config.migrationfraction)
 
     # The regional network model defines both of these, in order to configure an initial population for evolution
     # Construct the initial population
-    popsize_list = networkmodel.get_initial_size()
-    subpop_names = networkmodel.get_subpopulation_names()
-    population = sim.Population(size=popsize_list, subPopNames = subpop_names, ploidy=1, loci=config.numloci, infoFields=['migrate_to'])
+
+    pop = sim.Population(size = networkmodel.get_initial_size(),
+                         subPopNames = networkmodel.get_subpopulation_names(),
+                         infoFields=networkmodel.get_info_fields(),
+                         ploidy=1,
+                         loci=config.numloci)
+
+    log.info("population sizes: %s names: %s", pop.subPopSizes(), pop.subPopNames())
 
     # We are going to evolve the same population over several replicates, in order to measure how stochastic variation
     # effects the measured copying process.
-    simu = sim.Simulator(population, rep=config.reps)
-
+    simu = sim.Simulator(pop, rep=config.reps)
 
     # Start the simulation and evolve the population, taking samples after the burn-in time has elapsed
-
     simu.evolve(
         initOps=sim.InitGenotype(freq=initial_distribution),
         preOps=[
-            sim.PyOperator(func=ctu.logGenerationCount, param=(), step=100, reps=0)
+            sim.PyOperator(func=sampling.logGenerationCount, param=(), step=100, reps=0)
         ],
         matingScheme=sim.RandomSelection(subPopSize=networkmodel),
         postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
                  sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies,
-                                param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci),
+                                param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci, script, full_command_line, config.seed),
                                 subPops=sim.ALL_AVAIL,
                                 step=1, begin=burn_time),
 
@@ -122,8 +167,9 @@ def main():
     endtime = time()
     elapsed = endtime - start
     log.info("simulation complete in %s seconds", elapsed)
-    data.store_simulation_timing(sim_id, script, config.experiment, elapsed, config.simlength, config.popsize,
-                                 config.networkmodel)
+    sampled_length = int(config.simlength) - burn_time
+    data.store_simulation_metadata(sim_id, script, config.experiment, elapsed, config.simlength, sampled_length, config.popsize,
+                                 config.networkmodel,networkmodel.get_subpopulation_durations())
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ Description here
 
 """
 from dbutils import *
-from simulation_timing import SimulationTiming, store_simulation_timing
+from simulation_metadata import SimulationMetadata, store_simulation_metadata
 from sample_deme import ClassFrequencySampleUnaveraged, storeClassFrequencySample, storeClassFrequencySamples
 
 
@@ -25,5 +25,5 @@ experiment_name = "test"
 # of the data object being stored.  Ming configuration is then automatic so that simulation simulations need
 # include only two lines which are fully generic.
 
-modules = [simulation_timing, sample_deme]
+modules = [simulation_metadata, sample_deme]
 

@@ -8,6 +8,7 @@ Description here
 
 """
 import networkx as nx
+import numpy as np
 import os
 import sys
 import glob
@@ -17,6 +18,7 @@ import simuPOP as sim
 from simuPOP.utils import migrIslandRates
 import logging as log
 import random
+import zipfile
 
 class TemporalNetwork(object):
     """
@@ -35,7 +37,13 @@ class TemporalNetwork(object):
     subpopulation is removed from the population.
     """
 
-    def __init__(self, networkmodel_path=None, simulation_id=None, sim_length=0, burn_in_time=0, initial_subpop_size = 0):
+    def __init__(self,
+                 networkmodel_path=None,
+                 simulation_id=None,
+                 sim_length=0,
+                 burn_in_time=0,
+                 initial_subpop_size = 0,
+                 migrationfraction = 0.2):
         """
         :param networkmodel_path: List of full paths to a set of GML files
         :param sim_length: Number of generations to run the simulation
@@ -48,14 +56,16 @@ class TemporalNetwork(object):
         self.sim_id = simulation_id
         self.burn_in_time = burn_in_time
         self.init_subpop_size = initial_subpop_size
+        self.migration_fraction = migrationfraction
 
         self.time_to_network_map = {}
         self.time_to_sliceid_map = {}
         self.sliceid_to_time_map = {}
         self.times = []
 
+        self.node_origin_time = dict()
+        self.node_exit_time = dict()
 
-        ## TODO:  REMOVE AFTER CALCULATING A REAL MIGRATION MATRIX
         self._cached_migration_matrix = None
 
         # This will be set when we examine the network model
@@ -72,6 +82,9 @@ class TemporalNetwork(object):
         # Determine the initial population configuration
         self._calculate_initial_population_configuration()
 
+        # prime the migration matrix
+        self._cached_migration_matrix = self._calculate_migration_matrix(min(self.times))
+
     ############### Private Initialization Methods ###############
 
     def _parse_network_model(self):
@@ -81,18 +94,34 @@ class TemporalNetwork(object):
         """
         self.network_slices = dict()
 
-        file_list = []
-        for file in os.listdir(self.network_path):
-            if file.endswith(".gml"):
-                file_list.append(file)
+        # file_list = []
+        # for file in os.listdir(self.network_path):
+        #     if file.endswith(".gml"):
+        #         file_list.append(file)
+        #
+        # log.debug("file list: %s", file_list)
+        #
+        # for filename in file_list:
+        #     m = re.search('(?!\-)(\d+)\.gml', filename)
+        #     file_number = m.group(1)
+        #     log.debug("Parsing GML file %s:  file number %s", filename, file_number)
+        #     full_fname = self.network_path + "/" + filename
+        #     slice = nx.read_gml(full_fname, relabel=False)
+        #     self.network_slices[file_number] = slice
 
-        for filename in file_list:
-            m = re.match('\w+\-(\d+)\.gml', filename)
+
+        zf = zipfile.ZipFile(self.network_path, 'r')
+
+        for file in [f for f in zf.namelist() if f.endswith(".gml")]:
+            m = re.search('(?!\-)(\d+)\.gml', file)
             file_number = m.group(1)
-            log.debug("Parsing GML file %s:  file number %s", filename, file_number)
-            full_fname = self.network_path + "/" + filename
-            slice = nx.read_gml(full_fname, relabel=False)
+            log.debug("Parsing GML file %s:  file number %s", file, file_number)
+
+            gml = zf.read(file)
+            slice = nx.parse_gml(gml)
             self.network_slices[file_number] = slice
+
+
 
 
     def _assign_slice_times(self):
@@ -167,7 +196,13 @@ class TemporalNetwork(object):
         added_subpops = list(set(node_labels_cur)-set(node_labels_prev))
         deleted_subpops = list(set(node_labels_prev)-set(node_labels_cur))
 
-        log.debug("time: %s add subpop: %s del subpop: %s", time, added_subpops, deleted_subpops)
+
+        # now do tracking of origin and exit times for assemblage durations
+        for sp in added_subpops:
+            self.node_origin_time[sp] = time
+
+        for sp in deleted_subpops:
+            self.node_exit_time[sp] = time
 
         return (added_subpops, deleted_subpops)
 
@@ -259,11 +294,6 @@ class TemporalNetwork(object):
         random_neighbor_id = pop.subPopByName(random_neighbor_label)
         return (random_neighbor_id, random_neighbor_label)
 
-
-    def _get_updated_migration_matrix_for_time(self, time):
-        pass
-
-
     def _get_subpop_idname_map(self, pop):
         names = pop.subPopNames()
         name_id_map = dict()
@@ -271,6 +301,21 @@ class TemporalNetwork(object):
             id = pop.subPopByName(name)
             name_id_map[id] = name
         return name_id_map
+
+
+    def _calculate_migration_matrix(self, time):
+        g_cur = self.time_to_network_map[self.sliceid_to_time_map[self._get_sliceid_for_time(time)]]
+        g_mat = nx.to_numpy_matrix(g_cur)
+
+        # get the column totals
+        rtot = np.sum(g_mat, axis = 1)
+        scaled = (g_mat / rtot) * self.migration_fraction
+        diag = np.eye(np.shape(g_mat)[0]) * (1.0 - self.migration_fraction)
+        g_mat_scaled = diag + scaled
+
+        return g_mat_scaled.tolist()
+
+
 
 
     ###################### Public API #####################
@@ -290,6 +335,16 @@ class TemporalNetwork(object):
     def get_subpopulation_sizes(self):
         return self.subpop_sizes
 
+    def get_subpopulation_durations(self):
+        """
+        Returns a map with subpopulation name as key, and duration as value.  Burn-in time is NOT
+        included in the duration, so the durations are relative to the simlength - burnin.
+        """
+        duration = dict()
+        for sp in self.node_exit_time:
+            duration[sp] = int(self.node_exit_time[sp]) - int(self.node_origin_time[sp])
+            #log.debug("duration sp %s: %s - from %s to %s", sp, duration[sp], self.node_origin_time[sp], self.node_exit_time[sp])
+        return duration
 
     def __call__(self, pop):
         """
@@ -306,50 +361,72 @@ class TemporalNetwork(object):
 
         :return: A list of the subpopulation sizes for each subpopulation
         """
-        gen = pop.dvars().gen
-        if(self.is_change_time(gen) == False):
+        if 'gen' not in pop.vars():
+            gen = 0
+        else:
+            gen = pop.dvars().gen
+
+
+        # At the first time slice, start tracking duration for assemblages that exist at min(self.times)
+        # which is also the end of the burn-in time
+        # After this point, further changes are recorded as nodes are added/deleted
+        if gen == min(self.times):
+            starting_subpops = pop.subPopNames()
+            for subpop in starting_subpops:
+                self.node_origin_time[subpop] = min(self.times)
+
+        # At the very end of the simulation, after the last slice time, we finish off the
+        # duration times of assemblages that exist at sim_length.
+        if gen == self.sim_length:
+            ending_subpops = pop.subPopNames()
+            for subpop in ending_subpops:
+                self.node_exit_time[subpop] = self.sim_length
+
+
+        ######### Do the per tick processing ##########
+
+        if self.is_change_time(gen) == False:
             pass
         else:
             slice_for_time = self.time_to_sliceid_map[gen]
-            log.info("========= Processing network slice %s at time %s =============", slice_for_time, gen)
-            log.debug("time: %s starting subpop names: %s", gen, pop.subPopNames())
+            log.debug("========= Processing network slice %s at time %s =============", slice_for_time, gen)
+            log.debug("time: %s starting subpop names: %s", gen, sorted(pop.subPopNames()))
             # switch to a new network slice, first handling added and deleted subpops
             # then calculate a new migration matrix
             # then migrate according to the new matrix
             (added_subpops, deleted_subpops) = self._get_added_deleted_subpops_for_time(gen)
 
             # add new subpopulations
+            log.debug("time %s adding subpops: %s", gen, added_subpops)
             for sp in added_subpops:
                 (origin_sp, origin_sp_name) = self._get_origin_subpop_for_new_subpopulation(gen,pop,sp)
 
                 #log.debug("pre-split subpopulations: %s", self._get_subpop_idname_map(pop))
 
                 pop.splitSubPop(origin_sp, [0.5, 0.5], names=[origin_sp_name, sp])
-                log.debug("time %s: origin subpopulation %s splitting to form %s and %s", gen, origin_sp_name, origin_sp_name, sp)
+                log.debug("time %s: subpop %s splitting to form %s and %s", gen, origin_sp_name, origin_sp_name, sp)
                 # make sure all subpopulations are the same size, sampling from existing individuals with replacement
                 numpops = pop.numSubPop()
                 sizes = [self.init_subpop_size] * numpops
                 pop.resize(sizes, propagate=True)
 
             # delete subpopulations
+            log.debug("time %s deleting subpops: %s", gen, deleted_subpops)
             for sp in deleted_subpops:
                 sp_id = pop.subPopByName(sp)
-                log.debug("time %s: deleting subpopulation name: %s", gen, sp)
                 pop.removeSubPops(pop.subPopByName(sp))
 
             # update the migration matrix
-            self._cached_migration_matrix = self._get_updated_migration_matrix_for_time(gen)
+            self._cached_migration_matrix = self._calculate_migration_matrix(gen)
 
-        # execute migration and then return the new subpopulation sizes to the mating operator
-        # TODO:  Temporary!!
-        self._cached_migration_matrix = migrIslandRates(0.1, pop.numSubPop())
+            log.debug("time %s migr matrix: %s", gen, self._cached_migration_matrix)
 
 
         sim.migrate(pop, self._cached_migration_matrix)
         sim.stat(pop, popSize=True)
         # cache the new subpopulation names and sizes for debug and logging purposes
         # before returning them to the calling function
-        self.subpopulation_names = pop.subPopNames()
+        self.subpopulation_names = sorted(pop.subPopNames())
         self.subpop_sizes = pop.subPopSizes()
         return pop.subPopSizes()
 

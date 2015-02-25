@@ -7,4 +7,18 @@
 Description here
 
 """
+import math
 from parallel import get_parallel_cores
+
+
+def simulation_burnin_time(popsize, innovrate):
+    """
+    Calculates burnin time, and rounds it to the nearest 1000 generation interval.
+
+    :param popsize:
+    :param innovrate:
+    :return:
+    """
+    tmp = (9.2 * popsize) / (innovrate + 1.0) # this is conservative given the original constant is for the diploid process
+    return int(math.ceil(tmp / 1000.0)) * 1000
+

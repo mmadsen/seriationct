@@ -3,5 +3,5 @@ ming
 uuid
 numpy
 networkx
+matplotlib
 git+https://github.com/mmadsen/pytransmission.git
-git+https://github.com/mmadsen/ctpy.git

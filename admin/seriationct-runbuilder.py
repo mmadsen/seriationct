@@ -12,56 +12,131 @@ Description here
 import logging as log
 import argparse
 import itertools
-import madsenlab.axelrod.utils as utils
+import ctmixtures.utils as utils
+import numpy.random as npr
+import json
+import uuid
+import os
 
+
+def generate_randomized_simulation(seed, net_model):
+    """
+    Creates a simulation command line for the sim-networkmodel-seriation.py model, using random
+    prior distributions for the innovation rate and migration fraction
+
+    :return: string
+    """
+
+    theta = npr.uniform(low = float(expconfig['theta_low']), high = float(expconfig['theta_high']))
+    migr_frac = npr.uniform(low = float(expconfig['migrationfraction_low']), high = float(expconfig['migrationfraction_high']))
+
+    if args.simprefix is not None:
+        cmd = ""
+        cmd += args.simprefix
+        cmd += "/sim-networkmodel-seriation.py "
+    else:
+        cmd = "sim-networkmodel-seriation.py "
+
+    cmd += " --experiment "
+    cmd += args.experiment
+
+    cmd += " --popsize "
+    cmd += str(expconfig["popsize"])
+
+    cmd += " --maxinittraits "
+    cmd += str(expconfig["maxinittraits"])
+
+    cmd += " --numloci "
+    cmd += str(expconfig["numloci"])
+
+    cmd += " --innovrate "
+    cmd += str(theta)
+
+    cmd += " --simlength "
+    cmd += str(expconfig["simlength"])
+
+    cmd += " --debug "
+    cmd += args.debug
+
+    cmd += " --seed "
+    cmd += str(seed)
+
+    cmd += " --reps "
+    cmd += str(expconfig["replicates"])
+
+    cmd += " --samplesize "
+    cmd += str(expconfig["samplesize"])
+
+    cmd += " --migrationfraction "
+    cmd += str(migr_frac)
+
+    # for production runs, let the system decide how many cores to use
+    cmd += " --devel 0"
+
+    cmd += " --networkmodel "
+    cmd += net_model
+
+    cmd += '\n'
+
+    #log.debug("%s", cmd)
+    return cmd
+
+
+def parse_experiment_config(config_path):
+    try:
+        json_data = open(config_path)
+        config = json.load(json_data)
+    except ValueError:
+        print "Problem parsing json configuration file - probably malformed syntax"
+        exit(1)
+    except IOError as e:
+        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+        exit(1)
+
+    return config
 
 
 
 def setup():
-    global args, simconfig
+    global args, expconfig
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", help="provide name for experiment", required=True)
+    parser.add_argument("--expconfig", help="Experiment configuration file path", required=True)
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
-    parser.add_argument("--configuration", help="Configuration file for experiment", required=True)
-    parser.add_argument("--parallelism", help="Number of concurrent processes to run", default="4")
-    parser.add_argument("--savetraitgraphs", help="Saves a snapshot of trait tree graphs", action="store_true")
-    parser.add_argument("--samplinginterval", help="Interval between samples, once sampling begins, defaults to 1M steps", default="1000000")
-    parser.add_argument("--samplingstarttime", help="Time at which sampling begins, defaults to 1M steps", default="6000000")
-    parser.add_argument("--simulationendtime", help="Time at which simulation and sampling end, defaults to 10000000 steps", default="10000000")
+    parser.add_argument("--parallelism", help="Number of separate job lists to create", default="4")
+    parser.add_argument("--numsims", type=int, help="Number of simulations to generate across network models by random prior sampling (should be a multiple of the number of network models)")
+    parser.add_argument("--networkmodels", help="Path to directory with compressed temporal network models", required=True)
+    parser.add_argument("--simprefix", help="Full path prefix to the simulation executable (optional)")
 
     args = parser.parse_args()
-
-    simconfig = utils.TreeStructuredConfiguration(args.configuration)
+    expconfig = parse_experiment_config(args.expconfig)
 
     if args.debug == '1':
         log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
+    elif args.debug is None:
+        args.debug = '0'
     else:
         log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
-    log.debug("experiment name: %s", args.experiment)
+    log.info("Generating simulation commands for experiment: %s", args.experiment)
 
 
 
 def main():
-
-    structure_class_name = simconfig.POPULATION_STRUCTURE_CLASS
-    log.info("Configuring TreeStructured Axelrod model with structure class: %s", structure_class_name)
-
-
-    log.debug("Opening %s output files given parallelism", args.parallelism)
+    log.info("Opening %s output files for simulation configuration", args.parallelism)
     num_files = int(args.parallelism)
     file_list = []
-    base_name = "simrunner-exp-"
+    base_name = "job-"
     base_name += args.experiment
     base_name += "-"
 
     for i in range(0, num_files):
         filename = ''
         filename += base_name
-        filename += str(i)
+        filename += str(uuid.uuid4())
         filename += ".sh"
 
         f = open(filename, 'w')
@@ -72,83 +147,37 @@ def main():
     file_cycle = itertools.cycle(file_list)
 
 
-    basic_config = utils.TreeStructuredConfiguration(args.configuration)
+    # read all the network model archives, and create a itertools.cycle for them
+    # so that we distribute network models across the randomly chosen priors
+    network_model_files = []
 
-    if basic_config.INTERACTION_RULE_CLASS == 'madsenlab.axelrod.rules.MultipleTreePrerequisitesLearningCopyingRule':
-        state_space = [
-            basic_config.POPULATION_SIZES_STUDIED,
-            basic_config.TRAIT_LEARNING_RATE,
-            basic_config.MAXIMUM_INITIAL_TRAITS,
-            basic_config.NUM_TRAIT_TREES,
-            basic_config.TREE_BRANCHING_FACTOR,
-            basic_config.TREE_DEPTH_FACTOR,
-            basic_config.TRAIT_LOSS_RATE,
-            basic_config.INNOVATION_RATE,
-        ]
-    else:
-        log.error("This parallel sim runner not compatible with rule class: %s", basic_config.INTERACTION_RULE_CLASS)
-        exit(1)
+    for file in os.listdir(args.networkmodels):
+        if file.endswith(".zip"):
+            full_filepath = args.networkmodels + "/" + file
+            network_model_files.append(full_filepath)
+            log.info("Network model found: %s", full_filepath)
+
+    network_model_cycle = itertools.cycle(network_model_files)
 
 
-    if basic_config.NETWORK_FACTORY_CLASS == 'madsenlab.axelrod.population.WattsStrogatzSmallWorldFactory':
-        state_space.append(basic_config.WS_REWIRING_FACTOR)
+    for i in xrange(0, args.numsims):
 
+        # give us a random seed that will fit in a 64 bit long integer
+        seed = npr.randint(1,2**31)
 
-    for param_combination in itertools.product(*state_space):
-        for replication in range(0, basic_config.REPLICATIONS_PER_PARAM_SET):
-            cmd = "simulations/sim-treestructured-longrun.py "
-            cmd += " --experiment "
-            cmd += args.experiment
-            cmd += " --configuration "
-            cmd += args.configuration
-            cmd += " --popsize "
-            cmd += str(param_combination[0])
-            cmd += " --maxinittraits "
-            cmd += str(param_combination[2])
-            cmd += " --learningrate "
-            cmd += str(param_combination[1])
-            cmd += " --lossrate "
-            cmd += str(param_combination[6])
-            cmd += " --innovrate "
-            cmd += str(param_combination[7])
-            cmd += " --periodic 0 "
-            cmd += " --numtraittrees "
-            cmd += str(param_combination[3])
-            cmd += " --branchingfactor "
-            cmd += str(param_combination[4])
-            cmd += " --depthfactor "
-            cmd += str(param_combination[5])
-            cmd += " --debug "
-            cmd += args.debug
+        net_model = network_model_cycle.next()
+        cmd = generate_randomized_simulation(seed, net_model)
 
-            if len(param_combination) == 9:
-                cmd += " --swrewiring "
-                cmd += str(param_combination[8])
-
-            if args.savetraitgraphs:
-                cmd += " --savetraitgraphs "
-
-            if args.samplinginterval:
-                cmd += " --samplinginterval "
-                cmd += str(args.samplinginterval)
-
-            if args.samplingstarttime:
-                cmd += " --samplingstarttime "
-                cmd += str(args.samplingstarttime)
-
-            if args.simulationendtime:
-                cmd += " --simulationendtime "
-                cmd += str(args.simulationendtime)
-
-
-            cmd += '\n'
-
-            fc = file_cycle.next()
-            fc.write(cmd)
+        fc = file_cycle.next()
+        log.debug("cmd: %s", cmd)
+        fc.write(cmd)
 
 
     for fh in file_list:
         fh.close()
+
+
+
 
 
 if __name__ == "__main__":

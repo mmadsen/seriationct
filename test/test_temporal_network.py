@@ -10,18 +10,18 @@ Description here
 
 import logging as log
 import unittest
-import seriationct.utils as utils
 import seriationct.demography as demo
 import simuPOP as sim
 import os
 import tempfile
+import argparse
 
 log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 
 class TemporalNetworkTest(unittest.TestCase):
 
     def setUp(self):
-        network_model_dir = "data/gmltest"
+        network_model_dir = "test/data/gmltest.zip"
         self.end_sim = 60
 
         self.net_model = demo.TemporalNetwork(networkmodel_path=network_model_dir,

@@ -13,6 +13,7 @@ import unittest
 import seriationct.utils as utils
 import os
 import tempfile
+import argparse
 
 log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 

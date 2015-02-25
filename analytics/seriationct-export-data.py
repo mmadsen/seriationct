@@ -10,13 +10,28 @@ import os
 import logging as log
 import tempfile
 import argparse
-import madsenlab.axelrod.utils as utils
-import madsenlab.axelrod.data as data
+from collections import defaultdict
+import seriationct.data as data
+import pprint as pp
 
-# Prototype:
-# mongoexport --db f-test_samples_postclassification --collection pergeneration_stats_postclassification --csv --out pgstats.csv --fieldFile fieldlist
 
-mongoexport = "mongoexport "
+class DeepDefaultDict(dict):
+    def __missing__(self, key):
+        value = self[key] = type(self)()
+        return value
+
+    def __add__(self, x):
+        """ override addition when self is empty """
+        if not self:
+            return 0 + x
+        raise ValueError
+
+    def __sub__(self, x):
+        """ override subtraction when self is empty """
+        if not self:
+            return 0 - x
+        raise ValueError
+
 
 
 
@@ -29,23 +44,9 @@ def setup():
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
-    parser.add_argument("--configuration", help="Path to configuration file")
-    parser.add_argument("--model", choices=['axelrod', 'extensible', 'treestructured'], required=True)
-    parser.add_argument("--finalized", help="Only export runs which finalized after convergence", action="store_true")
-    parser.add_argument("--filename", help="path to file for export", required=True)
+    parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
 
     args = parser.parse_args()
-
-    simconfig = utils.TreeStructuredConfiguration(args.configuration)
-
-    if args.model == 'axelrod':
-        simconfig = utils.AxelrodConfiguration(args.configuration)
-    elif args.model == 'extensible':
-        simconfig = utils.AxelrodExtensibleConfiguration(args.configuration)
-    elif args.model == 'treestructured':
-        simconfig = utils.TreeStructuredConfiguration(args.configuration)
-    else:
-        log.error("This shouldn't happen - args.model = %s", args.model)
 
     if args.debug == 1:
         log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
@@ -63,37 +64,6 @@ def setup():
 
 
 
-def export_collection_to_csv(database, collection_name, fieldlist):
-
-    outputFileName = "data_"
-    outputFileName += collection_name
-    outputFileName += ".csv"
-
-    fieldFile = tempfile.NamedTemporaryFile(mode="w+t",suffix=".txt",dir="/tmp",delete=False)
-    fieldFileName = fieldFile.name
-    log.debug("Saving field list to %s", fieldFileName)
-
-    for field in fieldlist:
-        fieldFile.write(field)
-        fieldFile.write('\n')
-
-    fieldFile.flush()
-
-    args = []
-    args.append(mongoexport)
-    args.append("--db")
-    args.append(database)
-    args.append("--collection")
-    args.append(collection_name)
-    args.append("--csv")
-    args.append("--fieldFile")
-    args.append(fieldFileName)
-    args.append("--out")
-    args.append(outputFileName)
-
-    log.debug("args: %s", args)
-    retcode = os.system(" ".join(args))
-    log.debug("return code: %s", retcode)
 
 
 
@@ -101,64 +71,76 @@ def export_collection_to_csv(database, collection_name, fieldlist):
 if __name__ == "__main__":
     setup()
 
-
-    fieldnames = data.axelrod_run_treestructured.columns_to_export_for_analysis()
-    orig_fields = fieldnames[:]
-    fieldnames.extend(["cultureid", "culture_count", "mean_radii", "sd_radii",
-                       "orbit_number", "autgroupsize", "remaining_density",
-                       "mean_degree", "sd_degree",
-                       "mean_orbit_multiplicity", "sd_orbit_multiplicity",
-                       "max_orbit_multiplicity","order", "msg_lambda", "msg_beta", "mem_beta"])
-    ofile  = open(args.filename, "wb")
-    writer = csv.DictWriter(ofile, fieldnames=fieldnames, quotechar='"', quoting=csv.QUOTE_ALL)
-
-    headers = dict((n,n) for n in fieldnames)
-    writer.writerow(headers)
-
-    if args.finalized == True:
-        cursor = data.AxelrodStatsTreestructured.m.find(dict(run_finalized=1),dict(timeout=False))
-    else:
-        cursor = data.AxelrodStatsTreestructured.m.find(dict(),dict(timeout=False))
+    # fieldnames = []
+    # fieldnames.extend(["simulation_run_id", "replication", "subpop"])
+    #
+    # ofile  = open(args.filename, "wb")
+    # writer = csv.DictWriter(ofile, fieldnames=fieldnames, quotechar='"', quoting=csv.QUOTE_ALL)
+    #
+    # headers = dict((n,n) for n in fieldnames)
+    # writer.writerow(headers)
 
 
+
+
+    # the data cache has the following nested dict structure:  simid -> replicate -> subpop -> class:count
+
+    cmap = DeepDefaultDict()
+    cursor = data.ClassFrequencySampleUnaveraged.m.find(dict(),dict(timeout=False))
 
     for sample in cursor:
-        row = dict()
-        for field in sorted(orig_fields):
-            row[field] = sample[field]
+        sim_id = sample["simulation_run_id"]
+        rep = sample["replication"]
+        subpop = sample["subpop"]
 
-        # now pull apart the trait graph list - producing a row for each element of the trait graph list
-        tg_stats = sample['trait_graph_stats']
-        for tg in tg_stats:
-            #log.info("tg: %s", tg)
-            row['cultureid'] = tg['cultureid']
-            row['culture_count'] = tg['culture_count']
-            row['mean_radii'] = tg['mean_radii']
-            row['sd_radii'] = tg['sd_radii']
-            row['mean_degree'] = tg['mean_degree']
-            row['sd_degree'] = tg['sd_degree']
-            row['orbit_number'] = tg['orbit_number']
-            row['autgroupsize'] = tg['autgroupsize']
-            row['remaining_density'] = tg['remaining_density']
-            row['mean_orbit_multiplicity'] = tg['mean_orbit_multiplicity']
-            row['sd_orbit_multiplicity'] = tg['sd_orbit_multiplicity']
-            row['max_orbit_multiplicity'] = tg['max_orbit_multiplicity']
-            row['order'] = tg['order']
-            row['msg_lambda'] = tg['msg_lambda']
-            row['msg_beta'] = tg['msg_beta']
-            row['mem_beta'] = tg['mem_beta']
+        class_count_map = sample["class_count"]
+
+        for cls, count in class_count_map.items():
+            cmap[sim_id][rep][subpop][cls] += count
 
 
-            #log.info("row: %s", row)
-            writer.writerow(row)
+    class_set = set()
+    for sim_id in cmap.keys():
+        for rep in cmap[sim_id].keys():
+            for subpop in cmap[sim_id][rep].keys():
 
-    ofile.close()
+                for cls, count in cmap[sim_id][rep][subpop].items():
+                    log.info("sim: %s rep: %s subpop: %s class: %s freq: %s", sim_id, rep, subpop, cls, int(count))
+                    class_set.add(cls)
+
+    log.info("total number of classes: %s", len(class_set))
 
 
+    for sim_id in cmap.keys():
+        for rep in cmap[sim_id].keys():
+            outputfile = args.outputdirectory + "/" + sim_id + "-" + str(rep) + ".txt"
 
+            class_set = set()
 
+            with open(outputfile, 'wb') as outfile:
+                for sp in cmap[sim_id][rep].keys():
+                    for cls in cmap[sim_id][rep][sp].keys():
+                        class_set.add(cls)
 
+                class_list = list(class_set)
 
+                # write header row
+                header = sim_id
+                for cls in class_list:
+                    header += "\t"
+                    header += cls
+                header += "\n"
+
+                outfile.write(header)
+
+                for sp in cmap[sim_id][rep].keys():
+                    row = sp
+                    for cls in class_list:
+                        row += "\t"
+                        count = cmap[sim_id][rep][sp][cls]
+                        row += str(int(count)) if count != {} else str(0)
+                    row += "\n"
+                    outfile.write(row)
 
 
 
