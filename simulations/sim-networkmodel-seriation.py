@@ -32,7 +32,7 @@ global config, sim_id, script
 def setup(parser):
     config = parser.parse_args()
 
-    sim_id = uuid.uuid4().urn
+    sim_id = uuid.uuid1().urn
     script = __file__
 
     if config.debug == '1':
