@@ -1,3 +1,5 @@
+
+
 #!/usr/bin/env python
 # Copyright (c) 2015.  Carl P. Lipo
 #
@@ -13,11 +15,11 @@ Takes some input information and produces a series of .gml files.
 
 
     for example:
-    python create_graphs.py --filename test --model grid-distance --slices 5
-    python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree complete
-    python create_graphs.py --filename test --model grid-distance --slices 5 --x 20 --y 20 --tree minmax
-    python create_graphs.py --filename test --model hierarchical --slices 5 --levels 10 --children 10 --tree minmax
-    python create_graphs.py --filename test --model hierarchical --slices 5 --levels 10 --children 10 --tree complete
+    python create_graphs.py --filename test --model grid --writing minmax -slices 5
+    python create_graphs.py --filename test --model grid --slices 5 --x 20 --y 20 --wiring complete
+    python create_graphs.py --filename test --model grid --slices 5 --x 20 --y 20 --wiring random
+    python create_graphs.py --filename test --model grid --slices 5  --wiring hierarchy
+
 """
 
 import networkx as nx
@@ -50,11 +52,15 @@ def setup():
     parser.add_argument("--children",help="number of children per level.",default=5)
     parser.add_argument("--configuration", help="Path to configuration file")
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
-    parser.add_argument("--model", choices=['grid-distance','hierarchical', 'linear-distance','linear-hierarchical','branch'], required=True)
-    parser.add_argument("--tree", help="Kind of tree to create", choices=['minmax','complete','mst'], default='complete')
+    parser.add_argument("--model", choices=['grid','linear','branch'], required=True, default="grid")
+    parser.add_argument("--wiring", help="Kind of wiring to use in underlying model",
+                        choices=['minmax','complete','mst','hierarchy','random'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
-    parser.add_argument("--overlap",help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
+    parser.add_argument("--gchild_interconnect", help="in the case of a heirarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.10)
+    parser.add_argument("--child_interconnect", help="in the case of a heirarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.20)
+    parser.add_argument("--overlap",
+                        help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
     args = parser.parse_args()
 
@@ -67,20 +73,22 @@ def setup():
     #### main program ####
     log.info("Creating graph with name root %s." %args.filename)
     graph = create_vertices()
-
     return graph
 
 
 def create_vertices():
-    global nodeNames, nodeX, nodeY, spacefactor
+    global nodeNames, nodeX, nodeY, spacefactor, nodeRoot, nodeChildren, nodeGrandchildren
     nodeNames=[]
+    nodeChildren=[]
     nodeX={}
     nodeY={}
+    nodeGrandchildren={}
     spacefactor=1
+    nodeRoot=""
     net = nx.Graph(name=args.model, is_directed=False)
     xcoord=0
     ycoord=0
-    if args.model=="grid-distance":
+    if args.model=="grid":
         for yc in range(1,int(args.x)):
             for xc in range(1,int(args.y)):
                 name="assemblage-"+str(xc)+"-"+str(yc)
@@ -89,51 +97,57 @@ def create_vertices():
                 nodeX[name]=xc
                 nodeY[name]=yc
     else:
-        net.add_node("ROOT", label="ROOT" ,xcoord=0, ycoord=0)
-        nodeX["ROOT"]=int(args.children)*spacefactor/2
-        nodeY["ROOT"]=0
-        for i in range(1,int(args.levels)):
-            for j in range(1,int(args.children)):
-                name = "Level_%i_%i" %(j,i)
-                net.add_node(name, level=name,xcoord=j*spacefactor, ycoord=i*spacefactor)
-                nodeX[name]=j*spacefactor
-                nodeY[name]=i*spacefactor
-                if i==1:
-                    net.add_edge("ROOT", "Level_%i_%i" % (j,i))
-                    previous_level = 1
-                else:
-                    net.add_edge("Level_%i_%i" % (previous_level,j), name)
-                    previous_level = j
+        print "Please choose a model for the vertices. Default is grid. Others are currently unimplemented."
+
     return net
 
+
+
 def create_slices(graph):
-    if args.model=="hierarchical":
-        number_per_slice=int((int(args.children)*int(args.levels))/int(args.slices))
 
+    if args.wiring in ["hierarchy", "minmax"]:
+        slices = create_slices_hierarchy(graph)
     else:
-        number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
+        slices= create_slices_random(graph)
 
+    return slices
+
+def create_slices_hierarchy(graph):
+    global nodeRoot, nodeChildren, nodeGrandchildren
+    number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
     slices=[]
     ## first slice
     newnet = nx.Graph(name=args.model+"-1", is_directed=False)
     current_nodes=set([])
     possible_nodes = set(list(graph.nodes()))
-    possible_nodes.difference_update(["ROOT"])# set of all nodes that are possible
+    possible_nodes.difference_update([nodeRoot])# remove Root from nodes that can change
+
     for node in range(0,number_per_slice):   # select N number of nodes
         list_of_nodes = list(possible_nodes)
         #print list_of_nodes
 
         random_selection =random.randint(1,len(list_of_nodes))
         try:
-            chosen_node = list_of_nodes[random_selection] # pick a random node from the list of possibilities (all)
-            possible_nodes.difference_update([chosen_node])               # remove the  node from the possible choices
+            chosen_node = list_of_nodes[random_selection]       # pick a random node from the list of possibilities (all)
+            possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
             newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
             current_nodes.update([chosen_node])
         except:
             pass# update set of possible nodes
-    slices.append(newnet)
+
+    if args.wiring=="hierarchy":
+        hierarchy_net = create_hierarchy_in_graph(newnet)
+        wired_net=wire_networks(hierarchy_net)
+    else:
+        wired_net=wire_networks(newnet)
+
+    #plot_slice(wired_net)
+    slices.append(wired_net)
     #print current_nodes
     ## next n slices
+
+    children=set(nodeChildren)
+
     for ns in range(2,int(args.slices)+1):
         newnet.graph['name']=args.model+"-"+str(ns)
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
@@ -145,8 +159,82 @@ def create_slices(graph):
             #print "chosen node to remove: ", chosen_node_to_remove
             #print "newnet had ", len(newnet.nodes())
             newnet.remove_node(chosen_node_to_remove)
+            ## for hierarchy
+            if chosen_node_to_remove in nodeChildren:
+                children.difference_update([chosen_node_to_remove])
+                nodeChildren=list(children)
+                listOfAbandonedGchildren=nodeGrandchildren[chosen_node_to_remove]
+                ## need to find new children to attach grandchildren to...
+                for gc in listOfAbandonedGchildren:
+                    newParent=random.choice(nodeChildren)
+                    nodeGrandchildren[newParent].append(gc)
+
+            elif chosen_node_to_remove in nodeGrandchildren.items():
+                for key in nodeGrandchildren.iterkeys():
+
+                    setOfGrandchildrenForChild=set(nodeGrandchildren[key])
+                    if chosen_node_to_remove in nodeGrandchildren[key]:
+                        setOfGrandchildrenForChild.difference_update([chosen_node_to_remove])
+                        nodeGrandchildren[key]=list(setOfGrandchildrenForChild)
+
             possible_nodes.difference_update([chosen_node_to_remove])
             #print "now newnet has ", len(newnet.nodes())
+            current_nodes.difference_update([chosen_node_to_remove])
+
+        num_nodes_to_add = num_nodes_to_remove
+
+        for r in range(0,num_nodes_to_add):
+            chosen_node = choice(list(possible_nodes))
+            possible_nodes.difference_update(chosen_node)
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
+            current_nodes.update([chosen_node])
+        ## now create a new graph
+        updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
+        updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
+        newnet = updatedNet.copy() ## copy back to newnet
+        ## now wire the network
+        wired_net = wire_networks(newnet)
+        slices.append(wired_net)  ## note these are just nodes, not edges yet. (next step)
+    return slices
+
+
+def create_slices_random(graph):
+
+    number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
+    slices=[]
+    ## first slice
+    newnet = nx.Graph(name=args.model+"-1", is_directed=False)
+    current_nodes=set([])
+    possible_nodes = set(list(graph.nodes()))
+    possible_nodes.difference_update([nodeRoot])# remove Root from nodes that can change
+
+    for node in range(0,number_per_slice):   # select N number of nodes
+        list_of_nodes = list(possible_nodes)
+        #print list_of_nodes
+
+        random_selection =random.randint(1,len(list_of_nodes))
+        try:
+            chosen_node = list_of_nodes[random_selection]       # pick a random node from the list of possibilities (all)
+            possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
+            current_nodes.update([chosen_node])
+        except:
+            pass# update set of possible nodes
+
+    wired_net=wire_networks(newnet)
+    #plot_slice(wired_net)
+    slices.append(wired_net)
+
+    for ns in range(2,int(args.slices)+1):
+        newnet.graph['name']=args.model+"-"+str(ns)
+        # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
+        num_current_nodes=len(list(current_nodes))
+        num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))+1# nodes to remove
+
+        for r in range(0,num_nodes_to_remove):
+            chosen_node_to_remove = choice(newnet.nodes())
+            newnet.remove_node(chosen_node_to_remove)
+            possible_nodes.difference_update([chosen_node_to_remove])
             current_nodes.difference_update([chosen_node_to_remove])
         num_nodes_to_add = num_nodes_to_remove
 
@@ -154,14 +242,20 @@ def create_slices(graph):
             chosen_node = choice(list(possible_nodes))
             possible_nodes.difference_update(chosen_node)
             newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
+            random_link_node=random.choice(newnet.nodes())
+
+            key1=chosen_node+"*"+random_link_node
+            weight=random.random()
+            distance=calculate_distance(nodeX[chosen_node],nodeY[chosen_node],nodeX[random_link_node],nodeY[random_link_node])
+            newnet.add_edge(chosen_node, random_link_node,name=key1,
+                        unnormalized_weight=weight,
+                        from_node=chosen_node, to_node=random_link_node, distance=distance,weight=weight)
             #print "adding node: ", chosen_node
             current_nodes.update([chosen_node])
-        ## now create a new graph
-        updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
-        updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
-        newnet = updatedNet.copy() ## copy back to newnet
+
         slices.append(newnet)  ## note these are just nodes, not edges yet. (next step)
     return slices
+
 
 def save_slices(wired_slices):
     n=0
@@ -173,122 +267,183 @@ def saveGraph(graph):
     nx.write_gml(graph, args.filename+".gml")
 
 def calc_sum_distance(slice):
+    global nodeX, nodeY
     sumDistance = 0
-    for n,d in slice.nodes_iter(data=True):
-            from_node = d['label']
-            #from_node_id = d['id']
-            x1=d['xcoord']
-            y1=d['ycoord']
-            for n1,d1 in slice.nodes_iter(data=True):
-                testx=d1['xcoord']
-                testy=d1['ycoord']
+    for n in slice.nodes():
+            x1=nodeX[n]
+            y1=nodeY[n]
+            for n1 in slice.nodes():
+                testx=nodeX[n1]
+                testy=nodeY[n1]
                 distance=calculate_distance(x1,y1,testx,testy)
                 if distance>0:
                     sumDistance += distance
     return sumDistance/2 # since the distances are measured both ways, the actual sum distance is half the total
 
 
-def wire_networks(slices):
+
+def wire_networks(slice):
     global edgeDistance
     edgeDistance={}
-    wired_slices=[]
-    for slice in slices:
-        sumDistance=calc_sum_distance(slice)
-        for n,d in slice.nodes_iter(data=True):
-            from_node = d['label']
-            #from_node_id = d['id']
-            x1=d['xcoord']
-            y1=d['ycoord']
-            mindistance=10000000000
-            neighbor=from_node ## set this to be the same node initially
-            ## now find the node that is closest
+
+    #create the network
+    if args.wiring == 'mst':
+        tree= nx.minimum_spanning_tree(slice,weight='distance')
+    elif args.wiring == 'complete':
+        tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
+    elif args.wiring =="hierarchy":
+        tree= wire_hierarchy(slice)
+    elif args.wiring=="minmax":
+        tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
+    elif args.wiring=="random":
+        tree = createRandomGraph(input_graph=slice)
+    else:
+        ## use minmax as default
+        tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
+
+    return tree
+
+def createRandomGraph(**kwargs):
+    global nodeX, nodeY
+    graph=kwargs.get('input_graph')
+
+    nodes = graph.nodes()
+    nodes_linked=set([])
+    possible_nodes=set(nodes)
+
+    # pick a random node to start
+    first_node = choice(nodes)
+    possible_nodes.difference_update([first_node])
+    nodes_linked.update([first_node])
+
+    sumDistance=calc_sum_distance(graph)
+
+    for n in list(possible_nodes):
+        chosen_node_to_add = choice(list(possible_nodes))
+
+        nodes_linked.update([chosen_node_to_add])
+        possible_nodes.difference_update([chosen_node_to_add])
+        chosen_node_to_link=choice(list(nodes_linked))
+        key1=chosen_node_to_add+"*"+chosen_node_to_link
+        weight=random.random()
+        distance=calculate_distance(nodeX[chosen_node_to_add],nodeY[chosen_node_to_add],nodeX[chosen_node_to_link],nodeY[chosen_node_to_link])
+        graph.add_edge(chosen_node_to_add, chosen_node_to_link,name=key1,
+                        normalized=weight/sumDistance,
+                        unnormalized_weight=weight,
+                        from_node=chosen_node_to_add, to_node=chosen_node_to_link, distance=distance,weight=weight)
+
+    return graph
 
 
-            for n1,d1 in slice.nodes_iter(data=True):
-                testx=d1['xcoord']
-                testy=d1['ycoord']
+def create_hierarchy_in_graph(graph):
+    global spacefactor, nodeRoot, nodeChildren, nodeGrandchildren
+    # first find a random node to be the root
+    nodes = graph.nodes()
+    root = random.choice(nodes)
+    nodeRoot=root
+    possible_nodes = set(nodes)
+    linked_nodes=set([])
+    ## now find a random set of children
+    for n in range(0,int(args.children)):
+        random_child=random.choice(list(possible_nodes))
+        possible_nodes.difference_update([random_child])
+        nodeChildren.append(random_child)
+        linked_nodes.update([random_child])
 
-                distance=calculate_distance(x1,y1,testx,testy)
-                if distance>0:  # and distance<=mindistance and is_there_a_path(slice,from_node,neighbor)==False:
-                    neighbor=d1['label']
-                    #mindistance=distance
-                    key1=from_node+"*"+neighbor
-                    key2=neighbor+"*"+from_node
-                    edgeDistance[key1]=distance
-                    normalized_weight = distance/sumDistance
+    # now link grandchildren to children
+    for n in nodeChildren:
+        gchildlist=[]
+        for m in range(0,int(args.children)):
+            random_gchild=random.choice(list(possible_nodes))
+            possible_nodes.difference_update([random_child])
+            gchildlist.append(random_gchild)
+            linked_nodes.update([random_child])
+        nodeGrandchildren[n]=gchildlist
 
-                    slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
-                                   unnormalized_weight = 1/distance,
-                                   name=key1,from_node=from_node,to_node=neighbor,
-                                   distance=distance,weight=1/distance)
-
-        #create the network the network
-        if args.tree == 'mst':
-            tree= nx.minimum_spanning_tree(slice,weight='distance')
-        elif args.tree == 'complete':
-            tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
-                    #               distance=distance,weight=1/distance)
-                    #slice.add_edge(from_node,neighbor,normalized_weight=normalized_weight,
-                    #               name=key1,from_node=from_node,to_node=neighbor,
-                    #               distance=distance,weight=1/distance)
-        if args.model=="hierarchical":
-            tree= wire_hierarchical(slice)
+    ## filter nodes that are part of hierarchy...
+    for node in graph.nodes():
+        if node==root or node in nodeChildren or node in nodeGrandchildren:
+            pass
         else:
-            #create the network the network
-            if args.tree == 'mst':
-                tree= nx.minimum_spanning_tree(slice,weight='distance')
-            elif args.tree == 'complete':
-                tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
-            else:
-                tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
+            graph.remove_node(node)
 
-        wired_slices.append(tree)
+    return graph
 
-    return wired_slices
+def wire_hierarchy(graph):
+    global spacefactor, nodeRoot, nodeChildren, nodeGrandchildren, nodeX, nodeY
 
-def wire_hierarchical(input_graph):
-    global spacefactor
-    sumDistance = calc_sum_distance(input_graph)
-    output_graph = nx.Graph(is_directed=False)
-    ## first add all of the nodes
-    for name in input_graph.nodes():
-        output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
-        print "adding node ", name, " to output graph"
-    output_graph.add_node("ROOT",name="ROOT",label="ROOT",xcoord=0, ycoord=0)
-    pairsHash={}
-    list_of_nodes=input_graph.nodes()
-    for yc in range(0,int(args.levels)):
-        for xc in range(1,int(args.children)):
-            if yc==1:
-                node_name="Level_%i_%i" % (yc,xc)
-                try:
-                    node = list_of_nodes.index("Level_%i_%i" % (yc,xc))
+    sumDistance=calc_sum_distance(graph)
 
-                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(yc,xc)],nodeY["Level_%i_%i" %(yc,xc)] )
-                    normalized_weight = distance/sumDistance
+    ##  wire to root
+    for node in nodeChildren:
+        key1=nodeRoot+"*"+node
+        weight=1
+        xcoord = nodeX[node]
+        ycoord = nodeY[node]
+        rootX = nodeX[nodeRoot]
+        rootY = nodeY[nodeRoot]
+        distance=calculate_distance(xcoord,ycoord,rootX,rootY)
+        graph.add_edge(nodeRoot, node,name=key1,
+                normalized=weight/sumDistance,
+                unnormalized_weight=weight,
+                from_node=nodeRoot, to_node=node, distance=distance,weight=weight)
 
-                    print "adding edge from ROOT to ", "Level_%i_%i" %(yc,xc)
-                    output_graph.add_edge("ROOT","Level_%i_%i" %(yc,xc),
-                                          normalized_weight=normalized_weight,
-                                          distance=distance,weight=1/distance)
-                    previous_level=1
-                except:
-                    pass
-            else:
-                try:
-                    node = list_of_nodes.index("Level_%i_%i" % (yc,xc))
-                    distance = calculate_distance(nodeX["ROOT"],nodeY["ROOT"],nodeX["Level_%i_%i" %(yc,xc)],nodeY["Level_%i_%i" %(yc,xc)] )
-                    normalized_weight = distance/sumDistance
-                    print "adding edge from ","Level_%i_%i"%(previous_level,xc), " to ", "Level_%i_%i" %(yc,xc)
-                    output_graph.add_edge("Level_%i_%i"%(previous_level,xc),"Level_%i_%i"%(yc,xc),
-                                        normalized_weight=normalized_weight,
-                                          distance=distance,weight=1/distance)
-                    previous_level=yc
-                except:
-                    pass
-    return output_graph
+        ## now find the grandchildren and wire to children
 
-def createCompleteGraphByDistance( **kwargs):
+        for gnode in nodeGrandchildren[node]:
+            key1=node+"*"+gnode
+            weight=1
+            xcoord = nodeX[node]
+            ycoord = nodeY[node]
+            gnodeX = nodeX[gnode]
+            gnodeY = nodeY[gnode]
+            distance=calculate_distance(xcoord,ycoord,gnodeX,gnodeY)
+            graph.add_edge(node, gnode,name=key1,
+                normalized=weight/sumDistance,
+                unnormalized_weight=weight,
+                from_node=node, to_node=gnode, distance=distance,weight=weight)
+
+    # wire 20% of the children together at low rate
+
+    number_of_children=len(nodeChildren)
+    possible_children=set(nodeChildren)
+    for n in range(0,int(number_of_children*float(args.child_interconnect))):
+        chosen_child=choice(list(possible_children))
+        possible_children.difference_update([chosen_child])
+        link_child=choice(list(possible_children))
+        distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
+        key1=chosen_child+"*"+link_child
+        weight=0.1
+        graph.add_edge(chosen_child, link_child,name=key1,
+                        normalized=weight/sumDistance,
+                        unnormalized_weight=weight,
+                        from_node=chosen_child, to_node=link_child, distance=distance,weight=weight)
+
+    ## wire some fraction of the grandchildren together
+    gchildren=[]
+    for g in nodeChildren:
+        for gg in nodeGrandchildren:
+            if gg not in gchildren:
+                gchildren.append(gg)
+    number_of_gchildren=len(gchildren)
+    possible_gchildren=set(gchildren)
+    # wire 50% of those grand children to each other at low connectivity
+    for n in range(0,int(number_of_gchildren*float(args.gchild_interconnect))):
+        chosen_gchild=choice(list(possible_gchildren))
+        possible_gchildren.difference_update([chosen_gchild])
+        link_gchild=choice(list(possible_gchildren))
+        distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
+        key1=chosen_gchild+"*"+link_gchild
+        weight=0.1
+        graph.add_edge(chosen_child, link_gchild,name=key1,
+                        normalized=weight/sumDistance,
+                        unnormalized_weight=weight,
+                        from_node=chosen_gchild, to_node=link_gchild, distance=distance,weight=weight)
+
+    return graph
+
+def createCompleteGraphByDistance( **kwargs ):
+    global edgeDistance
     graph=kwargs.get('input_graph')
     weight=kwargs.get('weight')
     nodes = graph.nodes()
@@ -301,6 +456,8 @@ def createCompleteGraphByDistance( **kwargs):
         distance = calculate_distance(nodeX[e[0]],nodeY[e[0]],nodeX[e[1]],nodeY[e[1]] )
         key1=e[0]+"*"+e[1]
         key2=e[1]+"*"+e[0]
+        edgeDistance[key1]=distance
+        edgeDistance[key2]=distance
         normalized_weight = distance/sumDistance
         newnet.add_edge(e[0],e[1],name=key1,
                         normalized_weight=normalized_weight,
@@ -313,24 +470,28 @@ def createMinMaxGraphByWeight( **kwargs):
     ## first need to find the pairs with the maximum occurrence, then we work down from there until all of the
     ## nodes are included
     ## the weight
+
     weight = kwargs.get('weight', "weight")
     input_graph = kwargs.get('input_graph')
     sumDistance = calc_sum_distance(input_graph)
 
+    #first create a graph that is complete
+    new_graph = createCompleteGraphByDistance(input_graph=input_graph, weight='weight')
+
     output_graph = nx.Graph(is_directed=False)
 
     ## first add all of the nodes
-    for name in input_graph.nodes():
+    for name in new_graph.nodes():
         output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
 
     pairsHash={}
 
-    for e in input_graph.edges_iter():
-        d = input_graph.get_edge_data(*e)
+    for e in new_graph.edges_iter():
+        d = new_graph.get_edge_data(*e)
         fromAssemblage = e[0]
         toAssemblage = e[1]
         key = fromAssemblage+"*"+toAssemblage
-        value = input_graph[fromAssemblage][toAssemblage]['weight']
+        value = new_graph[fromAssemblage][toAssemblage]['weight']
         pairsHash[key]=value
 
     for key, value in sorted(pairsHash.iteritems(), key=operator.itemgetter(1), reverse=True ):
@@ -382,6 +543,20 @@ def create_movie():
     cmd += filename
     os.system(cmd)
 
+def plot_slice(slice):
+    i=0
+    pos={}
+    for label in slice.nodes():
+        x = get_attribute_from_node(label,'xcoord')
+        y = get_attribute_from_node(label,'ycoord')
+        pos[label]=(x,y)
+    nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False)
+    title=args.filename + "Slice-"+str(i)
+    plt.title(title)
+    i+=1
+    if args.graphshow == 1:
+        plt.show()
+
 def plot_slices(wired_slices):
     i=0
     for slice in wired_slices:
@@ -403,12 +578,12 @@ if __name__ == "__main__":
 
     graph = setup()
     slices = create_slices(graph)
-    wired_slices=wire_networks(slices)
+    #wired_slices=wire_networks(slices)
     if args.graphs == True:
-        plot_slices(wired_slices)
+        plot_slices(slices)
         if args.movie==True:
             create_movie()
-    save_slices(wired_slices)
+    save_slices(slices)
     '''
     R=wired_slices[0].copy()
     R.remove_nodes_from(n for n in wired_slices[0] if n in wired_slices[1])
