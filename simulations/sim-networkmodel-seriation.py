@@ -169,7 +169,7 @@ def main():
     log.info("simulation complete in %s seconds", elapsed)
     sampled_length = int(config.simlength) - burn_time
     data.store_simulation_metadata(sim_id, script, config.experiment, elapsed, config.simlength, sampled_length, config.popsize,
-                                 config.networkmodel,networkmodel.get_subpopulation_durations())
+                                 config.networkmodel,networkmodel.get_subpopulation_durations(),full_command_line,config.seed)
 
 
 if __name__ == "__main__":
