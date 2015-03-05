@@ -57,8 +57,8 @@ def setup():
                         choices=['minmax','complete','mst','hierarchy','random'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
-    parser.add_argument("--gchild_interconnect", help="in the case of a heirarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.10)
-    parser.add_argument("--child_interconnect", help="in the case of a heirarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.20)
+    parser.add_argument("--gchild_interconnect", help="in the case of a heirarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.00)
+    parser.add_argument("--child_interconnect", help="in the case of a heirarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.00)
     parser.add_argument("--overlap",
                         help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
