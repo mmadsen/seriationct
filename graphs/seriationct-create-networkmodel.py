@@ -334,6 +334,7 @@ def createRandomGraph(**kwargs):
                         unnormalized_weight=weight,
                         from_node=chosen_node_to_add, to_node=chosen_node_to_link, distance=distance,weight=weight)
 
+
     return graph
 
 
@@ -518,6 +519,10 @@ def createMinMaxGraphByWeight( **kwargs):
                     weight=0.000000000001
                 output_graph.add_path([a1, a2], normalized_weight=normalized_weight,unnormalized_weight=weight,
                                       distance=distance, weight=weight)
+
+    outdeg = output_graph.degree()
+    to_remove = [n for n in outdeg if outdeg[n] < 1]
+    output_graph.remove_nodes_from(to_remove)
     return output_graph
 
 def calculate_distance(x1,y1,x2,y2):
