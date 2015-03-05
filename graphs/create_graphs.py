@@ -102,7 +102,6 @@ def create_vertices():
     return net
 
 
-
 def create_slices(graph):
 
     if args.wiring in ["hierarchy", "minmax"]:
@@ -349,15 +348,15 @@ def create_hierarchy_in_graph(graph):
         possible_nodes.difference_update([random_child])
         nodeChildren.append(random_child)
         linked_nodes.update([random_child])
-
     # now link grandchildren to children
     for n in nodeChildren:
         gchildlist=[]
         for m in range(0,int(args.children)):
             random_gchild=random.choice(list(possible_nodes))
-            possible_nodes.difference_update([random_child])
+            possible_nodes.difference_update([random_gchild])
             gchildlist.append(random_gchild)
-            linked_nodes.update([random_child])
+            linked_nodes.update([random_gchild])
+
         nodeGrandchildren[n]=gchildlist
 
     ## filter nodes that are part of hierarchy...
