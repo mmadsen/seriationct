@@ -185,8 +185,11 @@ def create_slices_hierarchy(graph):
         for r in range(0,num_nodes_to_add):
             chosen_node = choice(list(possible_nodes))
             possible_nodes.difference_update(chosen_node)
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
+            ## find a parent for the node - must be from one of the existing nodes
+            parent_node = choice(list(possible_nodes))
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node], parent_node=parent_node )
             current_nodes.update([chosen_node])
+
         ## now create a new graph
         updatedNet = nx.Graph(name=args.model+"-"+str(ns), is_directed=False)
         updatedNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
@@ -198,7 +201,6 @@ def create_slices_hierarchy(graph):
 
 
 def create_slices_random(graph):
-
     number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
     slices=[]
     ## first slice
@@ -240,7 +242,8 @@ def create_slices_random(graph):
         for r in range(0,num_nodes_to_add):
             chosen_node = choice(list(possible_nodes))
             possible_nodes.difference_update(chosen_node)
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node])
+            parent_node = choice(list(possible_nodes))
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node],parent_node=parent_node )
             random_link_node=random.choice(newnet.nodes())
 
             key1=chosen_node+"*"+random_link_node
@@ -478,10 +481,10 @@ def createMinMaxGraphByWeight( **kwargs):
     new_graph = createCompleteGraphByDistance(input_graph=input_graph, weight='weight')
 
     output_graph = nx.Graph(is_directed=False)
-
+    output_graph.add_nodes_from(graph.nodes(data=True)) ## copy just the nodes
     ## first add all of the nodes
-    for name in new_graph.nodes():
-        output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
+    ##for name in new_graph.nodes():
+    ##    output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
 
     pairsHash={}
 
