@@ -75,19 +75,17 @@ def storeClassFrequencySamples(sim_id, gen, rep, fname, fcline, seed, ssize, pop
     each of which has the form: {subpop: str, crichness: int, cfreq: dict}
     """
     for sample in sample_list:
-        storeClassFrequencySample(sim_id, gen, rep, fname, fcline, seed, sample['subpop'], ssize, popsize, mut, sample['crichness'], sample['cfreq'], sample['ccount'] )
+        storeClassFrequencySample(sim_id, gen, rep, seed, sample['subpop'], ssize, popsize, mut, sample['crichness'], sample['cfreq'], sample['ccount'] )
 
     return True
 
 
-def storeClassFrequencySample(sim_id, gen, rep, fname, fcline, seed, subpop, ssize, popsize, mut, crichness, cfreq, ccount):
+def storeClassFrequencySample(sim_id, gen, rep, seed, subpop, ssize, popsize, mut, crichness, cfreq, ccount):
     ClassFrequencySampleUnaveraged(
         dict(
             simulation_run_id = sim_id,
             simulation_time = gen,
             replication = rep,
-            script_filename = fname,
-            full_command_line = fcline,
             random_seed = seed,
             subpop = subpop,
             sample_size = ssize,
@@ -111,8 +109,6 @@ class ClassFrequencySampleUnaveraged(Document):
     # run specific parameters
     simulation_run_id = Field(str)
     replication = Field(int)
-    script_filename = Field(str)
-    full_command_line = Field(str)
     random_seed = Field(int)
     sample_size = Field(int)
     population_size = Field(int)

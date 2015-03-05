@@ -35,7 +35,7 @@ def _get_collection_id():
 
 
 
-def store_simulation_metadata(sim_id,script,exp,elapsed,length,sampledlength,popsize,netmodel,durations):
+def store_simulation_metadata(sim_id,script,exp,elapsed,length,sampledlength,popsize,netmodel,durations,fcline,rseed):
     """Stores the parameters and metadata for a simulation run in the database.
 
     """
@@ -44,6 +44,8 @@ def store_simulation_metadata(sim_id,script,exp,elapsed,length,sampledlength,pop
         simulation_run_id = sim_id,
         experiment_name = exp,
         elapsed_time = elapsed,
+        full_command_line = fcline,
+        random_seed = rseed,
         run_length = length,
         sampled_length = sampledlength,
         popsize = popsize,
@@ -75,6 +77,8 @@ class SimulationMetadata(Document):
     script_filename = Field(str)
     simulation_run_id = Field(str)
     experiment_name = Field(str)
+    full_command_line = Field(str)
+    random_seed = Field(int)
     elapsed_time = Field(float)
     run_length = Field(int)
     sampled_length = Field(int)

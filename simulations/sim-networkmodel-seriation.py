@@ -32,7 +32,7 @@ global config, sim_id, script
 def setup(parser):
     config = parser.parse_args()
 
-    sim_id = uuid.uuid4().urn
+    sim_id = uuid.uuid1().urn
     script = __file__
 
     if config.debug == '1':
@@ -169,7 +169,7 @@ def main():
     log.info("simulation complete in %s seconds", elapsed)
     sampled_length = int(config.simlength) - burn_time
     data.store_simulation_metadata(sim_id, script, config.experiment, elapsed, config.simlength, sampled_length, config.popsize,
-                                 config.networkmodel,networkmodel.get_subpopulation_durations())
+                                 config.networkmodel,networkmodel.get_subpopulation_durations(),full_command_line,config.seed)
 
 
 if __name__ == "__main__":
