@@ -129,7 +129,7 @@ def create_slices_hierarchy(graph):
         try:
             chosen_node = list_of_nodes[random_selection]       # pick a random node from the list of possibilities (all)
             possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node], parent_node="initial") # add node
             current_nodes.update([chosen_node])
         except:
             pass# update set of possible nodes
@@ -217,7 +217,7 @@ def create_slices_random(graph):
         try:
             chosen_node = list_of_nodes[random_selection]       # pick a random node from the list of possibilities (all)
             possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node]) # add node
+            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node], parent_node="initial") # add node
             current_nodes.update([chosen_node])
         except:
             pass# update set of possible nodes
@@ -310,30 +310,53 @@ def createRandomGraph(**kwargs):
     graph=kwargs.get('input_graph')
 
     nodes = graph.nodes()
+
+    ## list of nodes that are already linked with edges
     nodes_linked=set([])
+
+    ## the set of nodes from which to choose
     possible_nodes=set(nodes)
 
-    # pick a random node to start
+    ## pick a random node to start
     first_node = choice(nodes)
+
+    ## remove this from the possible nodes
     possible_nodes.difference_update([first_node])
+
+    ## now add this node to the links of nodes to link
     nodes_linked.update([first_node])
+
 
     sumDistance=calc_sum_distance(graph)
 
-    for n in list(possible_nodes):
+    for n in range(0,len(nodes)-1):
+        ## choose a random node from ones that are not yet linked
         chosen_node_to_add = choice(list(possible_nodes))
 
-        nodes_linked.update([chosen_node_to_add])
+        ## remove this node from the list of possible nodes to link
         possible_nodes.difference_update([chosen_node_to_add])
+
+        ## choose a place to link this node -- node the nodes to link should only be those that are already linked
         chosen_node_to_link=choice(list(nodes_linked))
+
+        ## create a simple key for the edge
         key1=chosen_node_to_add+"*"+chosen_node_to_link
+
+        ## random weight 0-1
         weight=random.random()
+
+        ## calculate distance between the nodes
         distance=calculate_distance(nodeX[chosen_node_to_add],nodeY[chosen_node_to_add],nodeX[chosen_node_to_link],nodeY[chosen_node_to_link])
-        graph.add_edge(chosen_node_to_add, chosen_node_to_link,name=key1,
+
+        ## add edge
+        graph.add_edge(chosen_node_to_link,chosen_node_to_add,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
                         from_node=chosen_node_to_add, to_node=chosen_node_to_link, distance=distance,weight=weight)
 
+
+        ## now add the link that was added to the already linked node
+        nodes_linked.update([chosen_node_to_add])
 
     return graph
 
