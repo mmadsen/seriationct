@@ -105,7 +105,7 @@ def create_vertices():
 
 def create_slices(graph):
 
-    if args.wiring in ["hierarchy", "minmax"]:
+    if args.wiring in ["hierarchy", "minmax", "complete"]:
         slices = create_slices_hierarchy(graph)
     else:
         slices= create_slices_random(graph)
