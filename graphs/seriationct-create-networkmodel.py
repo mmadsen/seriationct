@@ -38,6 +38,7 @@ from random import choice
 import itertools
 import sys
 import os
+from itertools import chain
 
 
 def setup():
@@ -187,7 +188,11 @@ def create_slices_hierarchy(graph):
             possible_nodes.difference_update(chosen_node)
             ## find a parent for the node - must be from one of the existing nodes
             parent_node = choice(list(possible_nodes))
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node], parent_node=parent_node )
+            newnet.add_node(chosen_node,
+                            label=chosen_node,
+                            xcoord=nodeX[chosen_node],
+                            ycoord=nodeY[chosen_node],
+                            parent_node=parent_node )
             current_nodes.update([chosen_node])
 
         ## now create a new graph
@@ -215,26 +220,33 @@ def create_slices_random(graph):
 
         random_selection =random.randint(1,len(list_of_nodes))
         try:
-            chosen_node = list_of_nodes[random_selection]       # pick a random node from the list of possibilities (all)
+            chosen_node = list_of_nodes[random_selection]  # pick a random node from the list of possibilities (all)
+
             possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node], parent_node="initial") # add node
+            newnet.add_node(chosen_node,label=chosen_node,
+                            xcoord=nodeX[chosen_node],
+                            ycoord=nodeY[chosen_node],
+                            parent_node="initial") # add node
             current_nodes.update([chosen_node])
         except:
             pass# update set of possible nodes
 
     wired_net=wire_networks(newnet)
-    #plot_slice(wired_net)
+    print "first slice!"
+    plot_slice(wired_net)
     slices.append(wired_net)
 
-    for ns in range(2,int(args.slices)+1):
-        newnet.graph['name']=args.model+"-"+str(ns)
+    for ns in range(1,int(args.slices)):
+        slices.append(newnet.copy())
+        nodes_to_delete=[]
+        slices[ns].graph['name']=args.model+"-"+str(ns+1)
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
         num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))+1# nodes to remove
 
         for r in range(0,num_nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
-            newnet.remove_node(chosen_node_to_remove)
+            nodes_to_delete.append(chosen_node_to_remove)
             possible_nodes.difference_update([chosen_node_to_remove])
             current_nodes.difference_update([chosen_node_to_remove])
         num_nodes_to_add = num_nodes_to_remove
@@ -243,19 +255,31 @@ def create_slices_random(graph):
             chosen_node = choice(list(possible_nodes))
             possible_nodes.difference_update(chosen_node)
             parent_node = choice(list(possible_nodes))
-            newnet.add_node(chosen_node,label=chosen_node,xcoord=nodeX[chosen_node], ycoord=nodeY[chosen_node],parent_node=parent_node )
-            random_link_node=random.choice(newnet.nodes())
-
-            key1=chosen_node+"*"+random_link_node
-            weight=random.random()
-            distance=calculate_distance(nodeX[chosen_node],nodeY[chosen_node],nodeX[random_link_node],nodeY[random_link_node])
-            newnet.add_edge(chosen_node, random_link_node,name=key1,
+            slices[ns].add_node(chosen_node,label=chosen_node,
+                                xcoord=nodeX[chosen_node],
+                                ycoord=nodeY[chosen_node],
+                                parent_node=parent_node )
+            ## we need to link the new node back into the edges that already existed
+            old_node=nodes_to_delete[r]
+            edges=slices[ns].edges(old_node)
+            for fnode,tnode in edges:
+                key1=chosen_node+"*"+tnode
+                weight=random.random()
+                distance=calculate_distance(nodeX[chosen_node],
+                                            nodeY[chosen_node],
+                                            nodeX[tnode],
+                                            nodeY[tnode])
+                slices[ns].add_edge(chosen_node, tnode,name=key1,
                         unnormalized_weight=weight,
-                        from_node=chosen_node, to_node=random_link_node, distance=distance,weight=weight)
-            #print "adding node: ", chosen_node
+                        from_node=chosen_node,
+                        to_node=tnode,
+                        distance=distance,
+                        weight=weight)
+            try:
+                slices[ns].remove_node(old_node)
+            except:
+                pass
             current_nodes.update([chosen_node])
-
-        slices.append(newnet)  ## note these are just nodes, not edges yet. (next step)
     return slices
 
 
@@ -291,18 +315,20 @@ def wire_networks(slice):
     #create the network
     if args.wiring == 'mst':
         tree= nx.minimum_spanning_tree(slice,weight='distance')
+    elif args.wiring == 'random':
+        tree = createRandomGraph(input_graph=slice)
     elif args.wiring == 'complete':
         tree = createCompleteGraphByDistance(input_graph=slice,weight='distance')
-    elif args.wiring =="hierarchy":
+    elif args.wiring == "hierarchy":
         tree= wire_hierarchy(slice)
-    elif args.wiring=="minmax":
+    elif args.wiring == "minmax":
         tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
-    elif args.wiring=="random":
-        tree = createRandomGraph(input_graph=slice)
     else:
         ## use minmax as default
         tree = createMinMaxGraphByWeight(input_graph=slice, weight='weight')
 
+    print "plotting current tree..."
+    #plot_slice(tree)
     return tree
 
 def createRandomGraph(**kwargs):
@@ -326,10 +352,22 @@ def createRandomGraph(**kwargs):
     ## now add this node to the links of nodes to link
     nodes_linked.update([first_node])
 
+    ## now a random other node to link to the first (to create the basic link structure)
+    second_node = choice(list(possible_nodes))
 
     sumDistance=calc_sum_distance(graph)
+    key1=first_node+"*"+second_node
+    distance=calculate_distance(nodeX[first_node],nodeY[first_node],nodeX[second_node],nodeY[second_node])
+    weight=random.random()
+    graph.add_edge(first_node,second_node,name=key1,
+            normalized=weight/sumDistance,
+            unnormalized_weight=weight,
+            from_node=first_node, to_node=second_node, distance=distance,weight=weight)
 
-    for n in range(0,len(nodes)-1):
+    ## remove this from the possible nodes
+    possible_nodes.difference_update([second_node])
+
+    for n in range(0,len(nodes)-2):
         ## choose a random node from ones that are not yet linked
         chosen_node_to_add = choice(list(possible_nodes))
 
@@ -337,7 +375,14 @@ def createRandomGraph(**kwargs):
         possible_nodes.difference_update([chosen_node_to_add])
 
         ## choose a place to link this node -- node the nodes to link should only be those that are already linked
-        chosen_node_to_link=choice(list(nodes_linked))
+        list_of_nodes=map(list,graph.edges())
+        unconnected = False
+        chosen_node_to_link=choice(list(chain.from_iterable(list_of_nodes)))
+        while unconnected == False:
+            num_nodes_connected = nx.node_connected_component(graph,chosen_node_to_link)
+            if len(num_nodes_connected)>1:
+                unconnected= True
+                break
 
         ## create a simple key for the edge
         key1=chosen_node_to_add+"*"+chosen_node_to_link
@@ -357,7 +402,7 @@ def createRandomGraph(**kwargs):
 
         ## now add the link that was added to the already linked node
         nodes_linked.update([chosen_node_to_add])
-
+        #plot_slice(graph)
     return graph
 
 
@@ -608,7 +653,6 @@ if __name__ == "__main__":
 
     graph = setup()
     slices = create_slices(graph)
-    #wired_slices=wire_networks(slices)
     if args.graphs == True:
         plot_slices(slices)
         if args.movie==True:
