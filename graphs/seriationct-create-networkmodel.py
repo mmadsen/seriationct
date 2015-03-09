@@ -13,10 +13,10 @@ Takes some input information and produces a series of .gml files.
 
 
     for example:
-    python create_graphs.py --filename test --model grid --writing minmax -slices 5
-    python create_graphs.py --filename test --model grid --slices 5 --x 20 --y 20 --wiring complete
-    python create_graphs.py --filename test --model grid --slices 5 --x 20 --y 20 --wiring random
-    python create_graphs.py --filename test --model grid --slices 5  --wiring hierarchy
+    --filename test --model grid ---wiring minmax --slices 5
+    --filename test --model grid --slices 5 --x 20 --y 20 --wiring complete
+    --filename test --model grid --slices 5 --x 20 --y 20 --wiring random
+    --filename test --model grid --slices 5  --wiring hierarchy
 
 """
 
