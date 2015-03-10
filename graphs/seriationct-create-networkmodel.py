@@ -166,23 +166,23 @@ def create_slices_hierarchy(graph):
                 ## set this node as the parent of the grandchildren...
                 nodeGrandchildren[new_node_to_add]=listOfAbandonedGchildren
                 nodeChildren.update([new_node_to_add])
-                parent_node = choice(list(possible_nodes))
+                parent_node = choice(nextNet.nodes())
                 nextNet.add_node(new_node_to_add,
                             label=new_node_to_add,
                             xcoord=nodeX[new_node_to_add],
-                            ycoord=nodeY[new_node_to_add],
-                            parent_node=parent_node )
+                            ycoord=nodeY[new_node_to_add])
+                            #parent_node=parent_node )
                 current_nodes.update([new_node_to_add])
             elif chosen_node_to_remove in nodeGrandchildren.items():
                 new_node_to_add = choice(list(possible_nodes))
                 possible_nodes.difference_update([new_node_to_add])
                 current_nodes.update([new_node_to_add])
-                parent_node = choice(list(possible_nodes))
+                parent_node = choice(nextNet.nodes())
                 nextNet.add_node(new_node_to_add,
                             label=new_node_to_add,
                             xcoord=nodeX[new_node_to_add],
-                            ycoord=nodeY[new_node_to_add],
-                            parent_node=parent_node )
+                            ycoord=nodeY[new_node_to_add])
+                            #parent_node=parent_node )
                 current_nodes.update([new_node_to_add])
 
                 for key in nodeGrandchildren.iterkeys():
@@ -194,12 +194,12 @@ def create_slices_hierarchy(graph):
             else:  ### minmax case
                 chosen_node = choice(list(possible_nodes))
                 possible_nodes.difference_update([chosen_node])
-                parent_node = choice(list(possible_nodes))
+                parent_node = choice(nextNet.nodes())
                 nextNet.add_node(chosen_node,
                             label=chosen_node,
                             xcoord=nodeX[chosen_node],
-                            ycoord=nodeY[chosen_node],
-                            parent_node=parent_node )
+                            ycoord=nodeY[chosen_node])
+                            #parent_node=parent_node )
                 current_nodes.update([chosen_node])
 
         num_nodes_to_add = num_nodes_to_remove
@@ -221,7 +221,20 @@ def create_slices_hierarchy(graph):
         wired_net = wire_networks(nextNet)
         for unlinked_node in nx.isolates(wired_net):
             wired_net.remove_node(unlinked_node)
+
+        parents = nx.get_node_attributes(wired_net, 'parent_node')
+        for n in wired_net.nodes():
+            try:
+                test=parents[n];
+            except:
+                wired_net.add_node(n,
+                            label=n,
+                            xcoord=nodeX[n],
+                            ycoord=nodeY[n],
+                            parent_node=choice(wired_net.nodes()) )
+
         slices.append(wired_net.copy())  ## note these are just nodes, not edges yet. (next step)
+
     return slices
 
 
