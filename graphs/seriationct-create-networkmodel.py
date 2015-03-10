@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2015.  Carl P. Lipo
+# Copyright (c) 2015.  Carl P. Lipo and Mark E. Madsen
 #
 # This work is licensed under the terms of the Apache Software License, Version 2.0.  See the file LICENSE for details.
 
@@ -8,9 +8,6 @@ A script to create the .gml files needed to establish the network structure for 
 Takes some input information and produces a series of .gml files.
 
  Prototype:
-
- create_graphs.py --type gml --filename root_file_name  --number 25 --model grid
-
 
     for example:
     --filename test --model grid ---wiring minmax --slices 5
@@ -102,7 +99,6 @@ def create_vertices():
 
 
 def create_slices(graph):
-
     if args.wiring in ["hierarchy", "minmax", "complete"]:
         slices = create_slices_hierarchy(graph)
     else:
@@ -572,10 +568,7 @@ def createMinMaxGraphByWeight( **kwargs):
     new_graph = createCompleteGraphByDistance(input_graph=input_graph, weight='weight')
 
     output_graph = nx.Graph(is_directed=False)
-    output_graph.add_nodes_from(graph.nodes(data=True)) ## copy just the nodes
-    ## first add all of the nodes
-    ##for name in new_graph.nodes():
-    ##    output_graph.add_node(name, name=name, label=name, xcoord=nodeX[name],ycoord=nodeY[name])
+    output_graph.add_nodes_from(input_graph.nodes(data=True)) ## copy just the nodes
 
     pairsHash={}
 
@@ -612,7 +605,7 @@ def createMinMaxGraphByWeight( **kwargs):
     ## now remove all of the non linked nodes.
     outdeg = output_graph.degree()
     to_remove = [n for n in outdeg if outdeg[n] < 1]
-    output_graph.remove_nodes_from(to_remove)
+    input_graph.remove_nodes_from(to_remove)
     return output_graph
 
 def calculate_distance(x1,y1,x2,y2):
