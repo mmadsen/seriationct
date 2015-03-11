@@ -147,11 +147,13 @@ def create_slices_hierarchy(graph):
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
         num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))-(int(float(args.slices)))# nodes to remove
+        possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents is going to have all
+                                                     ##  the old nodes minus the ones that are removed (but no new ones)
 
         for r in range(0,num_nodes_to_remove):
             chosen_node_to_remove = choice(nextNet.nodes())
             possible_nodes.difference_update([chosen_node_to_remove])
-
+            possible_parent_nodes.difference_update([chosen_node_to_remove])  ## remove nodes from possible parents
             nextNet.remove_node(chosen_node_to_remove)
             possible_nodes.difference_update([chosen_node_to_remove])
             current_nodes.difference_update([chosen_node_to_remove])
@@ -166,7 +168,7 @@ def create_slices_hierarchy(graph):
                 ## set this node as the parent of the grandchildren...
                 nodeGrandchildren[new_node_to_add]=listOfAbandonedGchildren
                 nodeChildren.update([new_node_to_add])
-                parent_node = choice(nextNet.nodes())
+                ##parent_node = choice(nextNet.nodes())
                 nextNet.add_node(new_node_to_add,
                             label=new_node_to_add,
                             xcoord=nodeX[new_node_to_add],
@@ -177,7 +179,7 @@ def create_slices_hierarchy(graph):
                 new_node_to_add = choice(list(possible_nodes))
                 possible_nodes.difference_update([new_node_to_add])
                 current_nodes.update([new_node_to_add])
-                parent_node = choice(nextNet.nodes())
+                ##parent_node = choice(nextNet.nodes())
                 nextNet.add_node(new_node_to_add,
                             label=new_node_to_add,
                             xcoord=nodeX[new_node_to_add],
@@ -194,7 +196,7 @@ def create_slices_hierarchy(graph):
             else:  ### minmax case
                 chosen_node = choice(list(possible_nodes))
                 possible_nodes.difference_update([chosen_node])
-                parent_node = choice(nextNet.nodes())
+                ##parent_node = choice(nextNet.nodes())
                 nextNet.add_node(chosen_node,
                             label=chosen_node,
                             xcoord=nodeX[chosen_node],
@@ -227,11 +229,13 @@ def create_slices_hierarchy(graph):
             try:
                 test=parents[n];
             except:
+                temp_set = possible_parent_nodes    ## temporary set
+                temp_set.difference_update([n])     ## remove this from options (cant be own parent)
                 wired_net.add_node(n,
                             label=n,
                             xcoord=nodeX[n],
                             ycoord=nodeY[n],
-                            parent_node=choice(wired_net.nodes()) )
+                            parent_node=choice(list(temp_set)) )
 
         slices.append(wired_net.copy())  ## note these are just nodes, not edges yet. (next step)
 
@@ -279,6 +283,8 @@ def create_slices_random(graph):
 
         for r in range(0,num_nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
+            possible_parent_nodes = set(newnet.nodes()) ## this list of possible parents is going to have all
+                 ##  the old nodes minus the ones that are removed (but no new ones)
             nodes_to_delete.append(chosen_node_to_remove)
             possible_nodes.difference_update([chosen_node_to_remove])
             current_nodes.difference_update([chosen_node_to_remove])
@@ -287,11 +293,13 @@ def create_slices_random(graph):
         for r in range(0,num_nodes_to_add):
             chosen_node = choice(list(possible_nodes))
             possible_nodes.difference_update(chosen_node)
-            parent_node = choice(list(possible_nodes))
+
+            temp_set = possible_parent_nodes
+            temp_set.difference_update([chosen_node])
             slices[ns].add_node(chosen_node,label=chosen_node,
                                 xcoord=nodeX[chosen_node],
                                 ycoord=nodeY[chosen_node],
-                                parent_node=parent_node )
+                                parent_node=choice(list(temp_set)) )
             ## we need to link the new node back into the edges that already existed
             old_node=nodes_to_delete[r]
             edges=slices[ns].edges(old_node)
