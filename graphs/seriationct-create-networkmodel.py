@@ -141,9 +141,11 @@ def create_slices_hierarchy(graph):
     #print current_nodes
     ## next n slices
 
+    nextNet = nx.Graph(is_directed=False)
+    nextNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
+
     for ns in range(1,int(args.slices)):
-        nextNet = nx.Graph(name=args.model+"-"+str(ns+1), is_directed=False)
-        nextNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
+
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
         num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))-(int(float(args.slices)))# nodes to remove
