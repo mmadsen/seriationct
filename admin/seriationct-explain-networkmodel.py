@@ -97,7 +97,7 @@ def main():
     pop = sim.Population(size = net_model.get_initial_size(), subPopNames = net_model.get_subpopulation_names(), infoFields=net_model.get_info_fields())
 
     log.info("network model has slices at %s", net_model.times)
-    log.info("Initial migration matrix: %s", net_model._cached_migration_matrix)
+    #log.info("Initial migration matrix: %s", net_model._cached_migration_matrix)
     for time in range(1,config.simlength+1):
         pop.dvars().gen = time
         net_model(pop)

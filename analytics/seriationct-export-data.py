@@ -45,6 +45,7 @@ def setup():
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
+    parser.add_argument("--samplesize", type=int, help="Sample size to resample frequencies for each sim run and replication")
 
     args = parser.parse_args()
 
