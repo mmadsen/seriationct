@@ -136,27 +136,35 @@ def create_slices_hierarchy(graph):
     else:
         wired_net=wire_networks(newnet)
 
-    #plot_slice(wired_net)
     slices.append(wired_net.copy())
-    #print current_nodes
-    ## next n slices
 
+    ## we are going to use this copy of the graph to iteratively modify
     nextNet = nx.Graph(is_directed=False)
-    nextNet.add_nodes_from(newnet.nodes(data=True)) ## copy just the nodes
+    nextNet.add_nodes_from(wired_net.nodes(data=True)) ## copy just the nodes
 
+    # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
+    num_current_nodes=len(list(current_nodes))
+
+    ## based on the total number of nodes remaining (after the previous slice), divide up how many can be in each slice by the # of slices
+    ## note this means that the MAX change with full replacement will use up all the nodes.
+
+    num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))-(int(float(args.slices)))# nodes to remove
+
+    ## now create T+1, T+2, ... T+args.slices slices
     for ns in range(1,int(args.slices)):
 
-        # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
-        num_current_nodes=len(list(current_nodes))
-        num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))-(int(float(args.slices)))# nodes to remove
-        possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents is going to have all
-                                                     ##  the old nodes minus the ones that are removed (but no new ones)
+        possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents (any from previous slice)
 
+        ## remove 1 node at a time
         for r in range(0,num_nodes_to_remove):
+
+            ## pick a node to remove from existing nodes in graph
             chosen_node_to_remove = choice(nextNet.nodes())
-            possible_nodes.difference_update([chosen_node_to_remove])
-            possible_parent_nodes.difference_update([chosen_node_to_remove])  ## remove nodes from possible parents
+
+            ## remove node from net
             nextNet.remove_node(chosen_node_to_remove)
+            possible_nodes.difference_update([chosen_node_to_remove])
+
             possible_nodes.difference_update([chosen_node_to_remove])
             current_nodes.difference_update([chosen_node_to_remove])
 
@@ -195,18 +203,16 @@ def create_slices_hierarchy(graph):
                         setOfGrandchildrenForChild.difference_update([chosen_node_to_remove])
                         nodeGrandchildren[key]=list(setOfGrandchildrenForChild)
                         nodeGrandchildren[key].append(new_node_to_add)
-            else:  ### minmax case
-                chosen_node = choice(list(possible_nodes))
-                possible_nodes.difference_update([chosen_node])
+            else:  ### minmax case since nothing will be in the children/grandchildren lists.
+                chosen_node = choice(list(possible_nodes)) ## choose a node from the possible nodes to choose from (i.e., those not already added or deleted)
+                possible_nodes.difference_update([chosen_node]) ## remove this from possible choices
                 ##parent_node = choice(nextNet.nodes())
                 nextNet.add_node(chosen_node,
                             label=chosen_node,
                             xcoord=nodeX[chosen_node],
                             ycoord=nodeY[chosen_node])
                             #parent_node=parent_node )
-                current_nodes.update([chosen_node])
-
-        num_nodes_to_add = num_nodes_to_remove
+                current_nodes.update([chosen_node])  ## maintain the list of what's currently listed in the nodes
 
         '''for r in range(0,num_nodes_to_add):
             chosen_node = choice(list(possible_nodes))
