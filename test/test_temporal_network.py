@@ -36,7 +36,7 @@ class TemporalNetworkTest(unittest.TestCase):
 
     def test_get_sizes(self):
 
-        expected = [100, 100, 100]
+        expected = [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
 
         init_population_sizes = self.net_model.get_initial_size()
         log.info("init_pop_sizes: %s", init_population_sizes)
