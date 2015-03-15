@@ -403,6 +403,12 @@ class TemporalNetwork(object):
             #log.debug("duration sp %s: %s - from %s to %s", sp, duration[sp], self.node_origin_time[sp], self.node_exit_time[sp])
         return duration
 
+    def get_subpopulation_origin_times(self):
+        origins = dict()
+        origins.update(self.node_origin_time)
+        return origins
+
+
     def __call__(self, pop):
         """
         Main public interface to this demography model.  When the model object is called in every time step,
