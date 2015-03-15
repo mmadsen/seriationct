@@ -300,7 +300,7 @@ def create_slices_random(graph):
         slices[ns].graph['name']=args.model+"-"+str(ns+1)
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
-        num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap))*float(args.density))# nodes to remove
+        num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))# nodes to remove
 
         for r in range(0,num_nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
