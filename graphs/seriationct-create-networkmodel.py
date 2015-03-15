@@ -161,7 +161,7 @@ def create_slices_hierarchy(graph):
 
     #num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))-(int(float(args.slices)))# nodes to remove
 
-    num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap))*float(args.density))# nodes to remove
+    num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))# nodes to remove
 
     ## now create T+1, T+2, ... T+args.slices slices
     for ns in range(1,int(args.slices)):
