@@ -13,6 +13,8 @@ import argparse
 from collections import defaultdict
 import seriationct.data as data
 import pprint as pp
+import pickle
+import numpy as np
 
 
 class DeepDefaultDict(dict):
@@ -41,11 +43,10 @@ def setup():
     global args, config, simconfig
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", help="provide name for experiment, to be used as prefix for database collections")
-    parser.add_argument("--debug", help="turn on debugging output")
+    parser.add_argument("--debug", type=int, help="turn on debugging output")
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
-    parser.add_argument("--samplesize", type=int, help="Sample size to resample frequencies for each sim run and replication")
 
     args = parser.parse_args()
 
@@ -62,11 +63,6 @@ def setup():
     data.set_database_port(args.dbport)
     config = data.getMingConfiguration(data.modules)
     ming.configure(**config)
-
-
-
-
-
 
 
 if __name__ == "__main__":
@@ -99,12 +95,16 @@ if __name__ == "__main__":
         for cls, count in class_count_map.items():
             cmap[sim_id][rep][subpop][cls] += count
 
+    # conditional either we sample trait counts (which will reduce the list of traits we put in the header),
+    # or output the full list of counts (which will put every trait in the header)
+
+
+
 
     class_set = set()
     for sim_id in cmap.keys():
         for rep in cmap[sim_id].keys():
             for subpop in cmap[sim_id][rep].keys():
-
                 for cls, count in cmap[sim_id][rep][subpop].items():
                     log.info("sim: %s rep: %s subpop: %s class: %s freq: %s", sim_id, rep, subpop, cls, int(count))
                     class_set.add(cls)
@@ -114,7 +114,12 @@ if __name__ == "__main__":
 
     for sim_id in cmap.keys():
         for rep in cmap[sim_id].keys():
-            outputfile = args.outputdirectory + "/" + sim_id + "-" + str(rep) + ".txt"
+
+
+            sim_id_clean = sim_id[9:]
+            log.debug("sim_id without header: %s", sim_id_clean)
+
+            outputfile = args.outputdirectory + "/" + sim_id_clean + "-" + str(rep) + ".txt"
 
             class_set = set()
 
@@ -126,7 +131,7 @@ if __name__ == "__main__":
                 class_list = list(class_set)
 
                 # write header row
-                header = sim_id
+                header = "Assemblage_Name"
                 for cls in class_list:
                     header += "\t"
                     header += cls
