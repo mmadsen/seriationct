@@ -84,6 +84,8 @@ def create_vertices():
     net = nx.Graph(name=args.model, is_directed=False)
     xcoord=0
     ycoord=0
+    xyfile = open(args.filename+"XY.txt", 'w')
+    xyfile.write("assembalge\teasting\tnorthing\n")
     if args.model=="grid":
         for yc in range(1,int(args.x)):
             for xc in range(1,int(args.y)):
@@ -92,6 +94,8 @@ def create_vertices():
                 nodeNames.append(name)
                 nodeX[name]=xc
                 nodeY[name]=yc
+                xyfile.write(name+"\t"+str(xc)+"\t"+str(yc)+"\n")
+        xyfile.close()
     else:
         print "Please choose a model for the vertices. Default is grid. Others are currently unimplemented."
 
