@@ -35,7 +35,7 @@ def _get_collection_id():
 
 
 
-def store_simulation_metadata(sim_id,script,exp,elapsed,length,sampledlength,popsize,netmodel,durations,fcline,rseed):
+def store_simulation_metadata(sim_id,script,exp,elapsed,length,sampledlength,popsize,netmodel,durations,fcline,rseed,origins):
     """Stores the parameters and metadata for a simulation run in the database.
 
     """
@@ -50,7 +50,8 @@ def store_simulation_metadata(sim_id,script,exp,elapsed,length,sampledlength,pop
         sampled_length = sampledlength,
         popsize = popsize,
         networkmodel = netmodel,
-        subpopulation_durations = durations
+        subpopulation_durations = durations,
+        subpopulation_origin_times = origins
     )).m.insert()
     return True
 
@@ -85,6 +86,7 @@ class SimulationMetadata(Document):
     popsize = Field(int)
     networkmodel = Field(str)
     subpopulation_durations = Field(schema.Anything)
+    subpopulation_origin_times = Field(schema.Anything)
 
 
 

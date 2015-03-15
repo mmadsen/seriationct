@@ -397,11 +397,18 @@ class TemporalNetwork(object):
         Returns a map with subpopulation name as key, and duration as value.  Burn-in time is NOT
         included in the duration, so the durations are relative to the simlength - burnin.
         """
+
         duration = dict()
         for sp in self.node_exit_time:
             duration[sp] = int(self.node_exit_time[sp]) - int(self.node_origin_time[sp])
             #log.debug("duration sp %s: %s - from %s to %s", sp, duration[sp], self.node_origin_time[sp], self.node_exit_time[sp])
         return duration
+
+    def get_subpopulation_origin_times(self):
+        origins = dict()
+        origins.update(self.node_origin_time)
+        return origins
+
 
     def __call__(self, pop):
         """
@@ -434,7 +441,8 @@ class TemporalNetwork(object):
 
         # At the very end of the simulation, after the last slice time, we finish off the
         # duration times of assemblages that exist at sim_length.
-        if gen == self.sim_length:
+        if gen == self.sim_length - 1:
+            log.debug("End of simulation: recording exit time for assemblages present at sim_length")
             ending_subpops = pop.subPopNames()
             for subpop in ending_subpops:
                 self.node_exit_time[subpop] = self.sim_length

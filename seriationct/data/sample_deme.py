@@ -110,7 +110,7 @@ class ClassFrequencySampleUnaveraged(Document):
     simulation_run_id = Field(str)
     replication = Field(int)
     random_seed = Field(int)
-    sample_size = Field(int)
+    sample_size = Field(float)
     population_size = Field(int)
     mutation_rate = Field(float)
     # sample specific parameters

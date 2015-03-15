@@ -75,7 +75,7 @@ def main():
     parser.add_argument("--numloci", help="Number of loci per individual", type=int, required=True)
     parser.add_argument("--maxinittraits", help="Max initial number of traits per locus for initialization", type=int,
                         required=True)
-    parser.add_argument("--samplesize", help="Size of samples taken to calculate all statistics", type=int,
+    parser.add_argument("--samplefraction", help="Size of samples taken to calculate all statistics, as a proportion", type=float,
                         required=True)
     parser.add_argument("--innovrate", help="Rate at which innovations occur in population in scale-free theta units", type=float, required=True)
     parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 3000 generations",
@@ -156,7 +156,7 @@ def main():
         matingScheme=sim.RandomSelection(subPopSize=networkmodel),
         postOps=[sim.KAlleleMutator(k=MAXALLELES, rates=innovation_rate),
                  sim.PyOperator(func=sampling.sampleAlleleAndGenotypeFrequencies,
-                                param=(config.samplesize, config.innovrate, config.popsize, sim_id, config.numloci, script, full_command_line, config.seed),
+                                param=(config.samplefraction, config.innovrate, config.popsize, sim_id, config.numloci, script, full_command_line, config.seed),
                                 subPops=sim.ALL_AVAIL,
                                 step=1, begin=burn_time),
 
@@ -169,7 +169,8 @@ def main():
     log.info("simulation complete in %s seconds", elapsed)
     sampled_length = int(config.simlength) - burn_time
     data.store_simulation_metadata(sim_id, script, config.experiment, elapsed, config.simlength, sampled_length, config.popsize,
-                                 config.networkmodel,networkmodel.get_subpopulation_durations(),full_command_line,config.seed)
+                                 config.networkmodel,networkmodel.get_subpopulation_durations(),full_command_line,config.seed,
+                                 networkmodel.get_subpopulation_origin_times())
 
 
 if __name__ == "__main__":
