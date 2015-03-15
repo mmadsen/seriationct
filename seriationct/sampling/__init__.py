@@ -12,6 +12,7 @@ import logging as log
 import pprint as pp
 import seriationct.data as data
 from slatkin import montecarlo
+import math
 
 def logGenerationCount(pop, param):
         """Operator for logging the generation count using simuPOP's PyOperator hook.
@@ -86,10 +87,17 @@ def sampleAlleleAndGenotypeFrequencies(pop, param):
     gen = pop.dvars().gen
     subpops = pop.subPopNames()
     sample_list = list()
+    subpop_sizes = pop.subPopSizes()
+
+    sample_sizes = [int(math.ceil(ssize * n)) for n in subpop_sizes]
+
+    #log.debug("Sample sizes for subpops: %s", sample_sizes)
+
+    min_sample_size = min(sample_sizes)
 
 
     for sp_name in subpops:
-        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=ssize)
+        sample = sampling.drawRandomSample(pop, subPops=pop.subPopByName(sp_name), sizes=min_sample_size)
         sim.stat(sample, haploFreq = range(0, num_loci), vars=['haploFreq', 'haploNum'])
         sim.stat(sample, alleleFreq = sim.ALL_AVAIL)
 
