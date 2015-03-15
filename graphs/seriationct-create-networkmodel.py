@@ -34,6 +34,7 @@ import itertools
 import sys
 import os
 from itertools import chain
+import matplotlib.figure
 
 
 def setup():
@@ -58,6 +59,7 @@ def setup():
     parser.add_argument("--overlap",
                         help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
+    parser.add_argument("--density", help="the percentage of nodes used per slice. When 100% this means all possible nodes are used based on the grid size, overlap, and the number of slices. Must be >0%.", default=0.2)
     args = parser.parse_args()
 
     if args.debug == 1:
@@ -73,7 +75,7 @@ def setup():
 
 
 def create_vertices():
-    global nodeNames, nodeX, nodeY, spacefactor, nodeRoot, nodeChildren, nodeGrandchildren
+    global nodeNames, nodeX, nodeY, spacefactor, nodeRoot, nodeChildren, nodeGrandchildren, number_per_slice
     nodeNames=[]
     nodeChildren=set()
     nodeX={}
@@ -98,6 +100,12 @@ def create_vertices():
         xyfile.close()
     else:
         print "Please choose a model for the vertices. Default is grid. Others are currently unimplemented."
+    # 100% overlap = no change in # of nodes so can use ALL possible nodes (X*Y)
+    # 0% overlap = complete change in nodes every slice so can only have X*Y/num_slices
+    if float(args.overlap)>= 1.0:
+        number_per_slice= int(int(args.x)*int(args.y)*float(args.density))
+    else:
+        number_per_slice = int(float(args.density)*(int(args.x)*int(args.y)/(int(args.slices)*(1-float(args.overlap)))))
 
     return net
 
@@ -111,8 +119,7 @@ def create_slices(graph):
     return slices
 
 def create_slices_hierarchy(graph):
-    global nodeRoot, nodeChildren, nodeGrandchildren
-    number_per_slice=int((int(args.x)*int(args.y))/int(args.slices)-1)
+    global nodeRoot, nodeChildren, nodeGrandchildren, number_per_slice
 
     slices=[]
     ## first slice
@@ -152,7 +159,9 @@ def create_slices_hierarchy(graph):
     ## based on the total number of nodes remaining (after the previous slice), divide up how many can be in each slice by the # of slices
     ## note this means that the MAX change with full replacement will use up all the nodes.
 
-    num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))-(int(float(args.slices)))# nodes to remove
+    #num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))-(int(float(args.slices)))# nodes to remove
+
+    num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap))*float(args.density))# nodes to remove
 
     ## now create T+1, T+2, ... T+args.slices slices
     for ns in range(1,int(args.slices)):
@@ -255,7 +264,7 @@ def create_slices_hierarchy(graph):
 
 
 def create_slices_random(graph):
-    number_per_slice=int((int(args.x)*int(args.y))/int(args.slices))
+    global number_per_slice
     slices=[]
     ## first slice
     newnet = nx.Graph(name=args.model+"-1", is_directed=False)
@@ -291,7 +300,7 @@ def create_slices_random(graph):
         slices[ns].graph['name']=args.model+"-"+str(ns+1)
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
-        num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))+1# nodes to remove
+        num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap))*float(args.density))# nodes to remove
 
         for r in range(0,num_nodes_to_remove):
             chosen_node_to_remove = choice(newnet.nodes())
@@ -673,9 +682,11 @@ def plot_slice(slice):
         x = get_attribute_from_node(label,'xcoord')
         y = get_attribute_from_node(label,'ycoord')
         pos[label]=(x,y)
-    nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False)
+
+    nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False )
     title=args.filename + "Slice-"+str(i)
     plt.title(title)
+    plt.axis('equal')
     i+=1
     if args.graphshow == 1:
         plt.show()
@@ -683,15 +694,18 @@ def plot_slice(slice):
 def plot_slices(wired_slices):
     i=0
     for slice in wired_slices:
-
+        figsize=(int(args.x),int(args.y))
+        fig = matplotlib.figure.Figure(figsize=figsize)
+        ax = fig.add_subplot(aspect='equal')
         pos={}
         for label in slice.nodes():
             x = get_attribute_from_node(label,'xcoord')
             y = get_attribute_from_node(label,'ycoord')
-            pos[label]=(x,y)
-        nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False)
+            pos[label]=(y,x)
+        nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False, ax=ax)
         title=args.filename + "Slice-"+str(i)
         plt.title(title)
+        plt.axis('equal')
         i+=1
         plt.savefig(title+".png", dpi=250)
         if args.graphshow == 1:
