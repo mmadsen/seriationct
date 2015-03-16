@@ -10,7 +10,7 @@ filenameRoot <- function(x){
 }
 
 file_root <- function(x) {
-  substr(x,nchar(x)-50,nchar(x)-4)
+  substr(x,nchar(x)-46,nchar(x)-4)
 }
 setwd("/Users/clipo/PycharmProjects/seriationct/ca/resample-1/")
 file_list <- list_files_for_data_path(directory = "./")
