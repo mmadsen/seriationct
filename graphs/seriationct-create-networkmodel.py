@@ -47,6 +47,7 @@ def setup():
     parser.add_argument("--y", help="number of assemblages wide to generate", default=20)
     parser.add_argument("--levels",help="number of levels in hierarchical model.", default=5)
     parser.add_argument("--children",help="number of children per level.",default=5)
+    parser.add_argument("--grandchildren", help="number of grandchildren per child.", default=5)
     parser.add_argument("--configuration", help="Path to configuration file")
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
     parser.add_argument("--model", choices=['grid','linear','branch'], required=True, default="grid")
@@ -54,8 +55,9 @@ def setup():
                         choices=['minmax','complete','mst','hierarchy','random'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
-    parser.add_argument("--gchild_interconnect", help="in the case of a heirarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.00)
-    parser.add_argument("--child_interconnect", help="in the case of a heirarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.00)
+    parser.add_argument("--interconnectweight", help="Weight of the edges between child and between grandchild nodes.", default=0.1)
+    parser.add_argument("--gchild_interconnect", help="in the case of a heirarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=1.0)
+    parser.add_argument("--child_interconnect", help="in the case of a heirarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=1.0)
     parser.add_argument("--overlap",
                         help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
@@ -248,7 +250,7 @@ def create_slices_hierarchy(graph):
         parents = nx.get_node_attributes(wired_net, 'parent_node')
         for n in wired_net.nodes():
             try:
-                test=parents[n];
+                test=parents[n]
             except:
                 temp_set = possible_parent_nodes    ## temporary set
                 temp_set.difference_update([n])     ## remove this from options (cant be own parent)
@@ -290,7 +292,6 @@ def create_slices_random(graph):
             pass# update set of possible nodes
 
     wired_net=wire_networks(newnet)
-    print "first slice!"
     plot_slice(wired_net)
     slices.append(wired_net)
 
@@ -480,16 +481,15 @@ def create_hierarchy_in_graph(graph):
         possible_nodes.difference_update([random_child])
         nodeChildren.update([random_child])
         linked_nodes.update([random_child])
-    # now link grandchildren to children
-    for n in list(nodeChildren):
+        # now link grandchildren to children
+
         gchildlist=[]
-        for m in range(0,int(args.children)):
+        for m in range(0,int(args.grandchildren)):
             random_gchild=random.choice(list(possible_nodes))
             possible_nodes.difference_update([random_gchild])
             gchildlist.append(random_gchild)
             linked_nodes.update([random_gchild])
-
-        nodeGrandchildren[n]=gchildlist
+        nodeGrandchildren[random_child]=gchildlist
 
     ## filter nodes that are part of hierarchy...
     for node in graph.nodes():
@@ -537,17 +537,17 @@ def wire_hierarchy(graph):
     # wire % of the children together at low rate
     number_of_children=len(list(nodeChildren))
     possible_children=nodeChildren
-    for n in range(0,int(number_of_children*float(args.child_interconnect))):
+    for n in range(1,int(number_of_children*float(args.child_interconnect))):
         chosen_child=choice(list(possible_children))
         possible_children.difference_update([chosen_child])
         link_child=choice(list(possible_children))
+        #print len(list(possible_children))
         distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
         key1=chosen_child+"*"+link_child
-        weight=0.1
         graph.add_edge(chosen_child, link_child,name=key1,
                         normalized=weight/sumDistance,
-                        unnormalized_weight=weight,
-                        from_node=chosen_child, to_node=link_child, distance=distance,weight=weight)
+                        unnormalized_weight=float(args.interconnectweight),
+                        from_node=chosen_child, to_node=link_child, distance=distance,weight=float(args.interconnectweight))
 
     ## wire some fraction of the grandchildren together
     gchildren=[]
@@ -558,17 +558,17 @@ def wire_hierarchy(graph):
     number_of_gchildren=len(gchildren)
     possible_gchildren=set(gchildren)
     # wire some % of those grand children to each other at low connectivity
-    for n in range(0,int(number_of_gchildren*float(args.gchild_interconnect))):
+    for n in range(1,int(number_of_gchildren*float(args.gchild_interconnect))):
         chosen_gchild=choice(list(possible_gchildren))
         possible_gchildren.difference_update([chosen_gchild])
         link_gchild=choice(list(possible_gchildren))
+        #possible_gchildren.difference_update([link_gchild])
         distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
         key1=chosen_gchild+"*"+link_gchild
-        weight=0.1
         graph.add_edge(chosen_gchild, link_gchild,name=key1,
                         normalized=weight/sumDistance,
-                        unnormalized_weight=weight,
-                        from_node=chosen_gchild, to_node=link_gchild, distance=distance,weight=weight)
+                        unnormalized_weight=float(args.interconnectweight),
+                        from_node=chosen_gchild, to_node=link_gchild, distance=distance,weight=float(args.interconnectweight))
 
     return graph
 
