@@ -105,7 +105,7 @@ def create_vertices():
     if float(args.overlap)>= 1.0:
         number_per_slice= int(int(args.x)*int(args.y)*float(args.density))
     else:
-        number_per_slice = int(float(args.density)*(int(args.x)*int(args.y)/(int(args.slices)*(1-float(args.overlap)))))
+        number_per_slice = int(float(args.density)*(int(args.x)*int(args.y)/(int(args.slices)+1)*(1-float(args.overlap))))
 
     return net
 
