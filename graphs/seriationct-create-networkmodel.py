@@ -534,8 +534,7 @@ def wire_hierarchy(graph):
                 unnormalized_weight=weight,
                 from_node=node, to_node=gnode, distance=distance,weight=weight)
 
-    # wire 20% of the children together at low rate
-
+    # wire % of the children together at low rate
     number_of_children=len(list(nodeChildren))
     possible_children=nodeChildren
     for n in range(0,int(number_of_children*float(args.child_interconnect))):
@@ -558,7 +557,7 @@ def wire_hierarchy(graph):
                 gchildren.append(gg)
     number_of_gchildren=len(gchildren)
     possible_gchildren=set(gchildren)
-    # wire 50% of those grand children to each other at low connectivity
+    # wire some % of those grand children to each other at low connectivity
     for n in range(0,int(number_of_gchildren*float(args.gchild_interconnect))):
         chosen_gchild=choice(list(possible_gchildren))
         possible_gchildren.difference_update([chosen_gchild])
@@ -566,7 +565,7 @@ def wire_hierarchy(graph):
         distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
         key1=chosen_gchild+"*"+link_gchild
         weight=0.1
-        graph.add_edge(chosen_child, link_gchild,name=key1,
+        graph.add_edge(chosen_gchild, link_gchild,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
                         from_node=chosen_gchild, to_node=link_gchild, distance=distance,weight=weight)
