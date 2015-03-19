@@ -638,7 +638,7 @@ def createMinMaxGraphByWeight( **kwargs):
                 weight=1/distance
                 normalized_weight=distance/sumDistance
                 if weight in [0,None,False]:
-                    weight=0.000000000001
+                    weight=0.000000000001 ## use this value so that we never get a 1/0
                 output_graph.add_path([a1, a2], normalized_weight=normalized_weight,unnormalized_weight=weight,
                                       distance=distance, weight=weight)
     ## now remove all of the non linked nodes.
