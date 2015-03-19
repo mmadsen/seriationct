@@ -33,9 +33,9 @@ def generate_randomized_simulation(seed, net_model):
     if args.simprefix is not None:
         cmd = ""
         cmd += args.simprefix
-        cmd += "/sim-networkmodel-seriation.py "
+        cmd += "/sim-seriationct-networkmodel.py "
     else:
-        cmd = "sim-networkmodel-seriation.py "
+        cmd = "sim-seriationct-networkmodel.py "
 
     cmd += " --experiment "
     cmd += args.experiment
@@ -64,8 +64,8 @@ def generate_randomized_simulation(seed, net_model):
     cmd += " --reps "
     cmd += str(expconfig["replicates"])
 
-    cmd += " --samplesize "
-    cmd += str(expconfig["samplesize"])
+    cmd += " --samplefraction "
+    cmd += str(expconfig["samplefraction"])
 
     cmd += " --migrationfraction "
     cmd += str(migr_frac)
