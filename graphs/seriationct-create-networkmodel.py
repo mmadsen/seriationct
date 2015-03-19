@@ -528,7 +528,7 @@ def wire_hierarchy(graph):
         for gnode in nodeGrandchildren[node]:
             list_of_grandchildren.append(gnode)
             key1=node+"*"+gnode
-            weight=1
+            weight=1.0
             xcoord = nodeX[node]
             ycoord = nodeY[node]
             gnodeX = nodeX[gnode]
@@ -536,7 +536,7 @@ def wire_hierarchy(graph):
 
             distance=calculate_distance(xcoord,ycoord,gnodeX,gnodeY)
             output_graph.add_edge(node, gnode,name=key1,
-                normalized=weight/sumDistance,
+                normalized=float(weight)/float(sumDistance),
                 unnormalized_weight=weight,
                 from_node=node, to_node=gnode, distance=distance,weight=weight)
 
