@@ -170,7 +170,8 @@ def create_slices_hierarchy(graph):
     ## now create T+1, T+2, ... T+args.slices slices
     for ns in range(1,int(args.slices)):
 
-        possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents (any from previous slice)
+        possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents
+                                                     ## (any from previous slice)
 
         ## remove 1 node at a time
         for r in range(0,num_nodes_to_remove):
@@ -226,22 +227,15 @@ def create_slices_hierarchy(graph):
 
             ## remove node from net
             nextNet.remove_node(chosen_node_to_remove)
+
+            ## remove from list of possible nodes to add
             possible_nodes.difference_update([chosen_node_to_remove])
 
-            possible_nodes.difference_update([chosen_node_to_remove])
+            ## remove from list of nodes that are currently linked
             current_nodes.difference_update([chosen_node_to_remove])
-        '''for r in range(0,num_nodes_to_add):
-            chosen_node = choice(list(possible_nodes))
-            possible_nodes.difference_update(chosen_node)
-            ## find a parent for the node - must be from one of the existing nodes
-            parent_node = choice(list(possible_nodes))
-            newnet.add_node(chosen_node,
-                            label=chosen_node,
-                            xcoord=nodeX[chosen_node],
-                            ycoord=nodeY[chosen_node],
-                            parent_node=parent_node )
-            current_nodes.update([chosen_node])
-        '''
+
+            ## remove from list of parents
+            possible_parent_nodes.difference_update([chosen_node_to_remove])
 
         ## now wire the network
         wired_net = wire_networks(nextNet)
@@ -257,10 +251,20 @@ def create_slices_hierarchy(graph):
                 temp_set.difference_update([n])     ## remove this from options (cant be own parent)
                 wired_net.node[n]['parent_node']=choice(list(temp_set))
 
+        check_parent_nodes(wired_net)
+
         slices.append(wired_net.copy())  ## note these are just nodes, not edges yet. (next step)
+
 
     return slices
 
+def check_parent_nodes(graph):
+
+    for n in graph.nodes():
+
+        parent_node = graph.node[n]["parent_node"]
+        if parent_node is not "initial" and parent_node not in graph.nodes():
+            print "parent_node is set to ", parent_node, " but parent_node is not currently a node."
 
 def create_slices_random(graph):
     global number_per_slice
@@ -552,7 +556,8 @@ def wire_hierarchy(graph):
         output_graph.add_edge(chosen_child, link_child,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
-                        from_node=chosen_child, to_node=link_child, distance=distance,weight=weight)
+                        from_node=chosen_child,
+                        to_node=link_child, distance=distance,weight=weight)
 
     ## wire some fraction of the grandchildren together
     pairs = all_pairs(list_of_grandchildren)
@@ -567,7 +572,8 @@ def wire_hierarchy(graph):
         output_graph.add_edge(chosen_gchild, link_gchild,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
-                        from_node=chosen_gchild, to_node=link_gchild, distance=distance,weight=weight)
+                        from_node=chosen_gchild, to_node=link_gchild,
+                        distance=distance,weight=weight)
     return output_graph
 
 
