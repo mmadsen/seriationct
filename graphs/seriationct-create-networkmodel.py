@@ -54,6 +54,7 @@ def setup():
                         choices=['minmax','complete','mst','hierarchy','random'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
+    parser.add_argument("--interconnect",help="the weight used for the child/gchild interconnect edges.", default=0.1)
     parser.add_argument("--gchild_interconnect", help="in the case of a heirarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.00)
     parser.add_argument("--child_interconnect", help="in the case of a heirarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.00)
     parser.add_argument("--overlap",
@@ -500,11 +501,16 @@ def create_hierarchy_in_graph(graph):
 
     return graph
 
+def all_pairs(lst):
+    return list((itertools.permutations(lst, 2)))
+
 def wire_hierarchy(graph):
     global spacefactor, nodeRoot, nodeChildren, nodeGrandchildren, nodeX, nodeY
 
+    output_graph = nx.Graph(is_directed=False)
+    output_graph.add_nodes_from(graph.nodes(data=True)) ## copy just the nodes
     sumDistance=calc_sum_distance(graph)
-
+    list_of_grandchildren=[]
     ##  wire to root
     for node in list(nodeChildren):
         key1=nodeRoot+"*"+node
@@ -514,14 +520,14 @@ def wire_hierarchy(graph):
         rootX = nodeX[nodeRoot]
         rootY = nodeY[nodeRoot]
         distance=calculate_distance(xcoord,ycoord,rootX,rootY)
-        graph.add_edge(nodeRoot, node,name=key1,
+        output_graph.add_edge(nodeRoot, node,name=key1,
                 normalized=weight/sumDistance,
                 unnormalized_weight=weight,
                 from_node=nodeRoot, to_node=node, distance=distance,weight=weight)
 
         ## now find the grandchildren and wire to children
-
         for gnode in nodeGrandchildren[node]:
+            list_of_grandchildren.append(gnode)
             key1=node+"*"+gnode
             weight=1
             xcoord = nodeX[node]
@@ -529,48 +535,40 @@ def wire_hierarchy(graph):
             gnodeX = nodeX[gnode]
             gnodeY = nodeY[gnode]
             distance=calculate_distance(xcoord,ycoord,gnodeX,gnodeY)
-            graph.add_edge(node, gnode,name=key1,
+            output_graph.add_edge(node, gnode,name=key1,
                 normalized=weight/sumDistance,
                 unnormalized_weight=weight,
                 from_node=node, to_node=gnode, distance=distance,weight=weight)
 
-    # wire % of the children together at low rate
-    number_of_children=len(list(nodeChildren))
-    possible_children=nodeChildren
-    for n in range(0,int(number_of_children*float(args.child_interconnect))):
-        chosen_child=choice(list(possible_children))
-        possible_children.difference_update([chosen_child])
-        link_child=choice(list(possible_children))
+    # wire % of the children together at low weight
+    pairs = all_pairs(list(nodeChildren))
+    for n in range(0,int(len(pairs)*float(args.child_interconnect))):
+        random_pair = random.choice(pairs)
+        chosen_child=random_pair[0]
+        link_child=random_pair[1]
         distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
         key1=chosen_child+"*"+link_child
-        weight=0.1
-        graph.add_edge(chosen_child, link_child,name=key1,
+        weight=args.interconnect
+        output_graph.add_edge(chosen_child, link_child,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
                         from_node=chosen_child, to_node=link_child, distance=distance,weight=weight)
 
     ## wire some fraction of the grandchildren together
-    gchildren=[]
-    for g in list(nodeChildren):
-        for gg in nodeGrandchildren:
-            if gg not in gchildren:
-                gchildren.append(gg)
-    number_of_gchildren=len(gchildren)
-    possible_gchildren=set(gchildren)
+    pairs = all_pairs(list_of_grandchildren)
     # wire some % of those grand children to each other at low connectivity
-    for n in range(0,int(number_of_gchildren*float(args.gchild_interconnect))):
-        chosen_gchild=choice(list(possible_gchildren))
-        possible_gchildren.difference_update([chosen_gchild])
-        link_gchild=choice(list(possible_gchildren))
+    for n in range(0,int(len(pairs)*float(args.gchild_interconnect))):
+        random_pair = random.choice(pairs)
+        chosen_gchild=random_pair[0]
+        link_gchild=random_pair[1]
         distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
         key1=chosen_gchild+"*"+link_gchild
-        weight=0.1
-        graph.add_edge(chosen_gchild, link_gchild,name=key1,
+        weight=args.interconnect
+        output_graph.add_edge(chosen_gchild, link_gchild,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
                         from_node=chosen_gchild, to_node=link_gchild, distance=distance,weight=weight)
-
-    return graph
+    return output_graph
 
 def createCompleteGraphByDistance( **kwargs ):
     global edgeDistance
