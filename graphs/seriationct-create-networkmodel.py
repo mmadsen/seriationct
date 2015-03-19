@@ -529,14 +529,14 @@ def wire_hierarchy(graph):
         for gnode in nodeGrandchildren[node]:
             list_of_grandchildren.append(gnode)
             key1=node+"*"+gnode
-            weight=1
+            weight=1.0
             xcoord = nodeX[node]
             ycoord = nodeY[node]
             gnodeX = nodeX[gnode]
             gnodeY = nodeY[gnode]
             distance=calculate_distance(xcoord,ycoord,gnodeX,gnodeY)
             output_graph.add_edge(node, gnode,name=key1,
-                normalized=weight/sumDistance,
+                normalized=float(weight)/float(sumDistance),
                 unnormalized_weight=weight,
                 from_node=node, to_node=gnode, distance=distance,weight=weight)
 
@@ -548,7 +548,7 @@ def wire_hierarchy(graph):
         link_child=random_pair[1]
         distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
         key1=chosen_child+"*"+link_child
-        weight=args.interconnect
+        weight=float(args.interconnect)
         output_graph.add_edge(chosen_child, link_child,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
@@ -563,7 +563,7 @@ def wire_hierarchy(graph):
         link_gchild=random_pair[1]
         distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
         key1=chosen_gchild+"*"+link_gchild
-        weight=args.interconnect
+        weight=float(args.interconnect)
         output_graph.add_edge(chosen_gchild, link_gchild,name=key1,
                         normalized=weight/sumDistance,
                         unnormalized_weight=weight,
