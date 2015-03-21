@@ -175,6 +175,7 @@ def create_slices_hierarchy(graph):
     for ns in range(1,int(args.slices)):
 
         possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents (current set)
+        child_nodes_from_previous_slice = list(nodeChildren)
         ## remove 1 node at a time
         for r in range(0,num_nodes_to_remove):
 
@@ -217,7 +218,7 @@ def create_slices_hierarchy(graph):
                     ##parent_node = choice(nextNet.nodes())
 
                     #new grandchildren will have a parent from one of the children (not gchild)# .
-                    parent = choice(list(nodeChildren))
+                    parent = choice(list(child_nodes_from_previous_slice))
                     nextNet.add_node(new_node_to_add,
                                 label=new_node_to_add,
                                 xcoord=nodeX[new_node_to_add],
