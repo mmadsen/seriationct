@@ -706,30 +706,31 @@ def wire_hierarchy(graph):
 
     number_of_child_interconnects= int(len(pairs_string)*float(args.interconnect))
     #print number_of_child_interconnects
-    random_pairs = np.random.choice(pairs_string, number_of_child_interconnects, replace=False)
-    for random_pair_choice in random_pairs:
-        random_pair = random_pair_choice.split("*")
-        chosen_child=random_pair[0]
-        link_child=random_pair[1]
-        distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
-        key1=chosen_child+"*"+link_child
-        weight=float(args.child_interconnect)
+    if len(pairs_tuple)>0:
+        random_pairs = np.random.choice(pairs_string, number_of_child_interconnects, replace=False)
+        for random_pair_choice in random_pairs:
+            random_pair = random_pair_choice.split("*")
+            chosen_child=random_pair[0]
+            link_child=random_pair[1]
+            distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
+            key1=chosen_child+"*"+link_child
+            weight=float(args.child_interconnect)
 
-        if gnode not in output_graph.nodes():
-            print "error: gnode (", gnode, ") not in list of nodes."
-            break
+            if gnode not in output_graph.nodes():
+                print "error: gnode (", gnode, ") not in list of nodes."
+                break
 
-        output_graph.add_edge(chosen_child,
-                              link_child,name=key1,
-                        normalized=weight/sumDistance,
-                        unnormalized_weight=weight,
-                        from_node=chosen_child,
-                        to_node=link_child,
-                        distance=distance,
-                        weight=weight,
-                        type="child_to_child",
-                        linked_from="interconnect",
-                        group="root")
+            output_graph.add_edge(chosen_child,
+                                  link_child,name=key1,
+                            normalized=weight/sumDistance,
+                            unnormalized_weight=weight,
+                            from_node=chosen_child,
+                            to_node=link_child,
+                            distance=distance,
+                            weight=weight,
+                            type="child_to_child",
+                            linked_from="interconnect",
+                            group="root")
 
     ## wire some fraction of the grandchildren together (by children)
     for n in list_of_children:
@@ -739,25 +740,26 @@ def wire_hierarchy(graph):
         # wire some % of those grand children to each other at low connectivity
         number_of_gchild_interconnects= int(len(pairs_string)*float(args.interconnect))
         #print "Number of gchild interconnects: ", number_of_gchild_interconnects
-        random_pairs = np.random.choice(pairs_string, number_of_gchild_interconnects, replace=False)
-        for random_pair_string in random_pairs:
-            random_pair=random_pair_string.split("*")
-            chosen_gchild=random_pair[0]
-            link_gchild=random_pair[1]
-            distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
-            key1=chosen_gchild+"*"+link_gchild
-            weight=float(args.gchild_interconnect)
-            output_graph.add_edge(chosen_gchild,
-                            link_gchild,name=key1,
-                            normalized=weight/sumDistance,
-                            unnormalized_weight=weight,
-                            from_node=chosen_gchild,
-                            to_node=link_gchild,
-                            distance=distance,
-                            weight=weight,
-                            type="gchild_to_gchild",
-                            linked_from="interconnect",
-                            group=n)
+        if len(pairs_tuple)>0:
+            random_pairs = np.random.choice(pairs_string, number_of_gchild_interconnects, replace=False)
+            for random_pair_string in random_pairs:
+                random_pair=random_pair_string.split("*")
+                chosen_gchild=random_pair[0]
+                link_gchild=random_pair[1]
+                distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
+                key1=chosen_gchild+"*"+link_gchild
+                weight=float(args.gchild_interconnect)
+                output_graph.add_edge(chosen_gchild,
+                                link_gchild,name=key1,
+                                normalized=weight/sumDistance,
+                                unnormalized_weight=weight,
+                                from_node=chosen_gchild,
+                                to_node=link_gchild,
+                                distance=distance,
+                                weight=weight,
+                                type="gchild_to_gchild",
+                                linked_from="interconnect",
+                                group=n)
     return output_graph
 
 
