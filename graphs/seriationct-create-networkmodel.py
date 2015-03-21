@@ -743,10 +743,11 @@ def wire_hierarchy(graph):
                 random_pair=random_pair_string.split("*")
                 chosen_gchild=random_pair[0]
                 link_gchild=random_pair[1]
-                distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
-                key1=chosen_gchild+"*"+link_gchild
-                weight=float(args.gchild_interconnect)
-                output_graph.add_edge(chosen_gchild,
+                if random_pair[0] is not random_pair[1]:
+                    distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
+                    key1=chosen_gchild+"*"+link_gchild
+                    weight=float(args.gchild_interconnect)
+                    output_graph.add_edge(chosen_gchild,
                                 link_gchild,name=key1,
                                 normalized=weight/sumDistance,
                                 unnormalized_weight=weight,
