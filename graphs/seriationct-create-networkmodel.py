@@ -46,7 +46,8 @@ def setup():
     parser.add_argument("--x", help="number of assemblages tall to generate", default=20)
     parser.add_argument("--y", help="number of assemblages wide to generate", default=20)
     parser.add_argument("--levels",help="number of levels in hierarchical model.", default=5)
-    parser.add_argument("--children",help="number of children per level.",default=5)
+    parser.add_argument("--children",help="number of children per level.",default=3)
+    parser.add_argument("--grandchildren",help="number of grandchildren per level.", default=3)
     parser.add_argument("--configuration", help="Path to configuration file")
     parser.add_argument("--slices", help="Number of graph slices to create", default=5)
     parser.add_argument("--model", choices=['grid','linear','branch'], required=True, default="grid")
@@ -93,7 +94,10 @@ def create_vertices():
         for yc in range(1,int(args.x)):
             for xc in range(1,int(args.y)):
                 name="assemblage-"+str(xc)+"-"+str(yc)
-                net.add_node(name,label=name,xcoord=xc, ycoord=yc,level=None,parent_node=None)
+                net.add_node(name,label=name,
+                             xcoord=xc, ycoord=yc,
+                             level=None,parent_node=None,
+                             child_of=None)
                 nodeNames.append(name)
                 nodeX[name]=xc
                 nodeY[name]=yc
@@ -142,7 +146,8 @@ def create_slices_hierarchy(graph):
                             xcoord=nodeX[chosen_node],
                             ycoord=nodeY[chosen_node],
                             level=None,
-                            parent_node="initial") # add node
+                            parent_node="initial",
+                            child_of=None) # add node
             current_nodes.update([chosen_node])
         except:
             pass# update set of possible nodes
@@ -175,7 +180,7 @@ def create_slices_hierarchy(graph):
 
             ## pick a node to remove from existing nodes in graph
             chosen_node_to_remove = choice(nextNet.nodes())
-
+            original_child_of_value=nextNet.node[chosen_node_to_remove]['child_of']
             ## now add the node and deal with child/gchild lists
             ## if this is a child, we need to know what grandchildren need a new parent...
             if chosen_node_to_remove == nodeRoot:
@@ -194,31 +199,43 @@ def create_slices_hierarchy(graph):
                     nodeGrandchildren[new_node_to_add]=listOfAbandonedGchildren
                     nodeChildren.update([new_node_to_add])
 
+                    ## new children will always have a parent of root
                     nextNet.add_node(new_node_to_add,
                                 label=new_node_to_add,
                                 xcoord=nodeX[new_node_to_add],
                                 ycoord=nodeY[new_node_to_add],
-                                level="child")
+                                level="child",
+                                child_of=original_child_of_value,
+                                parent="root")
 
                     current_nodes.update([new_node_to_add])
+
                 else:  ## must be grandkid
                     new_node_to_add = choice(list(possible_nodes))
                     possible_nodes.difference_update([new_node_to_add])
                     current_nodes.update([new_node_to_add])
                     ##parent_node = choice(nextNet.nodes())
+
+                    #new grandchildren will have a parent from one of the children (not gchild)# .
+                    parent = choice(list(nodeChildren))
                     nextNet.add_node(new_node_to_add,
                                 label=new_node_to_add,
                                 xcoord=nodeX[new_node_to_add],
                                 ycoord=nodeY[new_node_to_add],
-                                level="grandchild")
-                    current_nodes.update([new_node_to_add])
+                                level="grandchild",
+                                child_of=original_child_of_value,
+                                parent=parent)
 
+                    current_nodes.update([new_node_to_add])
+                    # now need to put this new node in the
                     for key in nodeGrandchildren.iterkeys():
                         setOfGrandchildrenForChild=set(nodeGrandchildren[key])
                         if chosen_node_to_remove in nodeGrandchildren[key]:
                             setOfGrandchildrenForChild.difference_update([chosen_node_to_remove])
+                            ## set the list w/o this node
                             nodeGrandchildren[key]=list(setOfGrandchildrenForChild)
-                            nodeGrandchildren[key].append(new_node_to_add)
+                            ## add this node to the other list
+                            nodeGrandchildren[parent].append(new_node_to_add)
                 ## remove node from net
                 nextNet.remove_node(chosen_node_to_remove)
 
@@ -256,16 +273,12 @@ def create_slices_hierarchy(graph):
                 temp_set.difference_update([n])     ## remove this from options (cant be own parent)
                 wired_net.node[n]['parent_node']=choice(list(temp_set))
 
-        #check_parent_nodes(wired_net)
-
         #print "checking nodes... (3)"
         for n in wired_net.nodes():
-            #print "checking node: ", n
-            #print n, " - ", wired_net.node[n]['level']
             if wired_net.node[n]['level'] is None or wired_net.node[n]['xcoord'] is None:
                 print "problem with node ", n, " somehow added without data"
                 break
-                
+
         slices.append(wired_net.copy())  ## note these are just nodes, not edges yet. (next step)
 
     return slices
@@ -349,8 +362,6 @@ def create_slices_minmax(graph):
 
         ## now wire the network
         wired_net = wire_networks(nextNet)
-        #for unlinked_node in nx.isolates(wired_net):
-        #    wired_net.remove_node(unlinked_node)
 
         parents = nx.get_node_attributes(wired_net, 'parent_node')
         for n in wired_net.nodes():
@@ -360,8 +371,7 @@ def create_slices_minmax(graph):
                 temp_set = possible_parent_nodes    ## temporary set
                 temp_set.difference_update([n])     ## remove this from options (cant be own parent)
                 wired_net.node[n]['parent_node']=choice(list(temp_set))
-
-        #check_parent_nodes(wired_net)
+                ## now we need to update the edges -- so that the new node is in the right grou
 
         slices.append(wired_net.copy())  ## note these are just nodes, not edges yet. (next step)
 
@@ -584,6 +594,7 @@ def create_hierarchy_in_graph(graph):
     nodes = graph.nodes()
     nodeRoot = random.choice(nodes)
     graph.node[nodeRoot]['level']="root"
+    graph.node[nodeRoot]['child_of']='nobody'
     possible_nodes = set(nodes)
     possible_nodes.difference_update([nodeRoot])
     linked_nodes=set([])
@@ -593,17 +604,19 @@ def create_hierarchy_in_graph(graph):
         possible_nodes.difference_update([random_child])
         nodeChildren.update([random_child])
         linked_nodes.update([random_child])
+        graph.node[random_child]['child_of']="root"
         graph.node[random_child]['level']="child"
     # now link grandchildren to children
 
     for n in list(nodeChildren):
         nodeGrandchildren[n]=[]
-        for m in range(0,int(args.children)):
+        for m in range(0,int(args.grandchildren)):
             random_gchild=random.choice(list(possible_nodes))
             possible_nodes.difference_update([random_gchild])
             nodeGrandchildren[n].append(random_gchild)
             linked_nodes.update([random_gchild])
             graph.node[random_gchild]['level']="grandchild"
+            graph.node[random_gchild]['child_of']=n
 
     ## filter nodes that are not part of hierarchy...
     for node in graph.nodes():
@@ -613,7 +626,7 @@ def create_hierarchy_in_graph(graph):
     return graph
 
 def all_pairs(lst):
-    return list((itertools.permutations(lst, 2)))
+    return list((itertools.combinations(lst, 2)))
 
 def wire_hierarchy(graph):
     global nodeChildren, nodeGrandchildren, nodeX, nodeY
@@ -637,10 +650,8 @@ def wire_hierarchy(graph):
 
     ##  wire to root
     for node in list_of_children:
-        #print "root", root
-        #print "root", nodeRoot
         key1=root+"*"+node
-        weight=1
+        weight=1.0
         xcoord = nodeX[node]
         ycoord = nodeY[node]
         rootX = nodeX[root]
@@ -660,7 +671,10 @@ def wire_hierarchy(graph):
                 from_node=root,
                 to_node=node,
                 distance=distance,
-                weight=weight)
+                weight=weight,
+                type="root_to_child",
+                linked_from="root",
+                group="level_1")
 
         ## now find the grandchildren and wire to children
         for gnode in nodeGrandchildren[node]:
@@ -679,17 +693,27 @@ def wire_hierarchy(graph):
             output_graph.add_edge(node, gnode,name=key1,
                 normalized=float(weight)/float(sumDistance),
                 unnormalized_weight=weight,
-                from_node=node, to_node=gnode, distance=distance,weight=weight)
+                from_node=node, to_node=gnode,
+                distance=distance,
+                weight=weight,
+                type="child_to_gchild",
+                linked_from=node,
+                group="level_2")
 
     # wire % of the children together at low weight
-    pairs = all_pairs(list_of_children)
-    for n in range(0,int(len(pairs)*float(args.child_interconnect))):
-        random_pair = random.choice(pairs)
+    pairs_tuple = (all_pairs(list_of_children))
+    pairs_string=[p[0]+"*"+p[1] for p in pairs_tuple]
+
+    number_of_child_interconnects= int(len(pairs_string)*float(args.interconnect))
+    #print number_of_child_interconnects
+    random_pairs = np.random.choice(pairs_string, number_of_child_interconnects, replace=False)
+    for random_pair_choice in random_pairs:
+        random_pair = random_pair_choice.split("*")
         chosen_child=random_pair[0]
         link_child=random_pair[1]
         distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
         key1=chosen_child+"*"+link_child
-        weight=float(args.interconnect)
+        weight=float(args.child_interconnect)
 
         if gnode not in output_graph.nodes():
             print "error: gnode (", gnode, ") not in list of nodes."
@@ -702,26 +726,38 @@ def wire_hierarchy(graph):
                         from_node=chosen_child,
                         to_node=link_child,
                         distance=distance,
-                        weight=weight)
+                        weight=weight,
+                        type="child_to_child",
+                        linked_from="interconnect",
+                        group="root")
 
-    ## wire some fraction of the grandchildren together
-    pairs = all_pairs(list_of_grandchildren)
-    # wire some % of those grand children to each other at low connectivity
-    for n in range(0,int(len(pairs)*float(args.gchild_interconnect))):
-        random_pair = random.choice(pairs)
-        chosen_gchild=random_pair[0]
-        link_gchild=random_pair[1]
-        distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
-        key1=chosen_gchild+"*"+link_gchild
-        weight=float(args.interconnect)
-        output_graph.add_edge(chosen_gchild,
-                        link_gchild,name=key1,
-                        normalized=weight/sumDistance,
-                        unnormalized_weight=weight,
-                        from_node=chosen_gchild,
-                        to_node=link_gchild,
-                        distance=distance,
-                        weight=weight)
+    ## wire some fraction of the grandchildren together (by children)
+    for n in list_of_children:
+        gchildren_of_this_node = nodeGrandchildren[n]
+        pairs_tuple = all_pairs(gchildren_of_this_node)
+        pairs_string=[p[0]+"*"+p[1] for p in pairs_tuple]
+        # wire some % of those grand children to each other at low connectivity
+        number_of_gchild_interconnects= int(len(pairs_string)*float(args.interconnect))
+        #print "Number of gchild interconnects: ", number_of_gchild_interconnects
+        random_pairs = np.random.choice(pairs_string, number_of_gchild_interconnects, replace=False)
+        for random_pair_string in random_pairs:
+            random_pair=random_pair_string.split("*")
+            chosen_gchild=random_pair[0]
+            link_gchild=random_pair[1]
+            distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
+            key1=chosen_gchild+"*"+link_gchild
+            weight=float(args.gchild_interconnect)
+            output_graph.add_edge(chosen_gchild,
+                            link_gchild,name=key1,
+                            normalized=weight/sumDistance,
+                            unnormalized_weight=weight,
+                            from_node=chosen_gchild,
+                            to_node=link_gchild,
+                            distance=distance,
+                            weight=weight,
+                            type="gchild_to_gchild",
+                            linked_from="interconnect",
+                            group=n)
     return output_graph
 
 
