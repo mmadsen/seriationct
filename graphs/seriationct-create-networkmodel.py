@@ -211,7 +211,7 @@ def create_slices_hierarchy(graph):
                                 ycoord=nodeY[new_node_to_add],
                                 level="child",
                                 child_of=original_child_of_value,
-                                parent_node="root",
+                                parent_node=nodeRoot,
                                 appears_in_slice=ns)
                     #print "adding child node: ", new_node_to_add
                     current_nodes.update([new_node_to_add])
@@ -602,7 +602,7 @@ def create_hierarchy_in_graph(graph):
         linked_nodes.update([random_child])
         graph.node[random_child]['child_of']="root"
         graph.node[random_child]['level']="child"
-        graph.node[random_child]['parent_node']='root'
+        graph.node[random_child]['parent_node']=nodeRoot
     # now link grandchildren to children
 
     for n in list(nodeChildren):
