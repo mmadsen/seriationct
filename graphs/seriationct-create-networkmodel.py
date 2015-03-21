@@ -717,10 +717,6 @@ def wire_hierarchy(graph):
             key1=chosen_child+"*"+link_child
             weight=float(args.child_interconnect)
 
-            if gnode not in output_graph.nodes():
-                print "error: gnode (", gnode, ") not in list of nodes."
-                break
-
             output_graph.add_edge(chosen_child,
                                   link_child,name=key1,
                             normalized=weight/sumDistance,
