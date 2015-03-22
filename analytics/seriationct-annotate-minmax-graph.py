@@ -101,11 +101,13 @@ if __name__ == "__main__":
     # parse the slices in the networkmodel
     zf = zipfile.ZipFile(args.networkmodel, 'r')
     for file in [f for f in zf.namelist() if f.endswith(".gml")]:
-        print "file: ", file
-        gml = zf.read(file)
-        slice = nx.parse_gml(gml)
+        if file.startswith("__"):
+            pass
+        else:
+            gml = zf.read(file)
+            slice = nx.parse_gml(gml)
 
-        copy_attributes_to_minmax(g_slice = slice, g_mm = mm)
+            copy_attributes_to_minmax(g_slice = slice, g_mm = mm)
 
 
     # now save the annotated graph to a file in GML format
