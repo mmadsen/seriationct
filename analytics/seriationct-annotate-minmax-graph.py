@@ -32,8 +32,6 @@ def setup():
     else:
         log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
-
-
 """
 
  Example of a node in a slice of a networkmodel:
@@ -58,8 +56,8 @@ def get_node_for_key(name, key, graph):
     for attribute "key", or None if there is no match
     """
     for n in graph.nodes():
-        log.debug("graph node: %s", graph[n])
-        if graph[n][key] == name:
+        log.debug("graph node: %s", graph.node[n])
+        if graph.node[n][key] == name:
             return n
     return None
 
@@ -75,18 +73,16 @@ def copy_attributes_to_minmax(g_slice = None, g_mm = None):
     log.debug("mm nodes: %s", g_mm.nodes())
 
     for slice_node in g_slice.nodes():
-        log.debug("slice node: %s", g_slice[slice_node])
+        log.debug("slice node: %s", g_slice.node[slice_node])
 
         mm_node_id = get_node_for_key(slice_node, "name", g_mm)
 
-        g_mm[mm_node_id]['appears_in_slice'] = g_slice[slice_node]['appears_in_slice']
-        g_mm[mm_node_id]['level'] = g_slice[slice_node]['level']
-        g_mm[mm_node_id]['child_of'] = g_slice[slice_node]['child_of']
-        g_mm[mm_node_id]['parent_node'] = g_slice[slice_node]['parent_node']
+        g_mm.node[mm_node_id]['appears_in_slice'] = g_slice.node[slice_node]['appears_in_slice']
+        g_mm.node[mm_node_id]['level'] = g_slice.node[slice_node]['level']
+        g_mm.node[mm_node_id]['child_of'] = g_slice.node[slice_node]['child_of']
+        g_mm.node[mm_node_id]['parent_node'] = g_slice.node[slice_node]['parent_node']
 
-        log.debug("annotated: %s", g_mm[mm_node_id])
-
-
+        log.debug("annotated: %s", g_mm.node[mm_node_id])
 
 
 if __name__ == "__main__":
@@ -105,6 +101,7 @@ if __name__ == "__main__":
     # parse the slices in the networkmodel
     zf = zipfile.ZipFile(args.networkmodel, 'r')
     for file in [f for f in zf.namelist() if f.endswith(".gml")]:
+        print "file: ", file
         gml = zf.read(file)
         slice = nx.parse_gml(gml)
 
