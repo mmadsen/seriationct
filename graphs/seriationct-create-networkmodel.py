@@ -59,7 +59,8 @@ def setup():
     parser.add_argument("--gchild_interconnect_weight",help="the weight used for the gchild interconnect edges.", default=0.1)
     parser.add_argument("--gchild_interconnect_percentage", help="in the case of a hierarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.00)
     parser.add_argument("--child_interconnect_percentage", help="in the case of a hierarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.00)
-    parser.add_argument("--interlevel_weight", help="the weight used for edges between root/child or child/gchild nodes",type=float, default=1.0)
+    parser.add_argument("--root_child_weight", help="the weight used for edges between root/child nodes",type=float, default=1.0)
+    parser.add_argument("--child_gchild_weight", help="the weight used for edges between child/gchild nodes",type=float, default=1.0)
     parser.add_argument("--overlap",
                         help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
@@ -656,7 +657,7 @@ def wire_hierarchy(graph):
     ##  wire to root
     for node in list_of_children:
         key1=root+"*"+node
-        weight=float(args.interlevel_weight)
+        weight=float(args.root_child_weight)
         xcoord = nodeX[node]
         ycoord = nodeY[node]
         rootX = nodeX[root]
@@ -688,7 +689,7 @@ def wire_hierarchy(graph):
                 break
             list_of_grandchildren.append(gnode)
             key1=node+"*"+gnode
-            weight=float(args.interlevel_weight)
+            weight=float(args.child_gchild_weight)
             xcoord = nodeX[node]
             ycoord = nodeY[node]
             gnodeX = nodeX[gnode]

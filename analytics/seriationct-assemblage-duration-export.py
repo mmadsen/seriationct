@@ -8,6 +8,7 @@ import ming
 import logging as log
 import argparse
 import seriationct.data as data
+import pandas as pd
 import csv
 import pprint as pp
 
