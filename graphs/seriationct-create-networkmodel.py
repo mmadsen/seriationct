@@ -55,9 +55,10 @@ def setup():
                         choices=['minmax','complete','mst','hierarchy','random'], default='complete')
     parser.add_argument("--graphs", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
-    parser.add_argument("--interconnect",help="the weight used for the child/gchild interconnect edges.", default=0.1)
-    parser.add_argument("--gchild_interconnect", help="in the case of a heirarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.00)
-    parser.add_argument("--child_interconnect", help="in the case of a heirarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.00)
+    parser.add_argument("--child_interconnect_weight",help="the weight used for the child interconnect edges.", default=0.1)
+    parser.add_argument("--gchild_interconnect_weight",help="the weight used for the gchild interconnect edges.", default=0.1)
+    parser.add_argument("--gchild_interconnect_percentage", help="in the case of a hierarchical graph, what fraction of grandchildren are connected to each other (0-1.0) Default is 0.2", default=0.00)
+    parser.add_argument("--child_interconnect_percentage", help="in the case of a hierarchical graph, what fraction of children are connected to each other (0-1.0) Default is 0.1", default=0.00)
     parser.add_argument("--overlap",
                         help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
@@ -359,6 +360,10 @@ def create_slices_minmax(graph):
         wired_net = wire_networks(nextNet)
 
         parents = nx.get_node_attributes(wired_net, 'parent_node')
+        ## find the node that is closest.
+
+        #listOfWeights=nx.get_get_attributes(wired_net,'weight')
+        #closestNode = min(listOfWeights, key=listOfWeights.get)
         for n in wired_net.nodes():
             try:
                 test=parents[n];
@@ -703,7 +708,7 @@ def wire_hierarchy(graph):
     pairs_tuple = (all_pairs(list_of_children))
     pairs_string=[p[0]+"*"+p[1] for p in pairs_tuple]
 
-    number_of_child_interconnects= int(len(pairs_string)*float(args.interconnect))
+    number_of_child_interconnects= int(len(pairs_string)*float(args.child_interconnect_percentage))
     #print number_of_child_interconnects
     if len(pairs_tuple)>0:
         random_pairs = np.random.choice(pairs_string, number_of_child_interconnects, replace=False)
@@ -713,7 +718,7 @@ def wire_hierarchy(graph):
             link_child=random_pair[1]
             distance=calculate_distance(nodeX[chosen_child],nodeY[chosen_child],nodeX[link_child],nodeY[link_child])
             key1=chosen_child+"*"+link_child
-            weight=float(args.child_interconnect)
+            weight=float(args.child_interconnect_weight)
 
             output_graph.add_edge(chosen_child,
                                   link_child,name=key1,
@@ -733,7 +738,7 @@ def wire_hierarchy(graph):
         pairs_tuple = all_pairs(gchildren_of_this_node)
         pairs_string=[p[0]+"*"+p[1] for p in pairs_tuple]
         # wire some % of those grand children to each other at low connectivity
-        number_of_gchild_interconnects= int(len(pairs_string)*float(args.interconnect))
+        number_of_gchild_interconnects= int(len(pairs_string)*float(args.gchild_interconnect_percentage))
         #print "Number of gchild interconnects: ", number_of_gchild_interconnects
         if len(pairs_tuple)>0:
             random_pairs = np.random.choice(pairs_string, number_of_gchild_interconnects, replace=False)
@@ -744,7 +749,7 @@ def wire_hierarchy(graph):
                 if random_pair[0] != random_pair[1]:
                     distance=calculate_distance(nodeX[chosen_gchild],nodeY[chosen_gchild],nodeX[link_gchild],nodeY[link_gchild])
                     key1=chosen_gchild+"*"+link_gchild
-                    weight=float(args.gchild_interconnect)
+                    weight=float(args.gchild_interconnect_weight)
                     output_graph.add_edge(chosen_gchild,
                                 link_gchild,name=key1,
                                 normalized=weight/sumDistance,
