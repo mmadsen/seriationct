@@ -98,7 +98,7 @@ if __name__ == "__main__":
     input_basename = os.path.basename(args.inputfile)
     root, ext = os.path.splitext(input_basename)
     input_path = os.path.dirname(args.inputfile)
-    output_filename = input_path + root + "-annotated.gml"
+    output_filename = input_path + '/' + root + "-annotated.gml"
     log.info("Processing input %s to output %s", input_basename, output_filename)
 
     # read the minmax input file
