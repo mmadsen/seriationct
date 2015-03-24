@@ -77,6 +77,12 @@ def copy_attributes_to_minmax(g_slice = None, g_mm = None):
 
         mm_node_id = get_node_for_key(slice_node, "name", g_mm)
 
+        if mm_node_id is None:
+            # if we use samples of the original network model for seriation, not all of the slice
+            # nodes will appear in the minmax graph.  this is NOT a bug, but we need to just
+            # move on.
+            continue
+
         g_mm.node[mm_node_id]['appears_in_slice'] = g_slice.node[slice_node]['appears_in_slice']
         g_mm.node[mm_node_id]['level'] = g_slice.node[slice_node]['level']
         g_mm.node[mm_node_id]['child_of'] = g_slice.node[slice_node]['child_of']
