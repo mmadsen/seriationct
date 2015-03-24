@@ -37,6 +37,15 @@ def generate_randomized_simulation(seed, net_model):
     else:
         cmd = "sim-seriationct-networkmodel.py "
 
+    if args.dbhost is not None:
+        cmd += " --dbhost "
+        cmd += args.dbhost
+
+
+    if args.dbport is not None:
+        cmd += " --dbport "
+        cmd += args.dbport
+
     cmd += " --experiment "
     cmd += args.experiment
 
@@ -73,12 +82,17 @@ def generate_randomized_simulation(seed, net_model):
     # for production runs, let the system decide how many cores to use
     cmd += " --devel 0"
 
-    cmd += " --networkmodel "
-    cmd += net_model
+    if args.networkprefix is not None:
+        cmd += " --networkmodel "
+        cmd += args.networkprefix + "/"
+        cmd += net_model
+    else:
+        cmd += " --networkmodel "
+        cmd += net_model
 
     cmd += '\n'
 
-    #log.debug("%s", cmd)
+    log.debug("%s", cmd)
     return cmd
 
 
@@ -110,6 +124,8 @@ def setup():
     parser.add_argument("--numsims", type=int, help="Number of simulations to generate across network models by random prior sampling (should be a multiple of the number of network models)")
     parser.add_argument("--networkmodels", help="Path to directory with compressed temporal network models", required=True)
     parser.add_argument("--simprefix", help="Full path prefix to the simulation executable (optional)")
+    parser.add_argument("--networkprefix", help="Full path prefix to the network model directory given in --networkmodels (optiona)")
+    parser.add_argument("--jobdirectory", help="Path to a directory where job scripts should be written (optional)")
 
     args = parser.parse_args()
     expconfig = parse_experiment_config(args.expconfig)
@@ -135,10 +151,13 @@ def main():
 
     for i in range(0, num_files):
         filename = ''
+        if args.jobdirectory is not None:
+            filename = args.jobdirectory + "/"
         filename += base_name
         filename += str(uuid.uuid4())
         filename += ".sh"
 
+        log.debug("job file: %s", filename)
         f = open(filename, 'w')
 
         f.write("#!/bin/sh\n\n")
