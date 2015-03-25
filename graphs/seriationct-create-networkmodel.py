@@ -197,9 +197,9 @@ def create_slices_hierarchy(graph):
                 # find a new node to be root
                 old_root = nodeRoot  ## temporarily keep the old_root
                 new_root = choice(list(possible_nodes))  ## get any valid node that is unchosen
-                possible_nodes.update([new_root]) ## get rid of this node from pool of choices
-                valid_parent_list.update([old_root])
-                valid_parent_list.update([new_root])
+                possible_nodes.difference_update([new_root]) ## get rid of this node from pool of choices
+                valid_parent_list.update([old_root])  ## place the node into the list of nodes that can be parents
+                valid_parent_list.update([new_root])   ## place the new node into the list of nodes that can be parents
                 nextNet.add_node(new_root,
                                 label=new_root,
                                 xcoord=nodeX[new_root],
