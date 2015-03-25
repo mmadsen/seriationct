@@ -208,7 +208,7 @@ def create_slices_hierarchy(graph):
                 nodeRoot=new_root
                 current_nodes.update([new_root])            ## add to current _nodes
                 current_nodes.difference_update([old_root])  ## remove from current nodes
-                #print "swapping root ", old_root, " for new root: ", new_root
+                print "swapping root ", old_root, " for new root: ", new_root
 
         ## create a set for choosing  nodes to remove from graph (w/root as a choice)
         nodes_from_which_i_can_choose_without_root=set(nextNet.nodes())
@@ -360,15 +360,19 @@ def create_slices_minmax(graph):
     ## now create T+1, T+2, ... T+args.slices slices
     for ns in range(1,int(args.slices)):
 
-        possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents (current set)
 
+        possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents (current set)
         ## remove 1 node at a time
+        print "going to review ", num_nodes_to_remove, " nodes from graph with ", len(nextNet.nodes()), " nodes "
+
+        ## create a set of nodes from tht will be those that can be removed (exclude newly created nodes at each slice)
+        nodes_from_which_i_can_choose_to_remove = set(nextNet.nodes())
+
         for r in range(0,num_nodes_to_remove):
 
             ## pick a node to remove from existing nodes in graph
-            chosen_node_to_remove = choice(nextNet.nodes())
-
-             ### minmax case since nothing will be in the children/grandchildren lists.
+            chosen_node_to_remove = choice(list(nodes_from_which_i_can_choose_to_remove))
+            nodes_from_which_i_can_choose_to_remove.difference_update([chosen_node_to_remove])
             chosen_node = choice(list(possible_nodes)) ## choose a node from the possible nodes to choose from (i.e., those not already added or deleted)
             possible_nodes.difference_update([chosen_node]) ## remove this from possible choices
             ##parent_node = choice(nextNet.nodes())
@@ -379,7 +383,7 @@ def create_slices_minmax(graph):
                         #parent_node=parent_node )
             current_nodes.update([chosen_node])  ## maintain the list of what's currently listed in the nodes
 
-            ## remove node from net
+            ## remove node from current graph
             nextNet.remove_node(chosen_node_to_remove)
 
             ## remove from list of possible nodes to add
