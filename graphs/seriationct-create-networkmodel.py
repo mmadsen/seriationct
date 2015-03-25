@@ -190,9 +190,9 @@ def create_slices_hierarchy(graph):
         ## check to see if root is going to be swapped this slice or not based on a fixed probability
 
         check_for_root_swap=random.random()
+        old_root = nodeRoot
         if check_for_root_swap < float(args.root_swap_probability):
                 # find a new node to be root
-                old_root = nodeRoot  ## temporarily keep the old_root
                 new_root = choice(list(possible_nodes))  ## get any valid node that is unchosen
                 possible_nodes.difference_update([new_root]) ## get rid of this node from pool of choices
                 valid_parent_list.update([old_root])   ## place the node into the list of nodes that can be parents
@@ -246,8 +246,8 @@ def create_slices_hierarchy(graph):
                                 xcoord=nodeX[new_node_to_add],
                                 ycoord=nodeY[new_node_to_add],
                                 level="child",
-                                child_of=nodeRoot,
-                                parent_node=nodeRoot,
+                                child_of=old_root,
+                                parent_node=old_root,
                                 appears_in_slice=ns)
                     #print "adding child node: ", new_node_to_add
                     current_nodes.update([new_node_to_add])
@@ -320,23 +320,17 @@ def create_slices_minmax(graph):
     newnet = nx.Graph(name=args.model+"-1", is_directed=False)
     current_nodes=set([])
     possible_nodes = set(list(graph.nodes()))
-    possible_nodes.difference_update([nodeRoot])# remove Root from nodes that can change
 
-    for node in range(0,number_per_slice):   # select N number of nodes
-        list_of_nodes = list(possible_nodes)
-        #print list_of_nodes
-        random_selection =random.randint(1,len(list_of_nodes))
-        try:
-            chosen_node = list_of_nodes[random_selection]       # pick a random node from the list of possibilities (all)
-            possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
-            newnet.add_node(chosen_node,label=chosen_node,
-                            xcoord=nodeX[chosen_node],
-                            ycoord=nodeY[chosen_node],
-                            level=None,
-                            parent_node="initial") # add node
-            current_nodes.update([chosen_node])
-        except:
-            pass# update set of possible nodes
+    random_selection = random.sample(possible_nodes,number_per_slice)
+
+    for chosen_node in random_selection:   # select N number of nodes
+        possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
+        newnet.add_node(chosen_node,label=chosen_node,
+                        xcoord=nodeX[chosen_node],
+                        ycoord=nodeY[chosen_node],
+                        level=None,
+                        parent_node="initial") # add node
+        current_nodes.update([chosen_node])
 
     wired_net=wire_networks(newnet)
 
@@ -362,40 +356,26 @@ def create_slices_minmax(graph):
         ## remove 1 node at a time
         print "going to review ", num_nodes_to_remove, " nodes from graph with ", len(nextNet.nodes()), " nodes "
 
-        ## create a set of nodes from tht will be those that can be removed (exclude newly created nodes at each slice)
-        nodes_from_which_i_can_choose_to_remove = set(nextNet.nodes())
+        sample_of_nodes = random.sample(nextNet.nodes(), num_nodes_to_remove)
+        for chosen_node_to_remove in sample_of_nodes:
 
-        for r in range(0,num_nodes_to_remove):
-
-            ## pick a node to remove from existing nodes in graph
-            chosen_node_to_remove = choice(list(nodes_from_which_i_can_choose_to_remove))
-            nodes_from_which_i_can_choose_to_remove.difference_update([chosen_node_to_remove])
-            chosen_node = choice(list(possible_nodes)) ## choose a node from the possible nodes to choose from (i.e., those not already added or deleted)
-            possible_nodes.difference_update([chosen_node]) ## remove this from possible choices
-            ##parent_node = choice(nextNet.nodes())
+            possible_nodes.difference_update([chosen_node_to_remove]) ## remove this from possible choices
+            chosen_node = random.choice(list(possible_nodes))
+            parent_node = choice(possible_parent_nodes)
             nextNet.add_node(chosen_node,
                         label=chosen_node,
                         xcoord=nodeX[chosen_node],
-                        ycoord=nodeY[chosen_node],level="ooops")
-                        #parent_node=parent_node )
-            current_nodes.update([chosen_node])  ## maintain the list of what's currently listed in the nodes
+                        ycoord=nodeY[chosen_node],
+                        parent_node=parent_node )
 
+            current_nodes.update([chosen_node])  ## maintain the list of what's currently listed in the nodes
             ## remove node from current graph
             nextNet.remove_node(chosen_node_to_remove)
-
-            ## remove from list of possible nodes to add
-            possible_nodes.difference_update([chosen_node_to_remove])
-
             ## remove from list of nodes that are currently linked
             current_nodes.difference_update([chosen_node_to_remove])
 
-            ## shouldnt have to remove the node from possible_parents since we
-            ## get that list from the previous graph slice
-            ##possible_parent_nodes.difference_update([chosen_node_to_remove])
-
         ## now wire the network
         wired_net = wire_networks(nextNet)
-
         parents = nx.get_node_attributes(wired_net, 'parent_node')
         ## find the node that is closest.
 
