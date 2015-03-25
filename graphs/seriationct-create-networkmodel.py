@@ -194,7 +194,22 @@ def create_slices_hierarchy(graph):
             ## now add the node and deal with child/gchild lists
             ## if this is a child, we need to know what grandchildren need a new parent...
             if chosen_node_to_remove == nodeRoot:
-                pass
+                # find a new node to be root
+                old_root = nodeRoot
+                new_root = choice(list(possible_nodes))
+                possible_nodes.update([new_node_to_add])
+                valid_parent_list.update([new_root])
+                nextNet.add_node(new_root,
+                                label=new_root,
+                                xcoord=nodeX[new_root],
+                                ycoord=nodeY[new_root],
+                                level="root",
+                                child_of=old_root,
+                                parent_node=old_root,
+                                appears_in_slice=ns)
+                nodeRoot=new_root
+                current_nodes.update([new_root])
+
                 # dont do anything if node is the root.
             else:
                 if nextNet.node[chosen_node_to_remove]['level'] == "child":
