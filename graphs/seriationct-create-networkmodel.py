@@ -66,6 +66,7 @@ def setup():
     parser.add_argument("--overlap",
                         help="specify % of nodes to overlap from slice to slice. 0=No overlap, 1 = 100% overlap. Values must be between 0.0 and 1.0. For example. 0.5 for 50%", default=0.80)
     parser.add_argument("--movie", help="make a movie from png slices.", default=True)
+    parser.add_argument("--root_swap_probability", help="probability of the root being swapped in any slice. Default is 0.2", default=0.2)
     parser.add_argument("--density", help="the percentage of nodes used per slice. When 100% this means all possible nodes are used based on the grid size, overlap, and the number of slices. Must be >0%.", default=0.2)
     args = parser.parse_args()
 
@@ -171,7 +172,7 @@ def create_slices_hierarchy(graph):
     nextNet.add_nodes_from(wired_net.nodes(data=True)) ## copy just the nodes
 
     # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
-    num_current_nodes=len(list(current_nodes))
+    num_current_nodes=len(nextNet.nodes())
 
     ## based on the total number of nodes remaining (after the previous slice), divide up how many can be in each slice by the # of slices
     ## note this means that the MAX change with full replacement will use up all the nodes.
@@ -185,15 +186,11 @@ def create_slices_hierarchy(graph):
         print "now on slice: ", ns
         child_nodes_from_previous_slice = list(nodeChildren)
         #print "these are the child nodes from the previous slice: ", child_nodes_from_previous_slice
-        ## remove 1 node at a time
-        for r in range(0,num_nodes_to_remove):
 
-            ## pick a node to remove from existing nodes in graph
-            chosen_node_to_remove = choice(nextNet.nodes())
-            original_child_of_value=nextNet.node[chosen_node_to_remove]['child_of']
-            ## now add the node and deal with child/gchild lists
-            ## if this is a child, we need to know what grandchildren need a new parent...
-            if chosen_node_to_remove == nodeRoot:
+        ## check to see if root is going to be swapped this slice or not based on a fixed probability
+
+        check_for_root_swap=random.random()
+        if check_for_root_swap < float(args.root_swap_probability):
                 # find a new node to be root
                 old_root = nodeRoot  ## temporarily keep the old_root
                 new_root = choice(list(possible_nodes))  ## get any valid node that is unchosen
@@ -209,9 +206,27 @@ def create_slices_hierarchy(graph):
                                 parent_node=old_root,
                                 appears_in_slice=ns)
                 nodeRoot=new_root
-                current_nodes.update([new_root])
+                current_nodes.update([new_root])            ## add to current _nodes
+                current_nodes.difference_update([old_root])  ## remove from current nodes
+                #print "swapping root ", old_root, " for new root: ", new_root
 
-                # dont do anything if node is the root.
+        ## create a set for choosing  nodes to remove from graph (w/root as a choice)
+        nodes_from_which_i_can_choose_without_root=set(nextNet.nodes())
+        nodes_from_which_i_can_choose_without_root.difference_update([nodeRoot])
+
+        ## remove 1 node at a time
+        #print "slice #: ", ns, "now going to remove ", num_nodes_to_remove, " nodes out of a graph of ", len(nextNet.nodes()), " nodes"
+        for r in range(0,int(num_nodes_to_remove)):
+            chosen_node_to_remove = choice(list(nodes_from_which_i_can_choose_without_root))
+            ## should only choose root *once* per slice (not over and over)
+            original_child_of_value=nextNet.node[chosen_node_to_remove]['child_of']
+            nodes_from_which_i_can_choose_without_root.difference_update([chosen_node_to_remove])
+            ## now add the node and deal with child/gchild lists
+            ## if this is a child, we need to know what grandchildren need a new parent...
+            if chosen_node_to_remove == nodeRoot:
+                print "ruh roh! root shouldnt be on this list!!"
+                exit()  ## this should *NEVER* be the case
+
             else:
                 if nextNet.node[chosen_node_to_remove]['level'] == "child":
                     nodeChildren.difference_update([chosen_node_to_remove])
@@ -231,11 +246,12 @@ def create_slices_hierarchy(graph):
                                 xcoord=nodeX[new_node_to_add],
                                 ycoord=nodeY[new_node_to_add],
                                 level="child",
-                                child_of=original_child_of_value,
+                                child_of=nodeRoot,
                                 parent_node=nodeRoot,
                                 appears_in_slice=ns)
                     #print "adding child node: ", new_node_to_add
                     current_nodes.update([new_node_to_add])
+                    current_nodes.difference_update([chosen_node_to_remove])
 
                 else:  ## must be grandkid
                     new_node_to_add = choice(list(possible_nodes))
