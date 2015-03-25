@@ -195,7 +195,7 @@ def create_slices_hierarchy(graph):
                 old_root = nodeRoot  ## temporarily keep the old_root
                 new_root = choice(list(possible_nodes))  ## get any valid node that is unchosen
                 possible_nodes.difference_update([new_root]) ## get rid of this node from pool of choices
-                valid_parent_list.update([old_root])  ## place the node into the list of nodes that can be parents
+                valid_parent_list.update([old_root])   ## place the node into the list of nodes that can be parents
                 valid_parent_list.update([new_root])   ## place the new node into the list of nodes that can be parents
                 nextNet.add_node(new_root,
                                 label=new_root,
@@ -225,7 +225,7 @@ def create_slices_hierarchy(graph):
             ## if this is a child, we need to know what grandchildren need a new parent...
             if chosen_node_to_remove == nodeRoot:
                 print "ruh roh! root shouldnt be on this list!!"
-                exit()  ## this should *NEVER* be the case
+                exit()  ## this should *NEVER* be the case. If so, something is logically wrong. Stop. Figure it out.
 
             else:
                 if nextNet.node[chosen_node_to_remove]['level'] == "child":
@@ -234,7 +234,7 @@ def create_slices_hierarchy(graph):
                     listOfAbandonedGchildren=nodeGrandchildren[chosen_node_to_remove]
                     new_node_to_add = choice(list(possible_nodes))
 
-                    possible_nodes.update([new_node_to_add])
+                    possible_nodes.difference_update([new_node_to_add])
 
                     ## set this node as the parent of the grandchildren...
                     nodeGrandchildren[new_node_to_add]=listOfAbandonedGchildren
@@ -295,9 +295,6 @@ def create_slices_hierarchy(graph):
         wired_net = wire_hierarchy(nextNet)
         for unlinked_node in nx.isolates(wired_net):
             wired_net.remove_node(unlinked_node)
-
-        #print "checking nodes... (3)"
-
 
         valid_parent_list.update(set(child_nodes_from_previous_slice))
 
