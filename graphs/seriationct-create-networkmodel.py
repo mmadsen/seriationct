@@ -329,7 +329,8 @@ def create_slices_minmax(graph):
                         xcoord=nodeX[chosen_node],
                         ycoord=nodeY[chosen_node],
                         level=None,
-                        parent_node="initial") # add node
+                        parent_node="initial",
+                        appears_in_slice=1) # add node
         current_nodes.update([chosen_node])
 
     wired_net=wire_networks(newnet)
@@ -351,36 +352,45 @@ def create_slices_minmax(graph):
     ## now create T+1, T+2, ... T+args.slices slices
     for ns in range(1,int(args.slices)):
 
-
         possible_parent_nodes = set(nextNet.nodes()) ## this list of possible parents (current set)
+
         ## remove 1 node at a time
         print "going to review ", num_nodes_to_remove, " nodes from graph with ", len(nextNet.nodes()), " nodes "
 
-        sample_of_nodes = random.sample(nextNet.nodes(), num_nodes_to_remove)
-        for chosen_node_to_remove in sample_of_nodes:
-
+        sample_of_nodes_to_remove = random.sample(nextNet.nodes(), num_nodes_to_remove)
+        for chosen_node_to_remove in sample_of_nodes_to_remove:
             possible_nodes.difference_update([chosen_node_to_remove]) ## remove this from possible choices
             chosen_node = random.choice(list(possible_nodes))
-            parent_node = choice(possible_parent_nodes)
+
+            ## pick a parent - it can be any node from the previous slice
+            parent_node = choice(list(possible_parent_nodes))
+
+            ## remove node from current graph
+            nextNet.remove_node(chosen_node_to_remove)
+
+            #print "removing node: ", chosen_node_to_remove, " adding node: ", chosen_node
             nextNet.add_node(chosen_node,
                         label=chosen_node,
                         xcoord=nodeX[chosen_node],
                         ycoord=nodeY[chosen_node],
-                        parent_node=parent_node )
+                        parent_node=parent_node,
+                        appears_in_slice=ns)
 
             current_nodes.update([chosen_node])  ## maintain the list of what's currently listed in the nodes
-            ## remove node from current graph
-            nextNet.remove_node(chosen_node_to_remove)
+
+
             ## remove from list of nodes that are currently linked
             current_nodes.difference_update([chosen_node_to_remove])
 
         ## now wire the network
-        wired_net = wire_networks(nextNet)
+        wired_net = createMinMaxGraphByWeight(input_graph=nextNet, weight='weight')
+
+        for unlinked_node in nx.isolates(wired_net):
+            wired_net.remove_node(unlinked_node)
+
         parents = nx.get_node_attributes(wired_net, 'parent_node')
         ## find the node that is closest.
 
-        #listOfWeights=nx.get_get_attributes(wired_net,'weight')
-        #closestNode = min(listOfWeights, key=listOfWeights.get)
         for n in wired_net.nodes():
             try:
                 test=parents[n];
@@ -389,8 +399,7 @@ def create_slices_minmax(graph):
                 temp_set.difference_update([n])     ## remove this from options (cant be own parent)
                 wired_net.node[n]['parent_node']=choice(list(temp_set))
                 ## now we need to update the edges -- so that the new node is in the right grou
-
-        slices.append(wired_net.copy())  ## note these are just nodes, not edges yet. (next step)
+        slices.append(wired_net.copy())
 
     return slices
 
@@ -488,7 +497,7 @@ def save_slices(wired_slices):
     n=0
     for sl in wired_slices:
         n += 1
-        nx.write_gml(sl, args.filename+"-"+str(n)+".gml")
+        nx.write_gml(sl, args.filename+"-"+str(n).zfill(3)+".gml")
 
 def saveGraph(graph):
     nx.write_gml(graph, args.filename+".gml")
@@ -818,7 +827,7 @@ def createMinMaxGraphByWeight( **kwargs):
     sumDistance = calc_sum_distance(input_graph)
 
     #first create a graph that is complete
-    new_graph = createCompleteGraphByDistance(input_graph=input_graph, weight='weight')
+    new_graph = createCompleteGraphByDistance(input_graph=input_graph.copy(), weight='weight')
 
     output_graph = nx.Graph(is_directed=False)
     output_graph.add_nodes_from(input_graph.nodes(data=True)) ## copy just the nodes
@@ -859,7 +868,8 @@ def createMinMaxGraphByWeight( **kwargs):
     outdeg = output_graph.degree()
     to_remove = [n for n in outdeg if outdeg[n] < 1]
     input_graph.remove_nodes_from(to_remove)
-    return output_graph
+
+    return output_graph.copy()
 
 def calculate_distance(x1,y1,x2,y2):
     return math.sqrt((int(x1)-int(x2))**2 + (int(y1)-int(y2))**2)
@@ -881,7 +891,7 @@ def get_attribute_from_edge(graph, edgename, attribute):
 
 def create_movie():
     filename = args.filename+".mp4"
-    slicename = args.filename + "Slice-%d.png"
+    slicename = args.filename + "-Slice-00%d.png"
     cmd = "ffmpeg -f image2 -r 1/5 -i " + slicename + " -vcodec mpeg4 -y "
     cmd += filename
     os.system(cmd)
@@ -895,7 +905,7 @@ def plot_slice(slice):
         pos[label]=(x,y)
 
     nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False )
-    title=args.filename + "Slice-"+str(i)
+    title=args.filename + "-Slice-"+str(i).zfill(3)
     plt.title(title)
     plt.axis('equal')
     i+=1
@@ -914,14 +924,14 @@ def plot_slices(wired_slices):
             y = get_attribute_from_node(label,'ycoord')
             pos[label]=(y,x)
         nx.draw_networkx(slice,pos,node_size=20,node_color='red', with_labels=False, ax=ax)
-        title=args.filename + "Slice-"+str(i)
+        title=args.filename + "-Slice-"+str(i).zfill(3)
         plt.title(title)
         plt.axis('equal')
         i+=1
         plt.savefig(title+".png", dpi=250)
         if args.graphshow == 1:
             plt.show()
-
+        plt.close()
 if __name__ == "__main__":
 
     graph = setup()
