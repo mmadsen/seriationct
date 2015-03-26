@@ -426,22 +426,15 @@ def create_slices_random(graph):
     possible_nodes = set(list(graph.nodes()))
     possible_nodes.difference_update([nodeRoot])# remove Root from nodes that can change
 
-    for node in range(0,number_per_slice):   # select N number of nodes
-        list_of_nodes = list(possible_nodes)
-        #print list_of_nodes
+    sample_of_nodes_to_use = random.sample(graph.nodes(), number_per_slice)
+    for chosen_node in sample_of_nodes_to_use:
+        possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
+        newnet.add_node(chosen_node,label=chosen_node,
+                        xcoord=nodeX[chosen_node],
+                        ycoord=nodeY[chosen_node],
+                        parent_node="initial",level=None) # add node
+        current_nodes.update([chosen_node])
 
-        random_selection =random.randint(1,len(list_of_nodes))
-        try:
-            chosen_node = list_of_nodes[random_selection]  # pick a random node from the list of possibilities (all)
-
-            possible_nodes.difference_update([chosen_node])     # remove the  node from the possible choices
-            newnet.add_node(chosen_node,label=chosen_node,
-                            xcoord=nodeX[chosen_node],
-                            ycoord=nodeY[chosen_node],
-                            parent_node="initial",level=None) # add node
-            current_nodes.update([chosen_node])
-        except:
-            pass# update set of possible nodes
 
     wired_net=wire_networks(newnet)
     plot_slice(wired_net)
@@ -454,47 +447,46 @@ def create_slices_random(graph):
         # now we want to use a % of the nodes from the previous slice -- and remove the result. New ones drawn from the original pool.
         num_current_nodes=len(list(current_nodes))
         num_nodes_to_remove= int(float(num_current_nodes) * (1-float(args.overlap)))# nodes to remove
+        ## set parents before
+        possible_parent_nodes = set(newnet.nodes())
 
-        for r in range(0,num_nodes_to_remove):
-            chosen_node_to_remove = choice(newnet.nodes())
-            possible_parent_nodes = set(newnet.nodes()) ## this list of possible parents is going to have all
-                 ##  the old nodes minus the ones that are removed (but no new ones)
+        sample_of_nodes_to_remove = random.sample(newnet.nodes(), number_per_slice)
+        for chosen_node_to_remove in sample_of_nodes_to_remove:
             nodes_to_delete.append(chosen_node_to_remove)
             possible_nodes.difference_update([chosen_node_to_remove])
             current_nodes.difference_update([chosen_node_to_remove])
-        num_nodes_to_add = num_nodes_to_remove
+            chosen_node_to_add = choice(list(possible_nodes))
+            possible_nodes.difference_update([chosen_node])
 
-        for r in range(0,num_nodes_to_add):
-            chosen_node = choice(list(possible_nodes))
-            possible_nodes.difference_update(chosen_node)
+            new_parent = choice(list(possible_parent_nodes))
+            slices[ns].add_node(chosen_node_to_add,label=chosen_node_to_add,
+                                xcoord=nodeX[chosen_node_to_add],
+                                ycoord=nodeY[chosen_node_to_add],
+                                parent_node=new_parent,
+                                appears_in_slice=ns)
 
-            temp_set = possible_parent_nodes
-            temp_set.difference_update([chosen_node])
-            slices[ns].add_node(chosen_node,label=chosen_node,
-                                xcoord=nodeX[chosen_node],
-                                ycoord=nodeY[chosen_node],
-                                parent_node=choice(list(temp_set)) )
             ## we need to link the new node back into the edges that already existed
-            old_node=nodes_to_delete[r]
-            edges=slices[ns].edges(old_node)
+
+            edges=slices[ns].edges(chosen_node_to_remove)
             for fnode,tnode in edges:
                 key1=chosen_node+"*"+tnode
                 weight=random.random()
-                distance=calculate_distance(nodeX[chosen_node],
-                                            nodeY[chosen_node],
+                distance=calculate_distance(nodeX[chosen_node_to_add],
+                                            nodeY[chosen_node_to_add],
                                             nodeX[tnode],
                                             nodeY[tnode])
-                slices[ns].add_edge(chosen_node, tnode,name=key1,
+                slices[ns].add_edge(chosen_node_to_add, tnode,name=key1,
                         unnormalized_weight=weight,
                         from_node=chosen_node,
                         to_node=tnode,
                         distance=distance,
                         weight=weight)
             try:
-                slices[ns].remove_node(old_node)
+                slices[ns].remove_node(chosen_node_to_remove)
             except:
                 pass
             current_nodes.update([chosen_node])
+
             for unlinked_node in nx.isolates(slices[ns]):
                 slices[ns].remove_node(unlinked_node)
     return slices
