@@ -15,6 +15,8 @@ import logging as log
 import zipfile
 import networkx as nx
 import os
+from decimal import *
+from re import compile
 import pprint as pp
 
 
@@ -49,6 +51,15 @@ def setup():
 
 """
 
+def remove_exponent(d):
+    '''Remove exponent and trailing zeros.  Used to ensure that we don't have
+    scientific notation in node or edge attributes when we write the GML
+
+    >>> remove_exponent(Decimal('5E+3'))
+    Decimal('5000')
+
+    '''
+    return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
 
 def get_node_for_key(name, key, graph):
     """
@@ -60,6 +71,57 @@ def get_node_for_key(name, key, graph):
         if graph.node[n][key] == name:
             return n
     return None
+
+
+
+def read_gml_and_normalize_floats(file):
+    """
+    Read a GML file line by line, looking for scientific notation
+    and when found, normalize it using the Decimal library.
+    Then pass the lines of text to networkx parse_gml to
+    parse it.  This is a drop-in replacement for read_gml()
+    """
+    exp_regex = compile(r"(\d+(\.\d+)?)[Ee](\+|-)(\d+)")
+
+    input_lines = []
+
+    with open(file, 'rb') as gmlfile:
+        for line in gmlfile:
+            result = exp_regex.search(line)
+            if result is not None:
+                matched_value = result.group(0)
+                replacement = str(remove_exponent(Decimal(float(matched_value))))
+                line = line.replace(matched_value, replacement)
+                log.debug("Replacing %s with %s", matched_value, replacement)
+
+            input_lines.append(line)
+
+    return nx.parse_gml(input_lines)
+
+
+def parse_gml_and_normalize_floats(slice_lines):
+    """
+    Read a slice GML line by line, looking for scientific notation
+    and when found, normalize it using the Decimal library.
+    Then pass the lines of text to networkx parse_gml to
+    parse it.  This is a drop-in replacement for read_gml()
+    """
+    exp_regex = compile(r"(\d+(\.\d+)?)[Ee](\+|-)(\d+)")
+
+    input_lines = []
+
+
+    for line in slice_lines:
+        result = exp_regex.search(line)
+        if result is not None:
+            matched_value = result.group(0)
+            replacement = str(remove_exponent(Decimal(float(matched_value))))
+            line = line.replace(matched_value, replacement)
+            log.debug("Replacing %s with %s", matched_value, replacement)
+
+        input_lines.append(line)
+
+    return nx.parse_gml(input_lines)
 
 
 def copy_attributes_to_minmax(g_slice = None, g_mm = None):
@@ -102,7 +164,7 @@ if __name__ == "__main__":
     log.info("Processing input %s to output %s", input_basename, output_filename)
 
     # read the minmax input file
-    mm = nx.read_gml(args.inputfile)
+    mm = read_gml_and_normalize_floats(args.inputfile)
 
     # parse the slices in the networkmodel
     zf = zipfile.ZipFile(args.networkmodel, 'r')
@@ -111,7 +173,7 @@ if __name__ == "__main__":
             pass
         else:
             gml = zf.read(file)
-            slice = nx.parse_gml(gml)
+            slice = parse_gml_and_normalize_floats(gml)
 
             copy_attributes_to_minmax(g_slice = slice, g_mm = mm)
 
