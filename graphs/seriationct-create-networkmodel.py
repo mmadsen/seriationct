@@ -333,7 +333,10 @@ def create_slices_minmax(graph):
                         appears_in_slice=1) # add node
         current_nodes.update([chosen_node])
 
-    wired_net=wire_networks(newnet)
+    if args.wiring=='complete':
+        wired_net = createCompleteGraphByDistance(input_graph=newnet, weight='weight')
+    else:
+        wired_net = createMinMaxGraphByWeight(input_graph=newnet, weight='weight')
 
     slices.append(wired_net.copy())
 
@@ -383,7 +386,10 @@ def create_slices_minmax(graph):
             current_nodes.difference_update([chosen_node_to_remove])
 
         ## now wire the network
-        wired_net = createMinMaxGraphByWeight(input_graph=nextNet, weight='weight')
+        if args.wiring=='complete':
+            wired_net = createCompleteGraphByDistance(input_graph=nextNet, weight='weight')
+        else:
+            wired_net = createMinMaxGraphByWeight(input_graph=nextNet, weight='weight')
 
         for unlinked_node in nx.isolates(wired_net):
             wired_net.remove_node(unlinked_node)
@@ -795,6 +801,7 @@ def wire_hierarchy(graph):
 
 def createCompleteGraphByDistance( **kwargs ):
     global edgeDistance
+    edgeDistance={}
     graph=kwargs.get('input_graph')
     weight=kwargs.get('weight')
     nodes = graph.nodes()
