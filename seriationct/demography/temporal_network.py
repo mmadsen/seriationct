@@ -120,7 +120,7 @@ class TemporalNetwork(object):
             gml = zf.read(file)
             slice = nx.parse_gml(gml)
             #log.debug("slice nodes: %s", '|'.join(sorted(slice.nodes())))
-            self.network_slices[file_number] = slice
+            self.network_slices[int(file_number)] = slice
 
 
 
@@ -264,10 +264,10 @@ class TemporalNetwork(object):
         #log.debug("current sliceid: %s", current_sliceid)
 
         # handle the case where we're on the first slice
-        if current_sliceid == '1':
-            sliceid = '1'
+        if current_sliceid == 1:
+            sliceid = 1
         else:
-            sliceid = str(int(current_sliceid) - 1)
+            sliceid = current_sliceid - 1
 
         #log.debug("previous slice id for requested time %s is: %s", time, sliceid)
         return sliceid
