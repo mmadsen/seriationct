@@ -444,7 +444,6 @@ def create_slices_random(graph):
             pass# update set of possible nodes
 
     wired_net=wire_networks(newnet)
-    print "first slice!"
     plot_slice(wired_net)
     slices.append(wired_net)
 
@@ -496,6 +495,8 @@ def create_slices_random(graph):
             except:
                 pass
             current_nodes.update([chosen_node])
+            for unlinked_node in nx.isolates(slices[ns]):
+                slices[ns].remove_node(unlinked_node)
     return slices
 
 
