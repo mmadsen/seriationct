@@ -28,6 +28,7 @@ def setup():
     parser.add_argument("--networkmodel", help="path to ZIP format network model containing GML slices", required=True)
     parser.add_argument("--inputfile", help="path to GML version of minmax seriation output file", required=True)
     parser.add_argument("--modeltype", choices=['hierarchy', 'other'], required=True, default='other')
+    parser.add_argument("--experiment", help="Experiment name, used to label graphics", required=True)
     #parser.add_argument("--")
 
     args = parser.parse_args()
@@ -70,7 +71,7 @@ def get_node_for_key(name, key, graph):
     for attribute "key", or None if there is no match
     """
     for n in graph.nodes():
-        log.debug("graph node: %s", graph.node[n])
+        #log.debug("graph node: %s", graph.node[n])
         if graph.node[n][key] == name:
             return n
     return None
@@ -95,7 +96,7 @@ def read_gml_and_normalize_floats(file):
                 matched_value = result.group(0)
                 replacement = str(remove_exponent(Decimal(float(matched_value))))
                 line = line.replace(matched_value, replacement)
-                log.debug("Replacing %s with %s", matched_value, replacement)
+                #log.debug("Replacing %s with %s", matched_value, replacement)
 
             input_lines.append(line)
 
@@ -120,7 +121,7 @@ def parse_gml_and_normalize_floats(slice_lines):
             matched_value = result.group(0)
             replacement = str(remove_exponent(Decimal(float(matched_value))))
             line = line.replace(matched_value, replacement)
-            log.debug("Replacing %s with %s", matched_value, replacement)
+            #log.debug("Replacing %s with %s", matched_value, replacement)
 
         input_lines.append(line)
 
@@ -138,7 +139,7 @@ def copy_attributes_to_minmax(g_slice = None, g_mm = None):
     log.debug("mm nodes: %s", g_mm.nodes())
 
     for slice_node in g_slice.nodes():
-        log.debug("slice node: %s", g_slice.node[slice_node])
+        #log.debug("slice node: %s", g_slice.node[slice_node])
 
         mm_node_id = get_node_for_key(slice_node, "name", g_mm)
 
@@ -154,7 +155,7 @@ def copy_attributes_to_minmax(g_slice = None, g_mm = None):
             g_mm.node[mm_node_id]['child_of'] = g_slice.node[slice_node]['child_of']
             g_mm.node[mm_node_id]['parent_node'] = g_slice.node[slice_node]['parent_node']
 
-        log.debug("annotated: %s", g_mm.node[mm_node_id])
+        #log.debug("annotated: %s", g_mm.node[mm_node_id])
 
 
 def get_hierarchy_level_annotated_graphviz(input_graph, scheme):
@@ -256,6 +257,7 @@ def get_nonhierarchical__annotated_graphviz(input_graph):
         slice_ids.add(g.node[node]['appears_in_slice'])
 
     num_slices = len(slice_ids)
+    slice_max = max(list(slice_ids))
 
     if num_slices > 9:
         log.error("More slices than colors in the scheme list!!!")
@@ -264,10 +266,10 @@ def get_nonhierarchical__annotated_graphviz(input_graph):
         log.info("Less slices than colors in the scheme, using pubu3")
 
     scheme = base_color_scheme
-    scheme += str(len(slice_ids))
+    scheme += str(slice_max)
 
-    x = range(1,num_slices+1)
-    y = reversed(range(1,num_slices+1))
+    x = range(1,slice_max+1)
+    y = reversed(range(1,slice_max+1))
 
     color_map = dict(zip(x,y))
     log.debug("x: %s", x)
@@ -300,10 +302,27 @@ def get_nonhierarchical__annotated_graphviz(input_graph):
     return g
 
 
+def get_graphics_title(filename):
+    import re
+
+    occur = 6  # get the UUID and the replication number
+
+    indices = [x.start() for x in re.finditer("-", filename)]
+    print indices
+    uuid_part = filename[0:indices[occur-1]]
+    rest = filename[indices[occur-1]+1:]
+
+    title = args.experiment
+    title += "-"
+    title += uuid_part
+    title += "-minmax"
+
+    return title
 
 
 
-def write_ordered_dot(N,path,name=None):
+
+def write_ordered_dot(N,path,name="minmax seriation graph"):
     """Write NetworkX graph G to Graphviz dot format on path.
 
     Path can be a string or a file handle.
@@ -313,14 +332,16 @@ def write_ordered_dot(N,path,name=None):
     except ImportError:
         raise ImportError("write_dot() requires pydot",
                           "http://code.google.com/p/pydot/")
-    P=generate_ordered_dot(N, name)
 
-    title_string = "\nlabelloc=\'t\';label=\'%s\';}\n" % name
+    title = get_graphics_title(name)
+
+    log.debug("Plot title: %s", title)
+
+    P=generate_ordered_dot(N, title)
+
 
     p = P.to_string();
-    # p2 = re.sub("\n\}\n", "", p)
-    # p2 += "\nlabelloc=\"t\";\n"
-    # p2 += "label=\"%s\";\n}\n" % name
+
 
     with open(path, 'wb') as pathfile:
         pathfile.write(p)
@@ -455,7 +476,7 @@ if __name__ == "__main__":
         dot_filename = input_path + '/' + root + "-annotated-chronological.dot"
         png_filename = input_path + '/' + root + "-annotated-chronological.png"
 
-    write_ordered_dot(gv_annotated, dot_filename)
+    write_ordered_dot(gv_annotated, dot_filename, name=root)
 
     cmd = "neato -Tpng "
     cmd += dot_filename
