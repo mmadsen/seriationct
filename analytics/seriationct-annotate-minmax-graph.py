@@ -308,14 +308,14 @@ def get_graphics_title(filename):
     occur = 6  # get the UUID and the replication number
 
     indices = [x.start() for x in re.finditer("-", filename)]
-    print indices
     uuid_part = filename[0:indices[occur-1]]
     rest = filename[indices[occur-1]+1:]
 
     title = args.experiment
     title += "-"
     title += uuid_part
-    title += "-minmax"
+    title += "-minmax-"
+    title += args.modeltype
 
     return title
 
@@ -369,10 +369,10 @@ def generate_ordered_dot(N, name=None):
 
     node_attrs = dict()
     node_attrs["shape"] = "circle"
-    node_attrs["width"] = "0.3"
-    node_attrs["height"] = "0.3"
+    node_attrs["width"] = "0.75"
+    node_attrs["height"] = "0.75"
     node_attrs["label"] = ""
-    #node_attrs["fixedsize"] = "true"
+    node_attrs["fixedsize"] = "true"
     node_attrs["style"] = "filled"
 
     graph_defaults=N.graph.get('graph',{})
