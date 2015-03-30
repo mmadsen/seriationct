@@ -239,7 +239,17 @@ def generate_sequential_slices(num_slices, num_clusters, num_nodes_cluster, dens
 
 
 
-
+def generate_xyrows_for_slice(s_g):
+    rows = []
+    for n,d in s_g.nodes_iter(data=True):
+        row = s_g.node[n]['label']
+        row += '\t'
+        row += s_g.node[n]['xcoord']
+        row += '\t'
+        row += s_g.node[n]['ycoord']
+        row += '\n'
+        rows.append(row)
+    return rows
 
 
 
@@ -257,10 +267,28 @@ if __name__ == "__main__":
     basename += "/"
     basename += args.experiment
     basename += "-"
+
+    xyheader = "assemblage\teasting\tnorthing\n"
+    xyrows = []
+
     for i in range(1, args.slices + 1):
         slice = slicemap[i]
+
+        xyrows.extend(generate_xyrows_for_slice(slice))
+
         filename = basename
         filename += str(i).zfill(3)
         filename += ".gml"
         nx.write_gml(slice, filename)
+
+    xybasename = args.outputdirectory
+    xybasename += "/"
+    xybasename += args.experiment
+    xybasename += 'XY.txt'
+
+    with open(xybasename, 'wb') as xyfile:
+        xyfile.write(xyheader)
+        for row in xyrows:
+            xyfile.write(row)
+
 

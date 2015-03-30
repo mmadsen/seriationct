@@ -150,6 +150,13 @@ def copy_attributes_to_minmax(g_slice = None, g_mm = None):
             continue
 
         g_mm.node[mm_node_id]['appears_in_slice'] = g_slice.node[slice_node]['appears_in_slice']
+
+        # if the cluster_id attribute exists (meaning, new network creation scripts), copy it
+        # but do not cause problems if the old program is in use.
+        
+        cluster = g_slice.node[slice_node]['cluster_id']
+        if cluster is not None:
+            g_mm.node[mm_node_id]['cluster_id'] = cluster
         if args.modeltype == 'hierarchy':
             g_mm.node[mm_node_id]['level'] = g_slice.node[slice_node]['level']
             g_mm.node[mm_node_id]['child_of'] = g_slice.node[slice_node]['child_of']
