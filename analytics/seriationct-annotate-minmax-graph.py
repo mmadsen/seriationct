@@ -317,7 +317,7 @@ def get_clustered_annotated_graphviz(input_graph):
     """
 
     # base scheme has color sets from 3 to 9
-    base_color_scheme = 'gnbu'
+    base_color_scheme = 'accent'
 
 
         # make a copy so we don't touch the original graph, we'll return a new one
@@ -330,12 +330,12 @@ def get_clustered_annotated_graphviz(input_graph):
     # figure out penwidth scaling
     slice_ids = set()
     for node, data in g.nodes_iter(data=True):
-        slice_ids.add(g.node[node]['appears_in_slice'])
+        slice_ids.add(int(g.node[node]['appears_in_slice']))
 
     num_slices = len(slice_ids)
     slice_max = max(list(slice_ids))
 
-    if num_slices > 9:
+    if num_slices > 8:
         log.error("More slices than colors in the scheme list!!!")
 
     if num_slices < 3:
@@ -345,7 +345,7 @@ def get_clustered_annotated_graphviz(input_graph):
     scheme += str(slice_max)
 
     # no need to reverse since we're not using color for chronology
-    x = range(1,slice_max+1)
+    x = range(0,slice_max)
     y = range(1,slice_max+1)
 
     color_map = dict(zip(x,y))

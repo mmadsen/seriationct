@@ -33,6 +33,8 @@ def setup():
     parser.add_argument("--centroidmin", type=int, help="minimum X and Y for random cluster centroids", default=50)
     parser.add_argument("--centroidmax", type=int, help="maximum X and Y for random cluster centroids", default=400)
     parser.add_argument("--clusterspread", type=float, help="std deviation around cluster centroid for locating cluster nodes", default=10.0)
+    parser.add_argument("--intercluster_edgeweight", type=float, help="weight assigned to edges which span two clusters", default=1)
+    parser.add_argument("--intracluster_edgeweight", type=float, help="weight associated to edges which occur within a cluster", default=10)
 
     args = parser.parse_args()
 
@@ -75,7 +77,11 @@ def random_interconnect_clusters(full_g, clusters_to_connect, cluster_id_ranges,
     edge_list = zip(c1_nodes_chosen, c2_nodes_chosen)
     log.debug("Edges to construct: %s", edge_list)
     for new_edge in edge_list:
-        full_g.add_edge(*new_edge)  # *new_edge unpacks the tuple
+
+        full_g.add_edge(new_edge[0], new_edge[1],
+                        weight=args.intercluster_edgeweight,
+                        unnormalized_weight=args.intercluster_edgeweight,
+                        normalized_weight=args.intercluster_edgeweight)  # *new_edge unpacks the tuple
 
 def assign_spatial_locations_to_cluster(full_g, cluster_ids, x_centroid, y_centroid, sd_dist, cluster_id):
     """
@@ -119,7 +125,7 @@ def assign_node_distances(g):
         bx = int(g.node[b]['xcoord'])
         ay = int(g.node[a]['ycoord'])
         by = int(g.node[b]['ycoord'])
-        dist = math.sqrt(abs(by - ay) + abs(bx - ax))
+        dist = math.sqrt(pow(by - ay, 2) + pow(bx - ax, 2))
         d['distance'] = dist
 
 def generate_random_complete_clusters_with_interconnect(num_clusters, num_nodes_cluster,
@@ -137,7 +143,7 @@ def generate_random_complete_clusters_with_interconnect(num_clusters, num_nodes_
         g = nx.complete_graph(num_nodes_cluster)
         g = nx.convert_node_labels_to_integers(g, first_label=starting_id)
 
-        assign_uniform_intracluster_weights(g, 0.5)
+        assign_uniform_intracluster_weights(g, args.intracluster_edgeweight)
 
         clusters.append(g)
         cluster_ids = range(starting_id, starting_id + num_nodes_cluster)
