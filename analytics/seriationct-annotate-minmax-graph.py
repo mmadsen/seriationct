@@ -344,8 +344,9 @@ def get_clustered_annotated_graphviz(input_graph):
     scheme = base_color_scheme
     scheme += str(slice_max)
 
+    # no need to reverse since we're not using color for chronology
     x = range(1,slice_max+1)
-    y = reversed(range(1,slice_max+1))
+    y = range(1,slice_max+1)
 
     color_map = dict(zip(x,y))
     log.debug("x: %s", x)
@@ -383,7 +384,7 @@ def get_clustered_annotated_graphviz(input_graph):
 def get_graphics_title(filename):
     import re
 
-    occur = 6  # get the UUID and the replication number
+    occur = 6  # get the UUID and the replication number, so sixth occurrence of "-"
 
     indices = [x.start() for x in re.finditer("-", filename)]
     uuid_part = filename[0:indices[occur-1]]
