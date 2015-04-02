@@ -88,7 +88,7 @@ def calc_frequency_array(count_arr):
         freq_arr[row_idx] = [float(n)/float(total) for n in count_row.tolist()]
 
     # remove frequencies < 1e-04, or 0.0001
-    #freq_arr[freq_arr < args.dropthreshold] = 0.0
+    freq_arr[freq_arr < args.dropthreshold] = 0.0
 
     return freq_arr
 
