@@ -118,7 +118,8 @@ def main():
     initial_distribution = pypopgen.constructUniformAllelicDistribution(config.maxinittraits)
     log.debug("Initial allelic distribution (for each locus): %s", initial_distribution)
 
-    innovation_rate = pypopgen.wf_mutation_rate_from_theta(config.popsize, config.innovrate)
+    #innovation_rate = pypopgen.wf_mutation_rate_from_theta(config.popsize, config.innovrate)
+    innovation_rate = float(config.innovrate)
     log.debug("Per-locus innov rate within populations: %s", innovation_rate)
 
 

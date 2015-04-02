@@ -14,6 +14,7 @@ import logging as log
 import os
 import fnmatch
 import numpy as np
+from decimal import *
 
 
 def setup():
@@ -73,11 +74,21 @@ def read_unsampled_file(filename):
 
 def calc_frequency_array(count_arr):
     #log.debug("count_arr: %s", count_arr)
-    row_sums = np.sum(count_arr, axis=1)
-    freq_arr = (count_arr.T / row_sums).T
+    #row_sums = np.sum(count_arr, axis=1)
+    #freq_arr = (count_arr.T / row_sums).T
+
+
+    freq_arr = np.zeros(count_arr.shape)
+
+    for row_idx in range(0, count_arr.shape[0]):
+        count_row = count_arr[row_idx]
+
+        total = sum(count_row)
+        #log.debug("sum of freq in row %s: %s",row_idx, total)
+        freq_arr[row_idx] = [float(n)/float(total) for n in count_row.tolist()]
 
     # remove frequencies < 1e-04, or 0.0001
-    freq_arr[freq_arr < args.dropthreshold] = 0.0
+    #freq_arr[freq_arr < args.dropthreshold] = 0.0
 
     return freq_arr
 
@@ -87,6 +98,9 @@ def calc_frequency_array(count_arr):
 
 if __name__ == "__main__":
     setup()
+
+    getcontext().rounding = ROUND_DOWN
+    getcontext().prec = 4
 
     for file in os.listdir(args.inputdirectory):
         if fnmatch.fnmatch(file, '*.txt'):
@@ -98,22 +112,25 @@ if __name__ == "__main__":
 
             (assemblages, classes, count_arr) = read_unsampled_file(file)
 
+
             freq_arr = calc_frequency_array(count_arr)
 
             # First we sample the frequency array.  We then get rid of any resulting columns that have
             # all zeros -- these are classes which are unrepresented in any assemblage
             # then we write out the resulted reduced sample
 
-            sampled = np.zeros(freq_arr.shape)
+            sampled = np.zeros(count_arr.shape)
             for row_idx in range(0,freq_arr.shape[0]):
 
                 probs = freq_arr[row_idx]
-                log.debug("sum of all freq: %s", sum(probs))
+
+
+                #log.debug("probs: %s", probs)
                 sampled[row_idx] = np.random.multinomial(args.samplesize, probs, size=1)
-                log.debug("sampled: %s", sampled[row_idx])
+                #log.debug("sampled: %s", sampled[row_idx])
 
                 total_sample = sum(sampled[row_idx])
-                log.debug("sample size: %s  sample total: %s", args.samplesize, total_sample)
+                #log.debug("sample size: %s  sample total: %s", args.samplesize, total_sample)
 
             # find the nonzero columns in the result
             col_sum = np.sum(sampled, axis=0)

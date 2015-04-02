@@ -261,7 +261,7 @@ def get_nonhierarchical_oldstyle_annotated_graphviz(input_graph):
     # figure out penwidth scaling
     slice_ids = set()
     for node, data in g.nodes_iter(data=True):
-        slice_ids.add(g.node[node]['appears_in_slice'])
+        slice_ids.add(int(g.node[node]['appears_in_slice']))
 
     num_slices = len(slice_ids)
     slice_max = max(list(slice_ids))
