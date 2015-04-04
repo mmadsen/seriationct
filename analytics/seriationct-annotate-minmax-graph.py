@@ -157,6 +157,9 @@ def copy_attributes_to_minmax(g_slice = None, g_mm = None):
         cluster = g_slice.node[slice_node]['cluster_id']
         if cluster is not None:
             g_mm.node[mm_node_id]['cluster_id'] = cluster
+        lineage = g_slice.node[slice_node]['lineage_id']
+        if lineage is not None:
+            g_mm.node[mm_node_id]['lineage_id'] = lineage
         if args.modeltype == 'hierarchy':
             g_mm.node[mm_node_id]['level'] = g_slice.node[slice_node]['level']
             g_mm.node[mm_node_id]['child_of'] = g_slice.node[slice_node]['child_of']
