@@ -15,6 +15,7 @@ import networkx as nx
 import numpy as np
 import itertools
 import random
+import copy
 import math
 import os
 import fnmatch
@@ -132,6 +133,9 @@ def assign_node_distances(g):
         d['distance'] = dist
 
 
+
+
+
 def create_cluster_interconnect_schedule():
     """
     Given the type of model (lineage split, coalescence), and the number of clusters and lineages,
@@ -144,17 +148,19 @@ def create_cluster_interconnect_schedule():
     cluster_ids = range(0, args.numclusters)
     interconnect_schedule = dict()
     slice_ids = range(1, args.slices+1)
+    cluster_to_lineage_map = dict()
 
     # calculate how to break up the lineages
     lineage_list = dict()
-    for lineage in range(0,args.numlineages):
+    for lineage in range(1,args.numlineages+1):
         lineage_list[lineage] = []
     num_clusters_per_lineage = int(args.numclusters) / int(args.numlineages)
     # handle the integral number of clusters per lineage
-    for lineage in range(0,args.numlineages):
+    for lineage in range(1,args.numlineages+1):
         for i in range(0,num_clusters_per_lineage):
             cluster = cluster_ids.pop()
             lineage_list[lineage].append(cluster)
+            cluster_to_lineage_map[cluster] = lineage
     # handle the remainder if numclusters % numlineages != 0
     for i in range(0,len(cluster_ids)):
         lineage_list[i].append(cluster_ids.pop())
@@ -172,12 +178,12 @@ def create_cluster_interconnect_schedule():
                 interconnect_list = create_interconnect_tuples_from_clusterids(cluster_ids)
             else:
                 interconnect_list = []
-                for lineage in range(0,args.numlineages):
+                for lineage in range(1,args.numlineages+1):
                     interconnect_list.extend(create_interconnect_tuples_from_clusterids(lineage_list[lineage]))
         elif args.direction == 'coalesce':
             if slice < args.change_time:
                 interconnect_list = []
-                for lineage in range(0,args.numlineages):
+                for lineage in range(1,args.numlineages+1):
                     interconnect_list.extend(create_interconnect_tuples_from_clusterids(lineage_list[lineage]))
             else:
                 interconnect_list = create_interconnect_tuples_from_clusterids(cluster_ids)
@@ -186,7 +192,7 @@ def create_cluster_interconnect_schedule():
 
     log.debug("interconnect schedule: %s", interconnect_schedule)
 
-    return interconnect_schedule
+    return (interconnect_schedule,cluster_to_lineage_map)
 
 
 def create_interconnect_tuples_from_clusterids(clusterid_list):
@@ -291,19 +297,54 @@ def assign_random_parent_from_previous(s_g, prev_g, num_clusters):
         random_parent = random.choice(cluster_label_map[cluster])
         s_g.node[n]['parent_node'] = random_parent
 
+
+def label_nodes_with_lineage(slice_id, slice,cluster_to_lineage_map):
+    """
+    Assign a lineage label to each node based upon its existing cluster label,
+    previously assigned.  Depending upon the model type, assign the
+    initial unsplit root, or the coalesced condition, its own unique lineage label of zero
+    """
+    # map unique lineage ID to the root of the split, or the coalesced lineage
+    # depending upon model type.  Copy the cluster to lineage map because
+    # we're going to modify the copy.
+
+    cmap = copy.deepcopy(cluster_to_lineage_map)
+    if args.direction == 'split':
+        log.debug("labeling the initial slices as root of lineage with later split")
+        if slice_id < args.change_time:
+            for key in cmap.keys():
+                cmap[key] = 0
+    elif args.direction == 'coalesce':
+        log.debug("labeling the latest slices as root of lineage with initial split that coalesces")
+        if slice_id >= args.change_time:
+            for key in cmap.keys():
+                cmap[key] = 0
+
+    log.debug("cmap used for slice %s: %s", slice_id, cmap )
+
+    for n,d in slice.nodes_iter(data=True):
+        cid = int(slice.node[n]['cluster_id'])
+        slice.node[n]['lineage_id'] = str(cmap[cid])
+
+
 def generate_sequential_slices(num_slices, num_clusters, num_nodes_cluster, density_interconnect, centroid_range_tuple, cluster_spread):
     """
     Using generate_random_complete_clusters_with_interconnect, create num_slices graphs, designating one the initial slice
     """
     slice_map = dict()
 
-    interconnect_schedule = create_cluster_interconnect_schedule()
+    (interconnect_schedule,cluster_to_lineage_map) = create_cluster_interconnect_schedule()
+
+    log.debug("cluster to lineage: %s", cluster_to_lineage_map)
 
     for slice_id in range(1, num_slices+1):
         log.debug("creating slice %s", slice_id)
         s_g = generate_random_complete_clusters_with_interconnect(num_clusters, num_nodes_cluster,
                                                                   density_interconnect, centroid_range_tuple,
                                                                   cluster_spread, interconnect_schedule[slice_id])
+
+        label_nodes_with_lineage(slice_id, s_g,cluster_to_lineage_map)
+
         assign_to_slice(s_g,slice_id)
         slice_map[slice_id] = s_g
 

@@ -27,7 +27,7 @@ def setup():
     parser.add_argument("--debug", type=int, help="turn on debugging output")
     parser.add_argument("--networkmodel", help="path to ZIP format network model containing GML slices", required=True)
     parser.add_argument("--inputfile", help="path to GML version of minmax seriation output file", required=True)
-    parser.add_argument("--modeltype", choices=['hierarchy', 'other', 'clustered'], required=True, default='other')
+    parser.add_argument("--modeltype", choices=['hierarchy', 'other', 'clustered', 'lineage'], required=True, default='other')
     parser.add_argument("--experiment", help="Experiment name, used to label graphics", required=True)
     #parser.add_argument("--")
 
@@ -380,6 +380,87 @@ def get_clustered_annotated_graphviz(input_graph):
     return g
 
 
+def get_lineage_annotated_graphviz(input_graph):
+    """
+    Iterates over the nodes in a graph, annotating them for
+    origin time and duration.
+    """
+
+    # base scheme has color sets from 3 to 9
+    base_color_scheme = 'accent'
+
+    lineage_to_shape = dict()
+    lineage_to_shape[0] = 'circle'
+    lineage_to_shape[1] = 'square'
+    lineage_to_shape[2] = 'diamond'
+    lineage_to_shape[3] = 'parallelogram'
+    lineage_to_shape[4] = 'pentagon'
+
+
+
+        # make a copy so we don't touch the original graph, we'll return a new one
+    g = input_graph.copy()
+
+    # sometimes the "id" attribute is also the label, which we don't want for DOT production
+    g = nx.convert_node_labels_to_integers(g)
+
+
+    # figure out penwidth scaling
+    slice_ids = set()
+    for node, data in g.nodes_iter(data=True):
+        slice_ids.add(int(g.node[node]['appears_in_slice']))
+
+    num_slices = len(slice_ids)
+    slice_max = max(list(slice_ids))
+
+    if num_slices > 8:
+        log.error("More slices than colors in the scheme list!!!")
+
+    if num_slices < 3:
+        log.info("Less slices than colors in the scheme, using gnbu3")
+
+    scheme = base_color_scheme
+    scheme += str(slice_max)
+
+    # no need to reverse since we're not using color for chronology
+    x = range(0,slice_max)
+    y = range(1,slice_max+1)
+
+    color_map = dict(zip(x,y))
+    log.debug("x: %s", x)
+    log.debug("y: %s", y)
+    log.debug("color_map: %s", color_map)
+
+
+    max_slice = max(slice_ids)
+    max_penwidth = 6.0
+
+    # grandchildren might point their child_of attribute at a node which is not present
+    # in this minmax graph given that we're operating with a sample of assemblages.
+    # So when we find a child_of that's not represented in the
+    for node, data in g.nodes_iter(data=True):
+
+
+        lab = g.node[node]['label']
+        short_label = lab.replace('assemblage-','')
+        #del g.node[node]['label']
+        g.node[node]['short_label']= short_label
+
+        g.node[node]['colorscheme'] = scheme
+        #g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
+
+        g.node[node]['fillcolor'] = color_map[int(g.node[node]['cluster_id'])]
+        g.node[node]['shape'] = lineage_to_shape[int(g.node[node]['lineage_id'])]
+        g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
+
+    for node, data in g.nodes_iter(data=True):
+        g.node[node]['label'] = g.node[node]['short_label']
+
+    return g
+
+
+
+
 
 def get_graphics_title(filename):
     import re
@@ -558,6 +639,10 @@ if __name__ == "__main__":
         gv_annotated = get_clustered_annotated_graphviz(mm)
         dot_filename = input_path + '/' + root + "-clustered-annotated-chronological.dot"
         png_filename = input_path + '/' + root + "-clustered-annotated-chronological.png"
+    elif args.modeltype == 'lineage':
+        gv_annotated = get_lineage_annotated_graphviz(mm)
+        dot_filename = input_path + '/' + root + "-lineage-annotated-chronological.dot"
+        png_filename = input_path + '/' + root + "-lineage-annotated-chronological.png"
 
 
     write_ordered_dot(gv_annotated, dot_filename, name=root)
