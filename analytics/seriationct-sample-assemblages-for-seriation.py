@@ -34,6 +34,9 @@ def setup():
     parser.add_argument("--temporaldata", help="path to directory with temporal data files to match files in inputdirectory "
                                                "(required for temporal or spatiotemporal sampling")
     parser.add_argument("--temporalperiods", type=int, help="Number of temporal periods in which to stratify the sample", default=3)
+    parser.add_argument("--spatialquadrats", type=int, help="Number of blocks in the X and Y directions in which to stratify the sample", default=3)
+    parser.add_argument("--spatialdata", help="path to XY file of spatial coordinates for assemblages")
+    parser.add_argument("--maxsizespatial", type=int, help="Maximum size of spatial coordinates in X and Y directions", default=1100)
 
 
     args = parser.parse_args()
@@ -42,6 +45,9 @@ def setup():
         log.basicConfig(level=log.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
     else:
         log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+
+
+############################## utility methods ###########################
 
 
 def parse_filename_into_root(filename):
@@ -83,6 +89,101 @@ def read_unsampled_file(filename):
 
     return (header_str, row_list,assemblage_to_row)
 
+def build_regular_blocks(numblocks,max):
+    """
+    Construct block boundaries for use in spatial sampling.  The block
+    boundaries will be the same in the X and Y directions, forming numblocks
+    quadrats in the overall space.  The maximum space size is extended slightly to
+    account for the spread of nodes around centroids.
+    """
+    block_boundaries = []
+    block_width = float(max + 100) / float(numblocks)
+    lower_val = 0.0
+    upper_val = 0.0
+    for block in range(0, numblocks):
+        upper_val += block_width
+        block_boundaries.append((lower_val, upper_val))
+        lower_val = upper_val
+    #log.debug("boundaries: %s", block_boundaries)
+    return block_boundaries
+
+def split_list(a, n):
+    k, m = len(a) / n, len(a) % n
+    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in xrange(n))
+
+def read_temporal_data(temporal_path):
+    origin_map = dict()
+    origin_to_assemblages = defaultdict(list)
+    duration_map = dict()
+    with open(temporal_path, 'r') as tempcsv:
+        csvread = csv.reader(tempcsv, delimiter='\t')
+
+        header = csvread.next()
+
+        for row in csvread:
+            origin_map[row[0]] = int(row[1])
+            duration_map[row[0]] = int(row[2])
+            origin_to_assemblages[row[1]].append(row[0])
+
+    log.debug("origin_to_assemblages: %s", origin_to_assemblages)
+
+    return (origin_map,duration_map,origin_to_assemblages)
+
+
+def read_spatial_xyfile():
+    """
+    Read XY file of spatial coordinates for assemblages and return a dict where
+    the assemblage name is key, and the value is a tuple (x,y).  We use this
+    method because in real situations, the coordinates will not be part of the
+    assemblage names
+    """
+    assemblage_coordinates = dict()
+    with open(args.spatialdata, 'r') as xyfile:
+        csvread = csv.reader(xyfile, delimiter='\t')
+
+        header = csvread.next()
+
+        for row in csvread:
+            x = int(row[1])
+            y = int(row[2])
+            log.debug("x: %s y: %s", x,y)
+            assemblage_coordinates[row[0]] = (x,y)
+
+    log.debug("assemblage_coordinates: %s", assemblage_coordinates)
+
+    return assemblage_coordinates
+
+
+def get_quadrat_for_coordinates(coordinates, block_boundaries):
+    """
+    Given a tuple of x,y coordinates for an assemblage, returns a block ID
+    given the block boundaries
+    """
+    x = float(coordinates[0])
+    y = float(coordinates[1])
+
+    xblock = None
+    yblock = None
+
+    # calculate the block in the x and y directions
+    for i in range(0,len(block_boundaries)):
+        block = block_boundaries[i]
+        if block[0] <= x < block[1]:
+            xblock = i
+
+    for i in range(0,len(block_boundaries)):
+        block = block_boundaries[i]
+        if block[0] <= y < block[1]:
+            yblock = i
+
+
+    return (xblock,yblock)
+
+
+
+
+############################## sampling methods ###########################
+
 
 
 def random_sample_without_stratification(row_list):
@@ -102,15 +203,11 @@ def random_sample_without_stratification(row_list):
     return sampled_rows
 
 
-def split_list(a, n):
-    k, m = len(a) / n, len(a) % n
-    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in xrange(n))
-
 
 def random_temporal_sample(row_list, root, assemblage_to_row):
     """
     Takes a uniform random sample, stratified by splitting assemblages
-    into early and late.
+    into N periods.
     """
     uuid = get_uuid_from_root(root)
     temporal_file = uuid + "-assemblage-data.txt"
@@ -153,24 +250,57 @@ def random_temporal_sample(row_list, root, assemblage_to_row):
     return sampled_indices
 
 
+def random_spatial_sample(row_list, assemblage_to_row):
+    """
+    Takes a uniform random sample, stratified by splitting space into quadrats
+    with T blocks in the X and Y spatial directions.
+    """
+    coordinates_map = read_spatial_xyfile()
 
-def read_temporal_data(temporal_path):
-    origin_map = dict()
-    origin_to_assemblages = defaultdict(list)
-    duration_map = dict()
-    with open(temporal_path, 'r') as tempcsv:
-        csvread = csv.reader(tempcsv, delimiter='\t')
+    # build a list of tuples of the block boundaries
+    quadrat_boundaries = build_regular_blocks(args.spatialquadrats, args.maxsizespatial)
 
-        header = csvread.next()
+    log.debug("quadrat boundaries: %s", quadrat_boundaries)
 
-        for row in csvread:
-            origin_map[row[0]] = int(row[1])
-            duration_map[row[0]] = int(row[2])
-            origin_to_assemblages[row[1]].append(row[0])
+    num_blocks_each_direction = len(quadrat_boundaries)
 
-    log.debug("origin_to_assemblages: %s", origin_to_assemblages)
+    assemblages_by_quadrat = defaultdict(list)
 
-    return (origin_map,duration_map,origin_to_assemblages)
+    for row in row_list:
+        assemblage = row[0]
+        coord = coordinates_map[assemblage]
+        quadrat = get_quadrat_for_coordinates(coord,quadrat_boundaries)
+        assemblages_by_quadrat[quadrat].append(assemblage)
+
+    log.debug("assemblages by quadrat: %s", assemblages_by_quadrat)
+
+    # now we take an appropriate number of samples from each quadrat
+    num_samples = int(math.ceil(args.samplefraction * len(row_list)) / len(assemblages_by_quadrat))
+    log.debug("Number of assemblages sampled per quadrat: %s", num_samples)
+
+    sampled_assemblages = []
+    for quadrat_population in assemblages_by_quadrat.values():
+
+        log.debug("quadrat population: %s", quadrat_population)
+
+        num_assem_in_quadrat = len(quadrat_population)
+        if num_samples > num_assem_in_quadrat:
+            num_samples = num_assem_in_quadrat
+
+        quadrat_sample = random.sample(quadrat_population, num_samples)
+        log.debug("quadrat_sample: %s", quadrat_sample)
+        sampled_assemblages.extend(quadrat_sample)
+
+    sampled_indices = []
+    for assem in sampled_assemblages:
+        sampled_indices.append(assemblage_to_row[assem])
+
+    log.debug("sampled indices: %s", sampled_indices)
+    return sampled_indices
+
+
+
+
 
 
 
@@ -193,7 +323,7 @@ if __name__ == "__main__":
                 if args.sampletype == 'random':
                     sampled_rows = random_sample_without_stratification(row_list)
                 elif args.sampletype == 'spatial':
-                    pass
+                    sampled_rows = random_spatial_sample(row_list, assemblage_to_row)
                 elif args.sampletype == 'temporal':
                     sampled_rows = random_temporal_sample(row_list, root, assemblage_to_row)
                 elif args.sampletype == 'spatiotemporal':
