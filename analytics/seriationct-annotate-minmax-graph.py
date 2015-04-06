@@ -468,8 +468,7 @@ def get_lineage_annotated_graphviz(input_graph):
 def get_graphics_title(filename):
     import re
 
-    occur = 6  # get the UUID and the replication number, so sixth occurrence of "-"
-
+    occur = 13  # get the UUID and the full sampling scheme
     indices = [x.start() for x in re.finditer("-", filename)]
     uuid_part = filename[0:indices[occur-1]]
     rest = filename[indices[occur-1]+1:]
