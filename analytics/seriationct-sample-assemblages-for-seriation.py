@@ -125,7 +125,7 @@ def read_temporal_data(temporal_path):
             duration_map[row[0]] = int(row[2])
             origin_to_assemblages[row[1]].append(row[0])
 
-    log.debug("origin_to_assemblages: %s", origin_to_assemblages)
+    #log.debug("origin_to_assemblages: %s", origin_to_assemblages)
 
     return (origin_map,duration_map,origin_to_assemblages)
 
@@ -146,10 +146,10 @@ def read_spatial_xyfile():
         for row in csvread:
             x = int(row[1])
             y = int(row[2])
-            log.debug("x: %s y: %s", x,y)
+            #log.debug("x: %s y: %s", x,y)
             assemblage_coordinates[row[0]] = (x,y)
 
-    log.debug("assemblage_coordinates: %s", assemblage_coordinates)
+    #log.debug("assemblage_coordinates: %s", assemblage_coordinates)
 
     return assemblage_coordinates
 
@@ -299,8 +299,89 @@ def random_spatial_sample(row_list, assemblage_to_row):
     return sampled_indices
 
 
+def random_spatiotemporal_sample(row_list, assemblage_to_row):
+    """
+    Combines spatial and temporal sampling
+    """
+    log.debug("========== begin spatiotemporal sample ================")
+    uuid = get_uuid_from_root(root)
+    temporal_file = uuid + "-assemblage-data.txt"
+    temporal_path = args.temporaldata + "/" + temporal_file
+    log.debug("using temporal data: %s", temporal_path)
+
+    (origin_map,duration_map,origin_to_assemblages) = read_temporal_data(temporal_path)
+
+    #log.debug("origin_map: %s", origin_map)
+
+    times = set()
+    times.update(origin_map.values())
+    sorted_times = sorted(list(times))
+
+    period_lists = list(split_list(sorted_times, args.temporalperiods))
+
+    log.debug("Periods to stratify the temporal sample by: %s", period_lists)
 
 
+    coordinates_map = read_spatial_xyfile()
+
+    # build a list of tuples of the block boundaries
+    quadrat_boundaries = build_regular_blocks(args.spatialquadrats, args.maxsizespatial)
+
+    log.debug("quadrat boundaries: %s", quadrat_boundaries)
+
+    num_blocks_each_direction = len(quadrat_boundaries)
+
+    assemblages_by_quadrat = defaultdict(list)
+
+    for row in row_list:
+        assemblage = row[0]
+        coord = coordinates_map[assemblage]
+        quadrat = get_quadrat_for_coordinates(coord,quadrat_boundaries)
+        assemblages_by_quadrat[quadrat].append(assemblage)
+
+    #log.debug("assemblages by quadrat: %s", assemblages_by_quadrat)
+
+    # calculate number of assemblages per quadrat per period
+    num_spatial_samples = int(math.ceil(args.samplefraction * len(row_list)) / len(assemblages_by_quadrat))
+    num_samples = num_spatial_samples / len(period_lists)
+    log.debug("Number of assemblages sampled per quadrat per period: %s", num_samples)
+
+    sampled_assemblages = []
+    for quadrat_population in assemblages_by_quadrat.values():
+        log.debug("Starting quadrat sample ==============================")
+        log.debug("quadrat population: %s", quadrat_population)
+        quadrat_sample = []
+        for periods in period_lists:
+            assemblages_in_period_list = []
+            quadrat_period_list = []
+            log.debug("periods: %s", periods)
+            for time in periods:
+                # filter the assemblages that exist in this period to only include those in
+                # this quadrat
+                assemblages_in_period_list.extend(origin_to_assemblages[str(time)])
+                quadrat_period_list.extend( [a for a in assemblages_in_period_list if a in quadrat_population] )
+
+            log.debug("assemblages in quadrat and period: %s", quadrat_period_list)
+
+            #if num_samples >= len(quadrat_period_list):
+            #    num_samples = len(quadrat_period_list)
+            if len(quadrat_period_list) == 0:
+                continue
+
+            log.debug("taking %s samples from this quadrat and period", num_samples)
+
+            period_quadrat_sample = random.sample(quadrat_period_list, num_samples)
+            log.debug("period/quadrat sample: %s", period_quadrat_sample)
+            quadrat_sample.extend(period_quadrat_sample)
+        log.debug("quadrat sample: %s", quadrat_sample)
+        sampled_assemblages.extend(quadrat_sample)
+
+    sampled_indices = set()
+    for assem in sampled_assemblages:
+        sampled_indices.add(assemblage_to_row[assem])
+
+    log.debug("sampled indices: %s", sampled_indices)
+    return list(sampled_indices)
 
 
 
@@ -327,7 +408,7 @@ if __name__ == "__main__":
                 elif args.sampletype == 'temporal':
                     sampled_rows = random_temporal_sample(row_list, root, assemblage_to_row)
                 elif args.sampletype == 'spatiotemporal':
-                    pass
+                    sampled_rows = random_spatiotemporal_sample(row_list, assemblage_to_row)
 
                 log.info("Writing sampled output for file: %s ", outputfile)
 
