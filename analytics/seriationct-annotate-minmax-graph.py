@@ -465,18 +465,22 @@ def get_lineage_annotated_graphviz(input_graph):
 
 
 
-def get_graphics_title(filename):
+def get_graphics_title(root, sample_type):
     import re
 
-    occur = 13  # get the UUID and the full sampling scheme
-    indices = [x.start() for x in re.finditer("-", filename)]
-    uuid_part = filename[0:indices[occur-1]]
-    rest = filename[indices[occur-1]+1:]
+    log.debug("root: %s", root)
+
+    occur = 12  # get the UUID and sampling fractions, and whether it's a minmax graph
+    indices = [x.start() for x in re.finditer("-", root)]
+    uuid_part = root[0:indices[occur-1]]
+    rest = root[indices[occur-1]+1:]
 
     title = args.experiment
-    title += "-"
+    title += "  "
+    title += sample_type
+    title += "  "
     title += uuid_part
-    title += "-minmax-"
+    title += "  "
     title += args.modeltype
 
     return title
@@ -495,11 +499,9 @@ def write_ordered_dot(N,path,name="minmax seriation graph"):
         raise ImportError("write_dot() requires pydot",
                           "http://code.google.com/p/pydot/")
 
-    title = get_graphics_title(name)
+    log.debug("Plot title: %s", name)
 
-    log.debug("Plot title: %s", title)
-
-    P=generate_ordered_dot(N, title)
+    P=generate_ordered_dot(N, name)
 
 
     p = P.to_string();
@@ -602,6 +604,15 @@ if __name__ == "__main__":
     input_basename = os.path.basename(args.inputfile)
     root, ext = os.path.splitext(input_basename)
     input_path = os.path.dirname(args.inputfile)
+    path_components = os.path.split(input_path)
+
+    sample_type = path_components[-2]
+    # if the path element is the start of a ./path or /path, trim the path characters
+    sample_type = sample_type.strip('./')
+
+    graph_title = get_graphics_title(root, sample_type)
+
+
     if input_path is '':
         input_path = '.'
     output_filename = input_path + '/' + root + "-annotated.gml"
@@ -647,7 +658,7 @@ if __name__ == "__main__":
         png_filename = input_path + '/' + root + "-lineage-annotated-chronological.png"
 
 
-    write_ordered_dot(gv_annotated, dot_filename, name=root)
+    write_ordered_dot(gv_annotated, dot_filename, name=graph_title)
 
     cmd = "neato -Tpng "
     cmd += dot_filename
