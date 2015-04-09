@@ -10,7 +10,7 @@ Description here
 from distutils.core import setup
 
 setup(name="seriationct",
-      version="1.1",
+      version="1.2",
       packages = [
         'seriationct',
         'seriationct.data',
