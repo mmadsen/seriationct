@@ -399,7 +399,7 @@ if __name__ == "__main__":
 
             # create N independent samplings from each input file
             for sample_num in range(0, args.numsamples):
-                outputfile = args.outputdirectory + "/" + root + args.sampletype  +"-" + str(args.samplefraction) + "-resample-" + str(sample_num) + ".txt"
+                outputfile = args.outputdirectory + "/" + root + "-" + args.sampletype  +"-" + str(args.samplefraction) + "-resample-" + str(sample_num) + ".txt"
 
                 if args.sampletype == 'random':
                     sampled_rows = random_sample_without_stratification(row_list)
