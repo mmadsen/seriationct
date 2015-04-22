@@ -16,6 +16,8 @@ import pprint as pp
 import pickle
 import numpy as np
 
+import pandas as pd
+
 
 class DeepDefaultDict(dict):
     def __missing__(self, key):
@@ -99,54 +101,91 @@ if __name__ == "__main__":
     # or output the full list of counts (which will put every trait in the header)
 
 
+    # build a pandas data frame by creating lists for each class, along with
+    # a list of all subpopulations
 
-
-    class_set = set()
-    for sim_id in cmap.keys():
-        for rep in cmap[sim_id].keys():
-            for subpop in cmap[sim_id][rep].keys():
-                for cls, count in cmap[sim_id][rep][subpop].items():
-                    log.info("sim: %s rep: %s subpop: %s class: %s freq: %s", sim_id, rep, subpop, cls, int(count))
-                    class_set.add(cls)
-
-    log.info("total number of classes: %s", len(class_set))
 
 
     for sim_id in cmap.keys():
         for rep in cmap[sim_id].keys():
-
+            class_list = []
+            sp_list = []
+            columns = dict()
 
             sim_id_clean = sim_id[9:]
             log.debug("sim_id without header: %s", sim_id_clean)
 
             outputfile = args.outputdirectory + "/" + sim_id_clean + "-" + str(rep) + ".txt"
 
-            class_set = set()
+            for sp in cmap[sim_id][rep].keys():
+                sp_list.append(sp)
+                class_list.extend(cmap[sim_id][rep][sp].keys())
 
-            with open(outputfile, 'wb') as outfile:
-                for sp in cmap[sim_id][rep].keys():
-                    for cls in cmap[sim_id][rep][sp].keys():
-                        class_set.add(cls)
+            columns['Assemblage_Name'] = sp_list
 
-                class_list = list(class_set)
-
-                # write header row
-                header = "Assemblage_Name"
+            for sp in cmap[sim_id][rep].keys():
+                class_col = []
                 for cls in class_list:
-                    header += "\t"
-                    header += cls
-                header += "\n"
+                    count = cmap[sim_id][rep][sp][cls]
+                    class_col.append(count)
+                columns[cls] = class_col
 
-                outfile.write(header)
+            df = pd.DataFrame(columns)
+            df.to_csv(outputfile,sep=",",quoting=False)
 
-                for sp in cmap[sim_id][rep].keys():
-                    row = sp
-                    for cls in class_list:
-                        row += "\t"
-                        count = cmap[sim_id][rep][sp][cls]
-                        row += str(int(count)) if count != {} else str(0)
-                    row += "\n"
-                    outfile.write(row)
+
+
+
+
+    # class_set = set()
+    # for sim_id in cmap.keys():
+    #     for rep in cmap[sim_id].keys():
+    #         for subpop in cmap[sim_id][rep].keys():
+    #             for cls, count in cmap[sim_id][rep][subpop].items():
+    #                 log.info("sim: %s rep: %s subpop: %s class: %s freq: %s", sim_id, rep, subpop, cls, int(count))
+    #                 class_set.add(cls)
+    #
+    # log.info("total number of classes: %s", len(class_set))
+
+
+    # for sim_id in cmap.keys():
+    #     for rep in cmap[sim_id].keys():
+    #
+    #
+    #         sim_id_clean = sim_id[9:]
+    #         log.debug("sim_id without header: %s", sim_id_clean)
+    #
+    #         outputfile = args.outputdirectory + "/" + sim_id_clean + "-" + str(rep) + ".txt"
+    #
+    #         class_set = set()
+    #
+    #         with open(outputfile, 'wb') as outfile:
+    #             for sp in cmap[sim_id][rep].keys():
+    #                 for cls in cmap[sim_id][rep][sp].keys():
+    #                     class_set.add(cls)
+    #
+    #             class_list = list(class_set)
+    #
+    #             # write header row
+    #             header = "Assemblage_Name"
+    #             for cls in class_list:
+    #                 header += "\t"
+    #                 header += cls
+    #             header += "\n"
+    #
+    #             outfile.write(header)
+    #
+    #             for sp in cmap[sim_id][rep].keys():
+    #                 row = sp
+    #                 for cls in class_list:
+    #                     row += "\t"
+    #                     count = cmap[sim_id][rep][sp][cls]
+    #                     row += str(int(count)) if count != {} else str(0)
+    #                 row += "\n"
+    #                 outfile.write(row)
+    #
+
+
 
 
 
