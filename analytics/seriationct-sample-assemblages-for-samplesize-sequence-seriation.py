@@ -423,10 +423,12 @@ if __name__ == "__main__":
                         row_str += '\n'
                         outfile.write(row_str)
 
-                # now remove one row from the sample, and continue
+                # now remove two rows from the sample, and continue
                 element_to_remove = random.choice(sampled_rows)
                 sampled_rows.remove(element_to_remove)
-                sample_size -= 1
+                element_to_remove = random.choice(sampled_rows)
+                sampled_rows.remove(element_to_remove)
+                sample_size -= 2
 
 
         log.info("Completed processing of file %s", file)

@@ -16,8 +16,6 @@ import pprint as pp
 import pickle
 import numpy as np
 
-import pandas as pd
-
 
 class DeepDefaultDict(dict):
     def __missing__(self, key):
@@ -35,6 +33,77 @@ class DeepDefaultDict(dict):
         if not self:
             return 0 - x
         raise ValueError
+
+# broken out to allow line profiling
+#@profile
+def doExport():
+    # the data cache has the following nested dict structure:  simid -> replicate -> subpop -> class:count
+
+    cmap = DeepDefaultDict()
+    cursor = data.ClassFrequencySampleUnaveraged.m.find(dict(),dict(timeout=False))
+
+    for sample in cursor:
+        sim_id = sample["simulation_run_id"]
+        rep = sample["replication"]
+        subpop = sample["subpop"]
+
+        class_count_map = sample["class_count"]
+
+        for cls, count in class_count_map.items():
+            cmap[sim_id][rep][subpop][cls] += count
+
+    # conditional either we sample trait counts (which will reduce the list of traits we put in the header),
+    # or output the full list of counts (which will put every trait in the header)
+
+
+
+
+    class_set = set()
+    for sim_id in cmap.keys():
+        for rep in cmap[sim_id].keys():
+            for subpop in cmap[sim_id][rep].keys():
+                for cls, count in cmap[sim_id][rep][subpop].items():
+                    class_set.add(cls)
+
+    log.info("total number of classes: %s", len(class_set))
+
+
+    for sim_id in cmap.keys():
+        for rep in cmap[sim_id].keys():
+
+
+            sim_id_clean = sim_id[9:]
+
+
+            outputfile = args.outputdirectory + "/" + sim_id_clean + "-" + str(rep) + ".txt"
+
+            class_set = set()
+
+            with open(outputfile, 'wb') as outfile:
+                for sp in cmap[sim_id][rep].keys():
+                    for cls in cmap[sim_id][rep][sp].keys():
+                        class_set.add(cls)
+
+                class_list = list(class_set)
+
+                # write header row
+                header = "Assemblage_Name"
+                for cls in class_list:
+                    header += "\t"
+                    header += cls
+                header += "\n"
+
+                outfile.write(header)
+
+                for sp in cmap[sim_id][rep].keys():
+                    row = sp
+                    for cls in class_list:
+                        row += "\t"
+                        count = cmap[sim_id][rep][sp][cls]
+                        row += str(int(count)) if count != {} else str(0)
+                    row += "\n"
+                    outfile.write(row)
+
 
 
 
@@ -69,122 +138,7 @@ def setup():
 
 if __name__ == "__main__":
     setup()
-
-    # fieldnames = []
-    # fieldnames.extend(["simulation_run_id", "replication", "subpop"])
-    #
-    # ofile  = open(args.filename, "wb")
-    # writer = csv.DictWriter(ofile, fieldnames=fieldnames, quotechar='"', quoting=csv.QUOTE_ALL)
-    #
-    # headers = dict((n,n) for n in fieldnames)
-    # writer.writerow(headers)
-
-
-
-
-    # the data cache has the following nested dict structure:  simid -> replicate -> subpop -> class:count
-
-    cmap = DeepDefaultDict()
-    cursor = data.ClassFrequencySampleUnaveraged.m.find(dict(),dict(timeout=False))
-
-    for sample in cursor:
-        sim_id = sample["simulation_run_id"]
-        rep = sample["replication"]
-        subpop = sample["subpop"]
-
-        class_count_map = sample["class_count"]
-
-        for cls, count in class_count_map.items():
-            cmap[sim_id][rep][subpop][cls] += count
-
-    # conditional either we sample trait counts (which will reduce the list of traits we put in the header),
-    # or output the full list of counts (which will put every trait in the header)
-
-
-    # build a pandas data frame by creating lists for each class, along with
-    # a list of all subpopulations
-
-
-
-    for sim_id in cmap.keys():
-        for rep in cmap[sim_id].keys():
-            class_list = []
-            sp_list = []
-            columns = dict()
-
-            sim_id_clean = sim_id[9:]
-            log.debug("sim_id without header: %s", sim_id_clean)
-
-            outputfile = args.outputdirectory + "/" + sim_id_clean + "-" + str(rep) + ".txt"
-
-            for sp in cmap[sim_id][rep].keys():
-                sp_list.append(sp)
-                class_list.extend(cmap[sim_id][rep][sp].keys())
-
-            columns['Assemblage_Name'] = sp_list
-
-            for sp in cmap[sim_id][rep].keys():
-                class_col = []
-                for cls in class_list:
-                    count = cmap[sim_id][rep][sp][cls]
-                    class_col.append(count)
-                columns[cls] = class_col
-
-            df = pd.DataFrame(columns)
-            df.to_csv(outputfile,sep=",",quoting=False)
-
-
-
-
-
-    # class_set = set()
-    # for sim_id in cmap.keys():
-    #     for rep in cmap[sim_id].keys():
-    #         for subpop in cmap[sim_id][rep].keys():
-    #             for cls, count in cmap[sim_id][rep][subpop].items():
-    #                 log.info("sim: %s rep: %s subpop: %s class: %s freq: %s", sim_id, rep, subpop, cls, int(count))
-    #                 class_set.add(cls)
-    #
-    # log.info("total number of classes: %s", len(class_set))
-
-
-    # for sim_id in cmap.keys():
-    #     for rep in cmap[sim_id].keys():
-    #
-    #
-    #         sim_id_clean = sim_id[9:]
-    #         log.debug("sim_id without header: %s", sim_id_clean)
-    #
-    #         outputfile = args.outputdirectory + "/" + sim_id_clean + "-" + str(rep) + ".txt"
-    #
-    #         class_set = set()
-    #
-    #         with open(outputfile, 'wb') as outfile:
-    #             for sp in cmap[sim_id][rep].keys():
-    #                 for cls in cmap[sim_id][rep][sp].keys():
-    #                     class_set.add(cls)
-    #
-    #             class_list = list(class_set)
-    #
-    #             # write header row
-    #             header = "Assemblage_Name"
-    #             for cls in class_list:
-    #                 header += "\t"
-    #                 header += cls
-    #             header += "\n"
-    #
-    #             outfile.write(header)
-    #
-    #             for sp in cmap[sim_id][rep].keys():
-    #                 row = sp
-    #                 for cls in class_list:
-    #                     row += "\t"
-    #                     count = cmap[sim_id][rep][sp][cls]
-    #                     row += str(int(count)) if count != {} else str(0)
-    #                 row += "\n"
-    #                 outfile.write(row)
-    #
-
+    doExport()
 
 
 

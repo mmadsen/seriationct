@@ -14,21 +14,16 @@ import logging as log
 from time import time
 
 import argparse
-import ctpy.utils as ctu
-import pytransmission.popgen as pypopgen
-import simuOpt
-import math
-import uuid
-import ming
 
-import seriationct.demography as demo
-import seriationct.data as data
-import seriationct.sampling as sampling
+
+import uuid
+
 import seriationct.utils as utils
+import simuOpt
+simuOpt.setOptions(alleleType='long', optimized=True, quiet=False, numThreads=utils.get_parallel_cores(dev_flag=True))
 import simuPOP as sim
 
-simuOpt.setOptions(alleleType='long', optimized=True, quiet=False, numThreads=utils.get_parallel_cores(dev_flag=True))
-
+import seriationct.demography as demo
 
 
 global config, sim_id, script
@@ -50,11 +45,12 @@ def setup(parser):
     cores = utils.get_parallel_cores(config.devel)
     log.debug("Setting up %s cores for parallel simulation", cores)
 
-    import simuOpt
-    if(config.debug == 1):
-        simuOpt.setOptions(alleleType='long',optimized=True,quiet=False,numThreads = cores)
-    else:
-        simuOpt.setOptions(alleleType='long',optimized=True,quiet=True,numThreads = cores)
+    # import simuOpt
+    # if(config.debug == 1):
+    #     simuOpt.setOptions(alleleType='long',optimized=True,quiet=False,numThreads = cores)
+    # else:
+    #     simuOpt.setOptions(alleleType='long',optimized=True,quiet=True,numThreads = cores)
+
 
     return (config,sim_id,script)
 
