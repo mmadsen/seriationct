@@ -27,9 +27,10 @@ def setup():
     parser.add_argument("--inputdirectory", help="path to directory with IDSS format input files to sample", required=True)
     parser.add_argument("--outputdirectory", help="path to directory for sampled data files", required=True)
     parser.add_argument("--samplefraction", type=float, help="Sample size to resample frequencies for each sim run and replication", required=True)
-    parser.add_argument("--sampletype", choices=['random', 'spatial', 'temporal', 'spatiotemporal'],
+    parser.add_argument("--sampletype", choices=['random', 'spatial', 'temporal', 'spatiotemporal','complete','excludelist'],
                         help="type of sampling.  random has no stratification, temporal is rough early/late stratification, spatial is"
-                            "quadrants, spatiotemporal is stratification by both", required=True)
+                            "quadrants, spatiotemporal is stratification by both, complete preserves all rows, excludelist returns all rows except those given in a file", required=True)
+    parser.add_argument("--excludefile", help="File of assemblage names to exclude from the input list")
     parser.add_argument("--numsamples", type=int, help="number of samples to take from each original data set (default is 1)", default=1)
     parser.add_argument("--temporaldata", help="path to directory with temporal data files to match files in inputdirectory "
                                                "(required for temporal or spatiotemporal sampling")
@@ -183,6 +184,40 @@ def get_quadrat_for_coordinates(coordinates, block_boundaries):
 
 
 ############################## sampling methods ###########################
+
+def complete_inventory(row_list, assemblage_to_row):
+    """
+    A null method which simply returns all of the input rows.  This can be
+    useful for doing verification testing, or if there are a small number of input
+    assemblages, but we want to still feed simulation output through a common
+    data preparation pipeline for seriation.
+
+    """
+    return assemblage_to_row.values()
+
+
+def exclude_assemblage_list(row_list, exclude_file_path, assemblage_to_row):
+    """
+    A method for excluding specific assemblages from the sample.  This is useful mainly
+    for testing and calibration, where we might want to see what the effect is of excluding
+    specific assemblages.
+
+    """
+    sampled_rows = []
+    exclude_assemblages = []
+    with open(exclude_file_path, mode='r') as exclude_file:
+        for e in exclude_file:
+            assem = e.strip()
+            log.debug("Exclude assemblage: %s", assem)
+            exclude_assemblages.append(assem)
+
+    log.debug("exclude assemblages: %s", exclude_assemblages)
+
+    for row in row_list:
+        if row[0] not in exclude_assemblages:
+            sampled_rows.append(assemblage_to_row[row[0]])
+
+    return sampled_rows
 
 
 
@@ -409,6 +444,10 @@ if __name__ == "__main__":
                     sampled_rows = random_temporal_sample(row_list, root, assemblage_to_row)
                 elif args.sampletype == 'spatiotemporal':
                     sampled_rows = random_spatiotemporal_sample(row_list, assemblage_to_row)
+                elif args.sampletype == 'complete':
+                    sampled_rows = complete_inventory(row_list, assemblage_to_row)
+                elif args.sampletype == 'excludelist':
+                    sampled_rows = exclude_assemblage_list(row_list, args.excludefile, assemblage_to_row)
 
                 log.info("Writing sampled output for file: %s ", outputfile)
 

@@ -504,7 +504,10 @@ def write_ordered_dot(N,path,name="minmax seriation graph"):
     P=generate_ordered_dot(N, name)
 
 
+
+
     p = P.to_string();
+    #log.debug("dot: %s", p)
 
 
     with open(path, 'wb') as pathfile:
@@ -535,7 +538,7 @@ def generate_ordered_dot(N, name=None):
     node_attrs["shape"] = "circle"
     node_attrs["width"] = "0.75"
     node_attrs["height"] = "0.75"
-    node_attrs["label"] = ""
+    #node_attrs["label"] = ""
     node_attrs["fixedsize"] = "true"
     node_attrs["style"] = "filled"
 
@@ -587,6 +590,7 @@ def generate_ordered_dot(N, name=None):
             else:
                 edge=pydot.Edge(make_str(u),make_str(v),**str_edgedata)
             P.add_edge(edge)
+
     return P
 
 
@@ -609,6 +613,8 @@ if __name__ == "__main__":
     sample_type = path_components[-2]
     # if the path element is the start of a ./path or /path, trim the path characters
     sample_type = sample_type.strip('./')
+
+    log.debug("root: %s sampletype: %s", root, sample_type)
 
     graph_title = get_graphics_title(root, sample_type)
 
