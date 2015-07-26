@@ -40,6 +40,7 @@ def setup():
     parser.add_argument("--maxsizespatial", type=int, help="Maximum size of spatial coordinates in X and Y directions", default=1100)
 
 
+
     args = parser.parse_args()
 
     if args.debug == 1:

@@ -25,7 +25,7 @@ import seriationct.data as data
 import seriationct.sampling as sampling
 import seriationct.utils as utils
 
-simuOpt.setOptions(alleleType='long', optimized=True, quiet=False, numThreads=utils.get_parallel_cores(dev_flag=True))
+#simuOpt.setOptions(alleleType='long', optimized=True, quiet=False, numThreads=utils.get_parallel_cores(dev_flag=True))
 
 global config, sim_id, script
 
@@ -48,14 +48,18 @@ def setup(parser):
 
     # set up parallelism.  At the moment, this doesn't do anything on OSX
     # but should provide parallelism on Linux across the replicates at least
-    cores = utils.get_parallel_cores(config.devel)
-    log.debug("Setting up %s cores for parallel simulation", cores)
+
+    if config.cores is not None:
+        cores = config.cores
+    else:
+        cores = utils.get_parallel_cores(config.devel)
+    log.info("Setting up %s cores for parallel simulation", cores)
 
     import simuOpt
     if(config.debug == 1):
         simuOpt.setOptions(alleleType='long',optimized=True,quiet=False,numThreads = cores)
     else:
-        simuOpt.setOptions(alleleType='long',optimized=True,quiet=True,numThreads = cores)
+        simuOpt.setOptions(alleleType='long',optimized=True,quiet=False,numThreads = cores)
 
     return (config,sim_id,script)
 
@@ -65,6 +69,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", help="provide name for experiment", required=True)
+    parser.add_argument("--cores", type=int, help="Number of cores to use for simuPOP, overrides devel flag and auto calculation")
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--devel", help="Use only half of the available CPU cores", type=int, default=1)
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
