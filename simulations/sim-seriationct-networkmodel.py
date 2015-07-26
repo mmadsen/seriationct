@@ -27,7 +27,7 @@ import seriationct.utils as utils
 
 #simuOpt.setOptions(alleleType='long', optimized=True, quiet=False, numThreads=utils.get_parallel_cores(dev_flag=True))
 
-global config, sim_id, script
+global config, sim_id, script, cores
 
 def setup(parser):
     config = parser.parse_args()
@@ -172,7 +172,7 @@ def main():
 
     endtime = time()
     elapsed = endtime - start
-    log.info("simulation complete in %s seconds", elapsed)
+    log.info("simulation complete in %s seconds with %s cores", elapsed, cores)
     sampled_length = int(config.simlength) - burn_time
     data.store_simulation_metadata(sim_id, script, config.experiment, elapsed, config.simlength, sampled_length, config.popsize,
                                  config.networkmodel,networkmodel.get_subpopulation_durations(),full_command_line,config.seed,
