@@ -61,7 +61,7 @@ def setup(parser):
     else:
         simuOpt.setOptions(alleleType='long',optimized=True,quiet=False,numThreads = cores)
 
-    return (config,sim_id,script)
+    return (config,sim_id,script, cores)
 
 def main():
     start = time()
@@ -89,7 +89,7 @@ def main():
     parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, required=True, default=0.2)
     parser.add_argument("--seed", type=int, help="Seed for random generators to ensure replicability")
 
-    (config, sim_id, script) = setup(parser)
+    (config, sim_id, script, cores) = setup(parser)
 
     log.info("config: %s", config)
 
