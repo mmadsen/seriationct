@@ -101,10 +101,8 @@ def main():
             log.info("time: %s subpop names: %s subpop sizes: %s", time, net_model.get_subpopulation_names(), net_model.get_subpopulation_sizes())
 
         if time == config.simlength:
-
             sp_durations = net_model.get_subpopulation_durations()
             log.info("subpop durations: %s", sp_durations)
-
             log.info("time: %s END of simulation", time)
 
 if __name__ == "__main__":

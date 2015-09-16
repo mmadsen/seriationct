@@ -346,6 +346,8 @@ class TemporalNetwork(object):
         diag = np.eye(np.shape(g_mat)[0]) * (1.0 - self.migration_fraction)
         g_mat_scaled = diag + scaled
 
+        log.debug("scaled migration matrix: %s", g_mat_scaled.tolist())
+
         return g_mat_scaled.tolist()
 
 
