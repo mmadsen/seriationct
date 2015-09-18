@@ -456,6 +456,12 @@ def get_graphics_title(root, sample_type):
     uuid_part = root[0:indices[occur-1]]
     rest = root[indices[occur-1]+1:]
 
+    if re.match(r".*continuity.*", rest):
+        seriation_type = "continuity"
+    else:
+        seriation_type = "frequency"
+
+
     title = args.experiment
     title += "  "
     title += sample_type
@@ -463,6 +469,8 @@ def get_graphics_title(root, sample_type):
     title += uuid_part
     title += "  "
     title += args.modeltype
+    title += "  "
+    title += seriation_type
 
     return title
 
