@@ -22,7 +22,11 @@ import fnmatch
 
 
 def setup():
-    global args, config, simconfig
+    global args, config, simconfig, location_cache
+
+    # used to ensure that assemblage locations are unique across clusters if desired
+    location_cache = set()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", type=int, help="turn on debugging output")
     parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
@@ -91,11 +95,22 @@ def assign_spatial_locations_to_cluster(full_g, cluster_ids, x_centroid, y_centr
     """
     Assigns xcoord and ycoord, and spatial node label, to nodes in a cluster based upon a random normal
     spread around a centroid.  Thus, we can achieve complete spatial overlap in clusters (and thus a spatial null model),
-    by assigning the same centroid.
+    by assigning the same centroid.  No duplicate coordinates are assigned.
     """
+
     for id in cluster_ids:
-        xcoord = abs(int(math.ceil(random.normalvariate(x_centroid, sd_dist))))
-        ycoord = abs(int(math.ceil(random.normalvariate(y_centroid, sd_dist))))
+        xcoord = 0.0
+        ycoord = 0.0
+
+        while(True):
+            xcoord = abs(int(math.ceil(random.normalvariate(x_centroid, sd_dist))))
+            ycoord = abs(int(math.ceil(random.normalvariate(y_centroid, sd_dist))))
+            location = (xcoord,ycoord)
+            if location not in location_cache:
+                location_cache.add(location)
+                break
+
+
         #log.debug("node %s at %s,%s",id,xcoord,ycoord)
         full_g.node[id]['xcoord'] = str(xcoord)
         full_g.node[id]['ycoord'] = str(ycoord)
@@ -377,8 +392,12 @@ if __name__ == "__main__":
     setup()
 
     centroid_tuple = (args.centroidmin, args.centroidmax)
-    slicemap = generate_sequential_slices(args.slices,args.numclusters,args.nodespercluster,args.interconnectfraction,
-                                          centroid_tuple,args.clusterspread)
+    slicemap = generate_sequential_slices(args.slices,
+                                          args.numclusters,
+                                          args.nodespercluster,
+                                          args.interconnectfraction,
+                                          centroid_tuple,
+                                          args.clusterspread)
 
     log.debug("slice map: %s", slicemap)
 

@@ -136,7 +136,7 @@ def copy_attributes_to_minmax(g_slice = None, g_mm = None):
     of matching.
 
     """
-    log.debug("mm nodes: %s", g_mm.nodes())
+    #log.debug("mm nodes: %s", g_mm.nodes())
 
     for slice_node in g_slice.nodes():
         #log.debug("slice node: %s", g_slice.node[slice_node])
@@ -313,14 +313,45 @@ def get_nonhierarchical_oldstyle_annotated_graphviz(input_graph):
 
 
 
+def _create_greyscale_map(g):
+    """
+    Given an input graph which defines a number of slices, and the range of slice ID's,
+    create a useful spread of greyscale values mapped to slice ID's for a given graph.
+    Returns a tuple of color_scheme, color_map for use by the caller.
+    """
+    slice_ids = set()
+    for node, data in g.nodes_iter(data=True):
+        slice_ids.add(int(g.node[node]['appears_in_slice']))
+
+    num_slices = len(slice_ids)
+    slice_max = max(list(slice_ids))
+
+    # heuristic for figuring out spacing and colors given number of slices
+    # practical range runs from grey30 to 100
+
+    step = int(70 / slice_max)
+
+    color_names = []
+    for color in xrange(30,100,step):
+        color_name = "grey" + str(color)
+        color_names.append(color_name)
+
+    slices = range(1,slice_max+1)
+    color_map = dict(zip(slices,color_names))
+
+    #log.info("color_map: %s", color_map)
+    return ('x11', color_map)
+
+
+
 def get_clustered_annotated_graphviz(input_graph):
     """
     Iterates over the nodes in a graph, annotating them for
     origin time and duration.
     """
 
-    # base scheme has color sets from 3 to 9
-    base_color_scheme = 'accent'
+    # base scheme has large number of greyscale options
+    base_color_scheme = 'x11'
 
 
         # make a copy so we don't touch the original graph, we'll return a new one
@@ -330,34 +361,11 @@ def get_clustered_annotated_graphviz(input_graph):
     g = nx.convert_node_labels_to_integers(g)
 
 
-    # figure out penwidth scaling
-    slice_ids = set()
-    for node, data in g.nodes_iter(data=True):
-        slice_ids.add(int(g.node[node]['appears_in_slice']))
-
-    num_slices = len(slice_ids)
-    slice_max = max(list(slice_ids))
-
-    if num_slices > 8:
-        log.error("More slices than colors in the scheme list!!!")
-
-    if num_slices < 3:
-        log.info("Less slices than colors in the scheme, using gnbu3")
-
-    scheme = base_color_scheme
-    scheme += str(slice_max)
-
-    # no need to reverse since we're not using color for chronology
-    x = range(0,slice_max)
-    y = range(1,slice_max+1)
-
-    color_map = dict(zip(x,y))
-    log.debug("x: %s", x)
-    log.debug("y: %s", y)
-    log.debug("color_map: %s", color_map)
+    base_color_scheme, color_map = _create_greyscale_map(g)
 
 
-    max_slice = max(slice_ids)
+
+    # max_slice = max(slice_ids)
     max_penwidth = 6.0
 
     # grandchildren might point their child_of attribute at a node which is not present
@@ -371,11 +379,11 @@ def get_clustered_annotated_graphviz(input_graph):
         #del g.node[node]['label']
         g.node[node]['short_label']= short_label
 
-        g.node[node]['colorscheme'] = scheme
+        g.node[node]['colorscheme'] = base_color_scheme
         #g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
 
         g.node[node]['fillcolor'] = color_map[int(g.node[node]['cluster_id'])]
-        g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
+        #g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
 
     for node, data in g.nodes_iter(data=True):
         g.node[node]['label'] = g.node[node]['short_label']
@@ -390,7 +398,7 @@ def get_lineage_annotated_graphviz(input_graph):
     """
 
     # base scheme has color sets from 3 to 9
-    base_color_scheme = 'accent'
+    base_color_scheme = 'x11'
 
     lineage_to_shape = dict()
     lineage_to_shape[0] = 'circle'
@@ -408,34 +416,7 @@ def get_lineage_annotated_graphviz(input_graph):
     g = nx.convert_node_labels_to_integers(g)
 
 
-    # figure out penwidth scaling
-    slice_ids = set()
-    for node, data in g.nodes_iter(data=True):
-        slice_ids.add(int(g.node[node]['appears_in_slice']))
-
-    num_slices = len(slice_ids)
-    slice_max = max(list(slice_ids))
-
-    if num_slices > 8:
-        log.error("More slices than colors in the scheme list!!!")
-
-    if num_slices < 3:
-        log.info("Less slices than colors in the scheme, using gnbu3")
-
-    scheme = base_color_scheme
-    scheme += str(slice_max)
-
-    # no need to reverse since we're not using color for chronology
-    x = range(0,slice_max)
-    y = range(1,slice_max+1)
-
-    color_map = dict(zip(x,y))
-    log.debug("x: %s", x)
-    log.debug("y: %s", y)
-    log.debug("color_map: %s", color_map)
-
-
-    max_slice = max(slice_ids)
+    base_color_scheme, color_map = _create_greyscale_map(g)
     max_penwidth = 6.0
 
     # grandchildren might point their child_of attribute at a node which is not present
@@ -449,12 +430,12 @@ def get_lineage_annotated_graphviz(input_graph):
         #del g.node[node]['label']
         g.node[node]['short_label']= short_label
 
-        g.node[node]['colorscheme'] = scheme
+        g.node[node]['colorscheme'] = base_color_scheme
         #g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
 
-        g.node[node]['fillcolor'] = color_map[int(g.node[node]['cluster_id'])]
+        g.node[node]['fillcolor'] = color_map[int(g.node[node]['appears_in_slice'])]
         g.node[node]['shape'] = lineage_to_shape[int(g.node[node]['lineage_id'])]
-        g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
+        #g.node[node]['penwidth'] = (float(g.node[node]['appears_in_slice']) / max_slice) * max_penwidth
 
     for node, data in g.nodes_iter(data=True):
         g.node[node]['label'] = g.node[node]['short_label']
