@@ -64,14 +64,14 @@ def main():
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--networkmodel", help="Filename of the temporal network model zipfile for this simulation",
                         required=True)
-    parser.add_argument("--popsize", help="Population size for each subpopulation", type=int, required=True)
+    parser.add_argument("--popsize", help="Population size for each subpopulation", type=int, default=200)
     parser.add_argument("--simlength", help="Time at which simulation and sampling end",type=long, default="3000")
-    parser.add_argument("--innovrate", help="Rate at which innovations occur in population in scale-free theta units", type=float, required=True)
+    parser.add_argument("--innovrate", help="Rate at which innovations occur in population in scale-free theta units", type=float, default=0.001)
     parser.add_argument("--experiment", help="provide name for experiment", required=True)
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--devel", help="Use only half of the available CPU cores", type=int, default=1)
-    parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, required=True, default=0.2)
+    parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, default=0.1)
 
     (config, sim_id, script) = setup(parser)
 
