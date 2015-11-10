@@ -5,7 +5,7 @@
 
 """
 Creates a simple network model of N slices, each slice containing M populations, wired in a complete network.
-Each population is derived from a randomly chosen population in slice N-1.  
+Each population is derived from a randomly chosen population in slice N-1.
 
 """
 
@@ -139,7 +139,7 @@ def generate_random_slice(slice_id,num_populations,edgeweight,centroidx,centroid
         g.node[id]['label'] = lab
         g.node[id]['level'] = "None"
         g.node[id]['cluster_id'] = 1
-        g.node[id]['lineage'] = 1
+        g.node[id]['lineage_id'] = 1
         g.node[id]['appears_in_slice'] = slice_id
         if slice_id == 1:
             g.node[id]['parent_node'] = 'initial'

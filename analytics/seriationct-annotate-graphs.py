@@ -8,12 +8,15 @@ Description here
 
 """
 import seriationct.analytics as sa
+from seriation.database import SeriationDatabase, SeriationFileLocations, SeriationRun
 
 import csv
 import argparse
 import logging as log
 import zipfile
 import networkx as nx
+from mongoengine import *
+import itertools
 from networkx.utils import open_file, make_str
 import os
 from decimal import *
@@ -26,12 +29,15 @@ def setup():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", type=int, help="turn on debugging output")
     parser.add_argument("--networkmodel", help="path to ZIP format network model containing GML slices", required=True)
-    parser.add_argument("--inputfile", help="path to GML version of minmax seriation output file", required=True)
     parser.add_argument("--modeltype", choices=['hierarchy', 'other', 'clustered', 'lineage'], required=True, default='other')
     parser.add_argument("--experiment", help="Experiment name, used to label graphics", required=True)
-    parser.add_argument("--addlabel", help="Optional label to be added to diagrams")
-    #parser.add_argument("--")
-
+    parser.add_argument("--graphtype", choices=['minmaxbyweight', 'minmaxbycount', 'sumgraphbycount', 'sumgraphbyweight'], default="minmaxbyweight")
+    parser.add_argument("--seriationtype", choices=['frequency', 'continuity', 'both'], default='frequency')
+    parser.add_argument("--dbhost", help="MongoDB database hostname, defaults to localhost", default="localhost")
+    parser.add_argument("--dbport", help="MongoDB database port, defaults to 27017", type=int, default="27017")
+    parser.add_argument("--database", help="Name of IDSS-generated database of seriation runs to annotate", required=True)
+    parser.add_argument("--dbuser", help="Username on MongoDB database server, optional")
+    parser.add_argument("--dbpassword", help="Password on MongoDB database server, optional")
     args = parser.parse_args()
 
     if args.debug == 1:
@@ -40,11 +46,75 @@ def setup():
         log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
 
+    connect(db = args.database,
+            host = args.dbhost,
+            port = args.dbport,
+            username = args.dbuser,
+            password = args.dbpassword)
+
+
+
+def process_file(gmlfile):
+    """
+    Process a single GML file from the database
+
+    :param gmlfile:
+    :return:
+    """
+    pass
+
+
+
+def create_worklist():
+    """
+    Using the graphtype and seriationtype arguments, construct a list of file paths to process
+    from the database.
+
+    :return: list of files to process
+    """
+
+    # We might do both, or only one type of solution, so just iterate over a 1 or 2
+    # element list
+    stype = []
+    if args.seriationtype == 'both':
+        stype.append('frequency')
+        stype.append('continuity')
+    else:
+        stype.append(args.seriationtype)
+
+
+    filelist = []
+
+    for type in stype:
+        tag = type + args.graphtype
+
+        # iterate over documents which contain this tag, then pull the filename
+        # associated with the tag
+
+
+
+
 
 
 
 if __name__ == "__main__":
     setup()
+
+    # connect to the database and to the DB specified on the command line
+    # the collection itself is specified by mongoengine, which is magical
+    db = SeriationDatabase(args)
+
+    for srun in SeriationRun.objects:
+
+
+        process_file(gmlfile)
+
+
+
+
+
+
+
 
     # parse the inputfile and calculate the output file name
     input_basename = os.path.basename(args.inputfile)
@@ -58,7 +128,7 @@ if __name__ == "__main__":
 
     log.debug("root: %s sampletype: %s", root, sample_type)
 
-    graph_title = sa.get_graphics_title(root, sample_type, args.experiment, args.modeltype, args.addlabel)
+    graph_title = sa.get_graphics_title(root, sample_type)
 
 
     if input_path is '':
@@ -78,7 +148,7 @@ if __name__ == "__main__":
             gml = zf.read(file)
             slice = sa.parse_gml_and_normalize_floats(gml)
 
-            sa.copy_attributes_to_minmax(slice, mm, args.modeltype)
+            sa.copy_attributes_to_minmax(g_slice = slice, g_mm = mm)
 
 
     # now save the annotated graph to a file in GML format

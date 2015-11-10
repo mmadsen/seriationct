@@ -11,6 +11,21 @@ import math
 from parallel import get_parallel_cores
 
 
+# Function for testing the partial or total ordering of a list of numbers
+
+def strictly_increasing(L):
+    return all(x<y for x, y in zip(L, L[1:]))
+
+def strictly_decreasing(L):
+    return all(x>y for x, y in zip(L, L[1:]))
+
+def non_increasing(L):
+    return all(x>=y for x, y in zip(L, L[1:]))
+
+def non_decreasing(L):
+    return all(x<=y for x, y in zip(L, L[1:]))
+
+
 def simulation_burnin_time(popsize, innovrate):
     """
     Calculates burnin time, and rounds it to the nearest 1000 generation interval.

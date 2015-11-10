@@ -67,7 +67,7 @@ def main():
     parser.add_argument("--popsize", help="Population size for each subpopulation", type=int, default=200)
     parser.add_argument("--simlength", help="Time at which simulation and sampling end",type=long, default="3000")
     parser.add_argument("--innovrate", help="Rate at which innovations occur in population in scale-free theta units", type=float, default=0.001)
-    parser.add_argument("--experiment", help="provide name for experiment", required=True)
+    parser.add_argument("--experiment", help="provide name for experiment", required=False)
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--devel", help="Use only half of the available CPU cores", type=int, default=1)
@@ -102,8 +102,8 @@ def main():
 
         if time == config.simlength:
             sp_durations = net_model.get_subpopulation_durations()
-            log.info("subpop durations: %s", sp_durations)
-            log.info("time: %s END of simulation", time)
+            log.debug("subpop durations: %s", sp_durations)
+            log.debug("time: %s END of simulation", time)
 
 if __name__ == "__main__":
     main()

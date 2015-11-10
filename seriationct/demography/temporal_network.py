@@ -40,7 +40,7 @@ class TemporalNetwork(object):
     def __init__(self,
                  networkmodel_path=None,
                  simulation_id=None,
-                 sim_length=0,
+                 sim_length=10000,
                  burn_in_time=0,
                  initial_subpop_size = 0,
                  migrationfraction = 0.2):
@@ -63,6 +63,7 @@ class TemporalNetwork(object):
         self.sliceid_to_time_map = {}
         self.times = []
 
+        self.node_slice_map = dict()
         self.node_origin_time = dict()
         self.node_exit_time = dict()
 
@@ -122,6 +123,11 @@ class TemporalNetwork(object):
             #log.debug("slice nodes: %s", '|'.join(sorted(slice.nodes())))
             self.network_slices[int(file_number)] = slice
 
+        slices = sorted(self.network_slices.keys())
+        for i in slices:
+            g = self.network_slices[i]
+            for node, data in g.nodes_iter(data=True):
+                self.node_slice_map[g.node[node]['label']] = i
 
 
 
@@ -411,6 +417,10 @@ class TemporalNetwork(object):
         origins.update(self.node_origin_time)
         return origins
 
+    def get_subpopulation_slice_ids(self):
+        slices = dict()
+        slices.update(self.node_slice_map)
+        return slices
 
     def __call__(self, pop):
         """

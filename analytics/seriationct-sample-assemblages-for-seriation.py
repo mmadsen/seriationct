@@ -9,6 +9,7 @@ Description here
 """
 
 import csv
+import zipfile
 import argparse
 import logging as log
 import os
@@ -18,6 +19,7 @@ import random
 import numpy as np
 import re
 from collections import defaultdict
+import networkx as nx
 
 
 def setup():
@@ -27,10 +29,11 @@ def setup():
     parser.add_argument("--inputdirectory", help="path to directory with IDSS format input files to sample", required=True)
     parser.add_argument("--outputdirectory", help="path to directory for sampled data files", required=True)
     parser.add_argument("--samplefraction", type=float, help="Sample size to resample frequencies for each sim run and replication", required=True)
-    parser.add_argument("--sampletype", choices=['random', 'spatial', 'temporal', 'spatiotemporal','complete','excludelist'],
+    parser.add_argument("--sampletype", choices=['random', 'spatial', 'temporal', 'spatiotemporal','complete','excludelist','slicestratified'],
                         help="type of sampling.  random has no stratification, temporal is rough early/late stratification, spatial is"
                             "quadrants, spatiotemporal is stratification by both, complete preserves all rows, excludelist returns all rows except those given in a file", required=True)
     parser.add_argument("--excludefile", help="File of assemblage names to exclude from the input list")
+    parser.add_argument("--networkmodel", help="Path to the zipped network model used in simulations, used for slicestratification"),
     parser.add_argument("--numsamples", type=int, help="number of samples to take from each original data set (default is 1)", default=1)
     parser.add_argument("--temporaldata", help="path to directory with temporal data files to match files in inputdirectory "
                                                "(required for temporal or spatiotemporal sampling")
@@ -38,6 +41,7 @@ def setup():
     parser.add_argument("--spatialquadrats", type=int, help="Number of blocks in the X and Y directions in which to stratify the sample", default=3)
     parser.add_argument("--spatialdata", help="path to XY file of spatial coordinates for assemblages")
     parser.add_argument("--maxsizespatial", type=int, help="Maximum size of spatial coordinates in X and Y directions", default=1100)
+
 
 
 
@@ -50,6 +54,23 @@ def setup():
 
 
 ############################## utility methods ###########################
+
+def _parse_networkmodel(path):
+    network_slices = dict()
+
+    zf = zipfile.ZipFile(path, 'r')
+
+    for file in [f for f in zf.namelist() if f.endswith(".gml")]:
+        m = re.search('(?!\-)(\d+)\.gml', file)
+        file_number = m.group(1)
+        log.debug("Parsing GML file %s:  file number %s", file, file_number)
+
+        gml = zf.read(file)
+        slice = nx.parse_gml(gml)
+        #log.debug("slice nodes: %s", '|'.join(sorted(slice.nodes())))
+        network_slices[int(file_number)] = slice
+
+    return network_slices
 
 
 def parse_filename_into_root(filename):
@@ -239,6 +260,32 @@ def random_sample_without_stratification(row_list):
     return sampled_rows
 
 
+def random_sample_per_slice_stratification(row_list, assemblage_to_row):
+    """
+    Takes a fraction of nodes of size args.samplefraction from each slice, so that each
+    time slice in a set of assemblages is represented.  Mainly useful for simple, stylized
+    network models used to study the underlying behavior of seriations.  We assume for
+    simplicity a static population size of nodes per slice, which is consistent with the
+    builder program.
+    """
+    sampled_rows = []
+    slices = _parse_networkmodel(args.networkmodel)
+    num_nodes = slices[1].number_of_nodes()
+    sample_per_slice = int(args.samplefraction * num_nodes)
+    log.debug("number of assemblages to sample per slice: %s", sample_per_slice)
+
+    for slice in slices.values():
+        assem = []
+        for node, data in slice.nodes_iter(data=True):
+            assem.append(slice.node[node]['label'])
+        sample = random.sample(assem, sample_per_slice)
+        log.debug("sample for slice %s:  %s", slice, sample)
+        sampled_rows.extend([assemblage_to_row[x] for x in sample])
+
+    log.debug("sampled_rows: %s", sampled_rows)
+
+    return sampled_rows
+
 
 def random_temporal_sample(row_list, root, assemblage_to_row):
     """
@@ -422,6 +469,9 @@ def random_spatiotemporal_sample(row_list, assemblage_to_row):
 
 
 
+
+
+
 if __name__ == "__main__":
     setup()
 
@@ -449,6 +499,8 @@ if __name__ == "__main__":
                     sampled_rows = complete_inventory(row_list, assemblage_to_row)
                 elif args.sampletype == 'excludelist':
                     sampled_rows = exclude_assemblage_list(row_list, args.excludefile, assemblage_to_row)
+                elif args.sampletype == 'slicestratified':
+                    sampled_rows = random_sample_per_slice_stratification(row_list, assemblage_to_row)
 
                 log.info("Writing sampled output for file: %s ", outputfile)
 
