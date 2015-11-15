@@ -31,9 +31,10 @@ def setup():
     parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
     parser.add_argument("--networkmodel", help="path to network model which generated the data", required=True)
     parser.add_argument("--dropthreshold", type=float, help="Threshold for the Hartigan dip test for considering a type unimodal", default=0.1)
-    parser.add_argument("--filtertype", choices=['gtonedip','dip', 'onlynonzero'], help="Filtering can remove just types \
+    parser.add_argument("--filtertype", choices=['nonzerodip','dip', 'onlynonzero'], help="Filtering can remove just types \
         that fail Hartigans dip test, dip plus types that have less than two nonzero entries, or just types with less than two nonzero entries", \
                         required=True, default='dip')
+    parser.add_argument("--minnonzero", type=int, default=3, help="Minimum number of nonzero values in a type to be retained for seriation")
 
     args = parser.parse_args()
 
@@ -145,13 +146,13 @@ def filter_cols_for_unimodality(count_arr, threshold):
             continue
 
 
-        if args.filtertype in ['gtonedip','onlynonzero']:
-            if has_gt_n_nonzero_entry(col, 3) == False:
+        if args.filtertype in ['nonzerodip','onlynonzero']:
+            if has_gt_n_nonzero_entry(col, args.minnonzero) == False:
                 rejected_columns.append(i)
                 log.debug("rejecting col %s for having too few non-zero entries", i)
                 continue
 
-        if args.filtertype in ['gtonedip', 'dip']:
+        if args.filtertype in ['nonzerodip', 'dip']:
             # element zero of the dip test tuple is the p-value (or "dip test value" as it's described in the docs)
             dip_pvalue = dip.dip(idxs=col)[0]
             log.debug("dip pvalue for col %s: %s", i, dip_pvalue)
