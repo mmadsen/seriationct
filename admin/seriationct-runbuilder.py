@@ -120,7 +120,7 @@ def setup():
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
-    parser.add_argument("--parallelism", help="Number of separate job lists to create", default="4")
+    parser.add_argument("--parallelism", help="Number of separate job lists to create", default="1")
     parser.add_argument("--numsims", type=int, help="Number of simulations to generate across network models by random prior sampling (should be a multiple of the number of network models)")
     parser.add_argument("--networkmodels", help="Path to directory with compressed temporal network models", required=True)
     parser.add_argument("--simprefix", help="Full path prefix to the simulation executable (optional)")

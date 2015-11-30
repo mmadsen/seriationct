@@ -82,7 +82,7 @@ def main():
                         required=True)
     parser.add_argument("--samplefraction", help="Size of samples taken to calculate all statistics, as a proportion", type=float,
                         required=True)
-    parser.add_argument("--innovrate", help="Rate at which innovations occur in population in scale-free theta units", type=float, required=True)
+    parser.add_argument("--innovrate", help="Rate at which innovations occur in population as a per-locus rate", type=float, required=True)
     parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 3000 generations",
                         type=long, default="3000")
     parser.add_argument("--popsize", help="Initial size of population for each community in the model", type=int, required=True)
@@ -143,7 +143,7 @@ def main():
 
     pop = sim.Population(size = networkmodel.get_initial_size(),
                          subPopNames = networkmodel.get_subpopulation_names(),
-                         infoFields=networkmodel.get_info_fields(),
+                         infoFields = networkmodel.get_info_fields(),
                          ploidy=1,
                          loci=config.numloci)
 
