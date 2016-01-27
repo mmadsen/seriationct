@@ -16,3 +16,6 @@ from networkmodel_annotation import read_gml_and_normalize_floats, \
     get_lineage_annotated_graphviz, \
     get_nonhierarchical_oldstyle_annotated_graphviz, \
     write_ordered_dot
+
+
+from graph_algebra import graph_spectral_similarity
