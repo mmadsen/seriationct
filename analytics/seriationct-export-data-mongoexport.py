@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/ubuntu/anaconda2/bin/python
 
 # Copyright (c) 2013.  Mark E. Madsen <mark@madsenlab.org>
 #
@@ -11,7 +11,7 @@ import logging as log
 import argparse
 import seriationct.data as data
 import json
-
+import resource
 
 class DeepDefaultDict(dict):
     def __missing__(self, key):
@@ -37,10 +37,13 @@ def doExport():
 
     cmap = DeepDefaultDict()
 
-
+    cnt = 0
     with open(args.filename) as f:
         for line in f:
-            sample = json.loads(line)
+            cnt += 1
+            if cnt % 100000 == 0:
+                print "rows: %s  memory usage (MB): %s" % (cnt, (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000))
+            sample = json.loads(line.replace("\\", r"\\"))
             sim_id = sample["simulation_run_id"]
             rep = sample["replication"]
             subpop = sample["subpop"]
@@ -53,6 +56,7 @@ def doExport():
     # conditional either we sample trait counts (which will reduce the list of traits we put in the header),
     # or output the full list of counts (which will put every trait in the header)
 
+    print "(debug) file reading complete, now processing to collapse and aggregate"
 
     class_set = set()
     for sim_id in cmap.keys():
@@ -61,8 +65,11 @@ def doExport():
                 for cls, count in cmap[sim_id][rep][subpop].items():
                     class_set.add(cls)
 
+    print "(debug) memory usage after aggregation of classes: %s", (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)
+
     log.info("total number of classes: %s", len(class_set))
 
+    print "(debug) writing output files"
 
     for sim_id in cmap.keys():
         for rep in cmap[sim_id].keys():
