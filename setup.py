@@ -129,7 +129,7 @@ __version__ = '%s'
 
 setup(name="seriationct",
       version=get_version(),
-      packages = find_packages(include=["seriationct","tatome"]),
+      packages = find_packages(exclude=["admin","analytics","build","ca","graphs","conf","doc","notebooks","simulations","test","testdata"]),
       scripts = [
           'admin/seriationct-runbuilder.py',
           'admin/seriationct-explain-networkmodel.py',
