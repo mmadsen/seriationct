@@ -43,7 +43,12 @@ def doExport():
             cnt += 1
             if cnt % 100000 == 0:
                 print "rows: %s  memory usage (MB): %s" % (cnt, (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000))
-            sample = json.loads(line.replace("\\", r"\\"))
+            sample = None
+            try:
+                sample = json.loads(line.replace("\\", r"\\"))
+            except ValueError:
+                print "JSON parsing error in line %s" % (cnt + 1)
+                continue
             sim_id = sample["simulation_run_id"]
             rep = sample["replication"]
             subpop = sample["subpop"]
