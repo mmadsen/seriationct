@@ -1,8 +1,9 @@
 ez_setup
-pymongo
+pymongo==2.7.2
 ming
 uuid
 numpy
-networkx
+networkx==1.9.1
 matplotlib
 git+https://github.com/mmadsen/pytransmission.git
+git+https://github.com/mmadsen/ctmixtures.git

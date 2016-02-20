@@ -90,6 +90,10 @@ def generate_randomized_simulation(seed, net_model):
         cmd += " --networkmodel "
         cmd += net_model
 
+    if args.coresperprocess is not None:
+        cmd += " --cores "
+        cmd += str(args.coresperprocess)
+
     cmd += '\n'
 
     log.debug("%s", cmd)
@@ -126,6 +130,7 @@ def setup():
     parser.add_argument("--simprefix", help="Full path prefix to the simulation executable (optional)")
     parser.add_argument("--networkprefix", help="Full path prefix to the network model directory given in --networkmodels (optiona)")
     parser.add_argument("--jobdirectory", help="Path to a directory where job scripts should be written (optional)")
+    parser.add_argument("--coresperprocess", type=int, help="Number of cores to assign to each simulation run (optional, autoassigns otherwise)")
 
     args = parser.parse_args()
     expconfig = parse_experiment_config(args.expconfig)
