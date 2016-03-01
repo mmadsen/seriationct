@@ -505,7 +505,7 @@ def assign_distance_weighted_edges_to_slice(g, max_x_coord, max_y_coord):
 
 def generate_slices(num_slices, num_populations, edgeweight, max_x_coord, max_y_coord):
     """
-    Using generate_random_complete_clusters_with_interconnect, create num_slices graphs, designating one the initial slice
+    Using generate_random_complete_clusters_with_interconnect, create num_slices networkmodeling, designating one the initial slice
     """
     slice_map = dict()
 

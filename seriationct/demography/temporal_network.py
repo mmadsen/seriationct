@@ -25,7 +25,7 @@ class TemporalNetwork(object):
     TemporalNetwork implements a full "demographic model" in simuPOP terms,
     that is, it manages the size and existence of subpopulations, and the
     migration matrix between them.  The basic data for this model is derived
-    by importing a stack of NetworkX graphs in the form of GML format files.
+    by importing a stack of NetworkX networkmodeling in the form of GML format files.
     The stack is ordered by filename, and represents a set of subpopulations
     with unique ID's, and edges between them which are weighted.  The
     weights may be determined by any underlying model (e.g., distance,
@@ -91,7 +91,7 @@ class TemporalNetwork(object):
     def _parse_network_model(self):
         """
         Given a directory, sequentially read GML files with a naming spec <name>-<integer>.gml
-        and construct a sequence of NetworkX graphs from the GML files
+        and construct a sequence of NetworkX networkmodeling from the GML files
         """
         self.network_slices = dict()
 

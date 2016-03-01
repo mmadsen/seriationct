@@ -170,7 +170,7 @@ def assign_random_parent_from_previous(s_g, prev_g):
 
 def generate_slices(num_slices, num_populations, edgeweight, centroidx, centroidy, spatialsd):
     """
-    Using generate_random_complete_clusters_with_interconnect, create num_slices graphs, designating one the initial slice
+    Using generate_random_complete_clusters_with_interconnect, create num_slices networkmodeling, designating one the initial slice
     """
     slice_map = dict()
 
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     xybasename = args.outputdirectory
     xybasename += "/"
     xybasename += args.experiment
-    xybasename += 'XY.txt'
+    xybasename += '-XY.txt'
 
     with open(xybasename, 'wb') as xyfile:
         xyfile.write(xyheader)

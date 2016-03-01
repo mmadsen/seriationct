@@ -224,7 +224,7 @@ def assign_random_parent_from_previous(s_g, prev_g, num_clusters):
 
 def generate_sequential_slices(num_slices, num_clusters, num_nodes_cluster, density_interconnect, centroid_range_tuple, cluster_spread):
     """
-    Using generate_random_complete_clusters_with_interconnect, create num_slices graphs, designating one the initial slice
+    Using generate_random_complete_clusters_with_interconnect, create num_slices networkmodeling, designating one the initial slice
     """
     slice_map = dict()
     for slice_id in range(1, num_slices+1):
@@ -290,7 +290,7 @@ if __name__ == "__main__":
     xybasename = args.outputdirectory
     xybasename += "/"
     xybasename += args.experiment
-    xybasename += 'XY.txt'
+    xybasename += '-XY.txt'
 
     with open(xybasename, 'wb') as xyfile:
         xyfile.write(xyheader)

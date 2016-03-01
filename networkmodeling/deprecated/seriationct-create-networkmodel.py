@@ -55,7 +55,7 @@ def setup():
     parser.add_argument("--model", choices=['grid','linear','branch'], required=True, default="grid")
     parser.add_argument("--wiring", help="Kind of wiring to use in underlying model",
                         choices=['minmax','complete','mst','hierarchy','random'], default='complete')
-    parser.add_argument("--graphs", help="create plots of networks", default=True)
+    parser.add_argument("--networkmodeling", help="create plots of networks", default=True)
     parser.add_argument("--graphshow", help="show plots in runtime.", default=True)
     parser.add_argument("--child_interconnect_weight",help="the weight used for the child interconnect edges.", default=0.1)
     parser.add_argument("--gchild_interconnect_weight",help="the weight used for the gchild interconnect edges.", default=0.1)

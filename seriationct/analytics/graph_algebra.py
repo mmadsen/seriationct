@@ -17,7 +17,7 @@ def graph_spectral_similarity(g1, g2, threshold = 0.9):
     the sum of squared differences between the sets of Laplacian matrix eigenvalues that account
     for a given fraction of the total sum of the eigenvalues (default = 90%).
 
-    Similarity scores of 0.0 indicate identical graphs (given the adjacency matrix, not necessarily
+    Similarity scores of 0.0 indicate identical networkmodeling (given the adjacency matrix, not necessarily
     node identity or annotations), and large scores indicate strong dissimilarity.  The statistic is
     unbounded above.
     """

@@ -344,7 +344,7 @@ def label_nodes_with_lineage(slice_id, slice,cluster_to_lineage_map):
 
 def generate_sequential_slices(num_slices, num_clusters, num_nodes_cluster, density_interconnect, centroid_range_tuple, cluster_spread):
     """
-    Using generate_random_complete_clusters_with_interconnect, create num_slices graphs, designating one the initial slice
+    Using generate_random_complete_clusters_with_interconnect, create num_slices networkmodeling, designating one the initial slice
     """
     slice_map = dict()
 
@@ -423,7 +423,7 @@ if __name__ == "__main__":
     xybasename = args.outputdirectory
     xybasename += "/"
     xybasename += args.experiment
-    xybasename += 'XY.txt'
+    xybasename += '-XY.txt'
 
     with open(xybasename, 'wb') as xyfile:
         xyfile.write(xyheader)
