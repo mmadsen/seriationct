@@ -37,6 +37,19 @@ class DeepDefaultDict(dict):
 # broken out to allow line profiling
 #@profile
 def doExport():
+    database = args.experiment
+    database += "_samples_raw"
+    db_args = {}
+    db_args['dbhost'] = args.dbhost
+    db_args['dbport'] = args.dbport
+    db_args['database'] = database
+    db_args['dbuser'] = None
+    db_args['dbpassword'] = None
+    pp_db = data.PostProcessingDatabase(db_args)
+
+
+
+
     # the data cache has the following nested dict structure:  simid -> replicate -> subpop -> class:count
 
     cmap = DeepDefaultDict()
@@ -98,6 +111,7 @@ def doExport():
                 row += "\n"
                 outfile.write(row)
 
+    pp_db.store_exported_datafile(args.simid,outputfile)
 
 
 

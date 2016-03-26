@@ -1,6 +1,71 @@
 from mongoengine import *
 import logging as log
 
+# debug
+import inspect
+import pprint
+
+class SimulationRunMetadata(Document):
+    """
+    COPY OF THE MING OBJECT IN SIMULATION_METADATA.PY, UNTIL I MOVE THE MAIN SIMULATION PROGRAM TO MONGOENGINE
+    THIS IS BAD DUPLICATION, BAD PROGRAMMER!
+    """
+    script_filename = StringField()
+    simulation_run_id = StringField()
+    experiment_name = StringField()
+    full_command_line = StringField()
+    innov_rate = FloatField()
+    migration_fraction = FloatField()
+    random_seed = IntField()
+    num_loci = IntField()
+    max_init_traits = IntField()
+    elapsed_time = FloatField()
+    sim_length = IntField()
+    sample_fraction = FloatField()
+    sampled_length = IntField()
+    popsize = IntField()
+    networkmodel = StringField()
+    subpopulation_durations = DictField()
+    subpopulation_origin_times = DictField()
+
+
+
+class SimulationMetadataDatabase(object):
+    def __init__(self, args):
+        self.args = args
+
+        log.info("db connect args: %s", args)
+        connect(db=args['database'],
+                host=args['dbhost'],
+                port=int(args['dbport']),
+                username=args['dbuser'],
+                password=args['dbpassword'])
+
+    def store_simulation_run_parameters(self, sim_id, script, exp, elapsed, length,
+                                        sampledlength, popsize, netmodel, durations,
+                                        fcline, rseed, origins, innovrate, migrationrate,
+                                        numloci, maxinittraits):
+        print  [type(locals()[arg]) for arg in inspect.getargspec(self.store_simulation_run_parameters).args]
+
+        sm = SimulationRunMetadata()
+        sm.script_filename = script
+        sm.simulation_run_id = sim_id
+        sm.experiment_name = exp
+        sm.elapsed_time = elapsed
+        sm.full_command_line = fcline
+        sm.random_seed = rseed
+        sm.run_length = length
+        sm.sampled_length = sampledlength
+        sm.popsize = popsize
+        sm.networkmodel = netmodel
+        sm.subpopulation_durations = durations
+        sm.subpopulation_origin_times = origins
+        sm.innov_rate = innovrate
+        sm.migration_fraction = migrationrate
+        sm.num_loci = numloci
+        sm.max_init_traits = maxinittraits
+        pprint.pprint(sm)
+        sm.save(validate=False)
 
 
 ################ Regional Temporal Network Model Catalog ##############
@@ -77,6 +142,65 @@ class NetworkModelDatabase(object):
 
 ######################## Simulation Data Post Processing #################
 
+
+class PostProcessingDatabase(object):
+    def __init__(self, args):
+        self.args = args
+
+        log.info("db connect args: %s", args)
+        connect(db=args['database'],
+                host=args['dbhost'],
+                port=int(args['dbport']),
+                username=args['dbuser'],
+                password=args['dbpassword'])
+
+
+    def store_exported_datafile(self, sim_id, output_file):
+        exported_db = ExportedSimulationData()
+        exported_db.simulation_run_id = sim_id
+        exported_db.output_file = output_file
+        exported_db.save()
+
+    def store_sampled_datafile(self, input_file, ssize, output_file):
+        # first query the simulation ID of the input file
+        export_obj = ExportedSimulationData.objects.get(output_file=input_file)
+        sampled_db = SampledSimulationData()
+        sampled_db.input_file = input_file
+        sampled_db.output_file = output_file
+        sampled_db.sample_size = ssize
+        sampled_db.simulation_run_id = export_obj.simulation_run_id
+        sampled_db.save()
+
+    def store_assemblage_sampled_datafile(self, input_file, sample_type, sample_fraction, output_file):
+        sampled_obj = SampledSimulationData.objects.get(output_file=input_file)
+        assem_db = AssemblageSampledSimulationData()
+        assem_db.input_file = input_file
+        assem_db.output_file = output_file
+        assem_db.sample_fraction = sample_fraction
+        assem_db.sample_type = sample_type
+        assem_db.simulation_run_id = sampled_obj.simulation_run_id
+        assem_db.save()
+
+    def store_filtered_datafile(self, input_file, network_model_path, drop_threshold, filter_type, min_nonzero_assemblages, output_file):
+        assem_obj = AssemblageSampledSimulationData.objects.get(output_file=input_file)
+        filtered_db = FilteredAssemblageSimulationData()
+        filtered_db.input_file = input_file
+        filtered_db.output_file = output_file
+        filtered_db.network_model_path = network_model_path
+        filtered_db.drop_threshold = drop_threshold
+        filtered_db.filter_type = filter_type
+        filtered_db.min_nonzero_assemblages = min_nonzero_assemblages
+        filtered_db.simulation_run_id = assem_obj.simulation_run_id
+        filtered_db.save()
+
+    def store_seriation_inputfile(self, input_file, sim_id):
+        ser = SeriationInputData()
+        ser.simulation_run_id = sim_id
+        ser.seriation_input_file = input_file
+        ser.save()
+
+
+
 class ExportedSimulationData(EmbeddedDocument):
     """
     Simple export of raw simulation data to data files, time averaging all intervals
@@ -88,6 +212,11 @@ class ExportedSimulationData(EmbeddedDocument):
     simulation_run_id = StringField(required=True)
     # each end product file will come from a single original data export file
     output_file = StringField(required=True)
+    meta = {
+        'indexes': [
+            '$output_file'
+        ]
+    }
 
 
 class SampledSimulationData(EmbeddedDocument):
@@ -104,6 +233,11 @@ class SampledSimulationData(EmbeddedDocument):
     sample_size = IntField(required=True)
     output_file = StringField(required=True)
     simulation_run_id = StringField(required=True)
+    meta = {
+        'indexes': [
+            '$output_file'
+        ]
+    }
 
 
 class AssemblageSampledSimulationData(EmbeddedDocument):
@@ -121,6 +255,11 @@ class AssemblageSampledSimulationData(EmbeddedDocument):
     sample_fraction = FloatField(required=True)
     output_file = StringField(required=True)
     simulation_run_id = StringField(required=True)
+    meta = {
+        'indexes': [
+            '$output_file'
+        ]
+    }
 
 
 class FilteredAssemblageSimulationData(EmbeddedDocument):
@@ -141,6 +280,11 @@ class FilteredAssemblageSimulationData(EmbeddedDocument):
     min_nonzero_assemblages = IntField()
     output_file = StringField(required=True)
     simulation_run_id = StringField(required=True)
+    meta = {
+        'indexes': [
+            '$output_file'
+        ]
+    }
 
 
 class SeriationInputData(EmbeddedDocument):
@@ -157,4 +301,9 @@ class SeriationInputData(EmbeddedDocument):
     """
     seriation_input_file = StringField(required=True)
     simulation_run_id = StringField(required=True)
+    meta = {
+        'indexes': [
+            '$seriation_input_file'
+        ]
+    }
 

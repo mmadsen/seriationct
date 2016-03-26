@@ -68,7 +68,7 @@ def main():
     MAXALLELES = 10000000
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", help="provide name for experiment", required=True)
+    parser.add_argument("--experiment", help="provide name for experiment", required=True, type=str)
     parser.add_argument("--cores", type=int, help="Number of cores to use for simuPOP, overrides devel flag and auto calculation")
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--devel", help="Use only half of the available CPU cores", type=int, default=1)
@@ -76,7 +76,7 @@ def main():
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--reps", help="Replicated populations per parameter set", type=int, default=4)
     parser.add_argument("--networkmodel", help="Path of a zipfile containing GML files representing the temporal network model for this simulation",
-                        required=True)
+                        required=True, type=str)
     parser.add_argument("--numloci", help="Number of loci per individual", type=int, required=True)
     parser.add_argument("--maxinittraits", help="Max initial number of traits per locus for initialization", type=int,
                         required=True)
@@ -84,7 +84,7 @@ def main():
                         required=True)
     parser.add_argument("--innovrate", help="Rate at which innovations occur in population as a per-locus rate", type=float, required=True)
     parser.add_argument("--simlength", help="Time at which simulation and sampling end, defaults to 3000 generations",
-                        type=long, default="3000")
+                        type=int, default="3000")
     parser.add_argument("--popsize", help="Initial size of population for each community in the model", type=int, required=True)
     parser.add_argument("--migrationfraction", help="Fraction of population that migrates each time step", type=float, required=True, default=0.2)
     parser.add_argument("--seed", type=int, help="Seed for random generators to ensure replicability")
@@ -175,9 +175,32 @@ def main():
     #log.info("simulation complete in %s seconds with %s cores", elapsed, cores)
     log.info("simulation complete,%s,%s",cores,elapsed)
     sampled_length = int(config.simlength) - burn_time
-    data.store_simulation_metadata(sim_id, script, config.experiment, elapsed, config.simlength, sampled_length, config.popsize,
-                                 config.networkmodel,networkmodel.get_subpopulation_durations(),full_command_line,config.seed,
-                                 networkmodel.get_subpopulation_origin_times())
+
+    database = config.experiment
+    database += "_samples_raw"
+    db_args = {}
+    db_args['dbhost'] = config.dbhost
+    db_args['dbport'] = config.dbport
+    db_args['database'] = database
+    db_args['dbuser'] = None
+    db_args['dbpassword'] = None
+    sm_db = data.SimulationMetadataDatabase(db_args)
+    sm_db.store_simulation_run_parameters(sim_id,
+                                          script,
+                                          config.experiment,
+                                          elapsed,
+                                          config.simlength,
+                                          sampled_length,
+                                          config.popsize,
+                                          config.networkmodel,
+                                          networkmodel.get_subpopulation_durations(),
+                                          full_command_line,
+                                          config.seed,
+                                          networkmodel.get_subpopulation_origin_times(),
+                                          innovation_rate,
+                                          config.migrationfraction,
+                                          config.numloci,
+                                          config.maxinittraits)
 
 
 if __name__ == "__main__":

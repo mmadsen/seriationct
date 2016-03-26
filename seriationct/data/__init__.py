@@ -8,11 +8,12 @@ Description here
 
 """
 from dbutils import *
-from simulation_metadata import SimulationMetadata, store_simulation_metadata
+
 from sample_deme import ClassFrequencySampleUnaveraged, storeClassFrequencySample, storeClassFrequencySamples
 from processing_db import RegionalTemporalNetworkModel, NetworkModelDatabase, ExportedSimulationData, \
     SampledSimulationData, AssemblageSampledSimulationData, \
-    FilteredAssemblageSimulationData, SeriationInputData
+    FilteredAssemblageSimulationData, SeriationInputData, PostProcessingDatabase, \
+    SimulationMetadataDatabase
 
 # the following *should* be overridden by command line processing, even by defaults.
 # bogus values are to ensure that CLI processing and configuration is working without bugs
@@ -27,5 +28,5 @@ experiment_name = "test"
 # of the data object being stored.  Ming configuration is then automatic so that simulation simulations need
 # include only two lines which are fully generic.
 
-modules = [simulation_metadata, sample_deme]
+modules = [sample_deme]
 

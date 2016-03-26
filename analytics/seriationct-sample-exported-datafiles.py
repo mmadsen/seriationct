@@ -15,6 +15,7 @@ import os
 import fnmatch
 import numpy as np
 from decimal import *
+import seriationct.data as data
 
 
 def setup():
@@ -102,6 +103,17 @@ if __name__ == "__main__":
     getcontext().rounding = ROUND_DOWN
     getcontext().prec = 4
 
+    database = args.experiment
+    database += "_samples_raw"
+    db_args = {}
+    db_args['dbhost'] = args.dbhost
+    db_args['dbport'] = args.dbport
+    db_args['database'] = database
+    db_args['dbuser'] = None
+    db_args['dbpassword'] = None
+    pp_db = data.PostProcessingDatabase(db_args)
+
+
     for file in os.listdir(args.inputdirectory):
         if fnmatch.fnmatch(file, '*.txt'):
             root = parse_filename_into_root(file)
@@ -160,7 +172,7 @@ if __name__ == "__main__":
                     row += "\n"
                     outfile.write(row)
 
-
+            pp_db.store_sampled_datafile(file,args.samplesize,outputfile)
 
             log.info("Completed processing of file %s", outputfile)
 
