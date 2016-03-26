@@ -1,0 +1,15 @@
+{
+  "network_type": "pnn",
+  "network_generator": "seriationct-build-spatial-neighbor-network.py",
+  "mean_edges_perpopulation_low": 1.1,
+  "mean_edges_perpopulation_high": 4.0,
+  "sd_edges_perpopulation_low": 0.1,
+  "sd_edges_perpopulation_high": 1.0,
+  "exponential_coefficient_low": 1.0,
+  "exponential_coefficient_high": 4.0,
+  "edgeweight": 10,
+  "num_populations_per_slice": 32,
+  "spatial_aspect_ratio": 1.0,
+  "slices": 10
+}
+

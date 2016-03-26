@@ -32,21 +32,24 @@ import json
 import uuid
 import os
 import csv
+import shutil
+from seriationct.data import NetworkModelDatabase
 
 def setup():
     global args, nmconfig
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", help="provide name for experiment", required=True)
+    parser.add_argument("--seed", type=int, help="random generator seed for replication, defaults to None", default=None)
     parser.add_argument("--netmodelconfig", help="Network model configuration file path", required=True)
     parser.add_argument("--debug", help="turn on debugging output")
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
-    parser.add_argument("--nummodels", type=int, help="Number of network models to  random prior sampling (should be a multiple of the number of network models)")
+    parser.add_argument("--nummodels", type=int, help="Number of network models to create through random prior sampling (should be a multiple of the number of network models)")
     parser.add_argument("--rawnetworkmodelspath", help="Path to directory to place raw temporal network model subdirectories", required=True)
     parser.add_argument("--compressednetworkmodelspath", help="Path to directory to place compressed network model files", required=True)
     parser.add_argument("--xyfilespath", help="Path to directory to place assemblage coordinate XY files", required=True)
-    parser.add_argument("--modelrepositorycsv", help="Path to CSV file to record parameters for each model for later analysis", required=True)
+    #parser.add_argument("--modelrepositorycsv", help="Path to CSV file to record parameters for each model for later analysis", required=True)
 
     args = parser.parse_args()
     nmconfig = parse_netmodel_config(args.netmodelconfig)
@@ -58,21 +61,48 @@ def setup():
     else:
         log.basicConfig(level=log.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
-    log.info("Generating %s network models with sampled priors for experiment: %s", args.nummodels, args.experiment)
+    log.info("Generating %s network models with sampled priors for experiment: %s using generator: %s", args.nummodels, args.experiment, nmconfig['network_generator'])
 
 
 
-def generate_randomized_networkmodel(seed, net_model):
+def generate_randomized_networkmodel(seed):
     """
     Creates a simulation command line for the sim-networkmodel-seriation.py model, using random
-    prior distributions for the innovation rate and migration fraction
+    prior distributions for the innovation rate and migration fraction.
 
-    :return: string
+    :return: string, dict of parameters for CSV file
     """
+    record = {}
+    npr.RandomState(seed=seed)
 
-    field_order = ['modelid', 'mean_edges_perpopulation', 'sd_edges_perpopulation', 'exponential_decay_coefficient', 'edgeweight', 'num_populations_per_slice', 'slices', 'spatial_aspect_ratio']
-    params = dict()
+    model_uuid = str(uuid.uuid4())
+    record['model_uuid'] = model_uuid
 
+    model_id = args.experiment
+    model_id += "_"
+    model_id += nmconfig['network_type']
+    model_id += "_"
+    model_id += model_uuid
+
+    record['model_id'] = model_id
+    record['network_type'] = nmconfig['network_type']
+
+    rawdirectorypath = args.rawnetworkmodelspath
+    rawdirectorypath += "/"
+    rawdirectorypath += model_id
+    record['rawdirectorypath'] = rawdirectorypath
+
+    compressedfilepath = args.compressednetworkmodelspath
+    compressedfilepath += "/"
+    compressedfilepath += model_id
+    compressedfilepath += ".zip"
+    record['compressedfilepath'] = compressedfilepath
+
+    xyfilepath = args.xyfilespath
+    xyfilepath += "/"
+    xyfilepath += model_id
+    xyfilepath += '-XY.txt'
+    record['xyfilepath'] = xyfilepath
 
     mean_edges_perpopulation = npr.uniform(low=float(nmconfig['mean_edges_perpopulation_low']),
                                            high=float(nmconfig['mean_edges_perpopulation_high']))
@@ -83,63 +113,67 @@ def generate_randomized_networkmodel(seed, net_model):
     exponential_coefficient = npr.uniform(low=float(nmconfig['exponential_coefficient_low']),
                                           high=float(nmconfig['exponential_coefficient_high']))
 
-
-{
-
-    "edgeweight": 10,
-    "slices": 10,
-    "numpopulations": 32
-}
+    record['mean_edges_per_population'] = mean_edges_perpopulation
+    record['sd_edges_per_population'] = sd_edges_perpopulation
+    record['exponential_decay_coefficient'] = exponential_coefficient
 
 
+    nm_generator = nmconfig['network_generator']
+    record['generator'] = nm_generator
+    cmd = nm_generator
 
-    cmd = "seriationct-build-spatial-neighbor.py "
+    cmd += " --modelid "
+    cmd += model_id
 
-    if args.dbhost is not None:
-        cmd += " --dbhost "
-        cmd += args.dbhost
-
-
-    if args.dbport is not None:
-        cmd += " --dbport "
-        cmd += args.dbport
+    cmd += " --outputdirectory "
+    cmd += rawdirectorypath
 
     cmd += " --experiment "
     cmd += args.experiment
 
     cmd += " --slices "
     cmd += str(nmconfig['slices'])
+    record['slices'] = nmconfig['slices']
 
     cmd += " --debug "
     cmd += args.debug
 
     cmd += " --numpopulations "
-    cmd += str(nmconfig['numpopulations'])
+    cmd += str(nmconfig['num_populations_per_slice'])
+    record['populations_per_slice'] = nmconfig['num_populations_per_slice']
 
     cmd += " --edgeweight "
     cmd += str(nmconfig['edgeweight'])
+    record['edgeweight'] = nmconfig['edgeweight']
 
+    cmd += " --spatialaspectratio "
+    cmd += str(nmconfig['spatial_aspect_ratio'])
+    record['spatial_aspect_ratio'] = nmconfig['spatial_aspect_ratio']
 
+    cmd += " --meanedgesperpopulation "
+    cmd += str(mean_edges_perpopulation)
 
-    # for production runs, let the system decide how many cores to use
-    cmd += " --devel 0"
+    cmd += " --sdedgesperpopulation "
+    cmd += str(sd_edges_perpopulation)
 
-    if args.networkprefix is not None:
-        cmd += " --networkmodel "
-        cmd += args.networkprefix + "/"
-        cmd += net_model
-    else:
-        cmd += " --networkmodel "
-        cmd += net_model
+    cmd += " --exponentialcoefficient "
+    cmd += str(exponential_coefficient)
 
-    if args.coresperprocess is not None:
-        cmd += " --cores "
-        cmd += str(args.coresperprocess)
 
     cmd += '\n'
 
     log.debug("%s", cmd)
-    return cmd
+    return (cmd, record)
+
+
+def get_csv_header():
+    fields = ['model_id', 'model_uuid', 'network_type', 'generator', 'mean_edges_per_population',
+              'sd_edges_per_population','exponential_decay_coefficient',
+              'edgeweight', 'spatial_aspect_ratio', 'populations_per_slice', 'slices', 'rawdirectorypath',
+              'xyfilepath', 'compressedfilepath']
+
+    return fields
+
 
 
 def parse_netmodel_config(config_path):
@@ -157,71 +191,84 @@ def parse_netmodel_config(config_path):
 
 
 
+def create_compressed_networkmodel(model_id):
+    """
 
+    TODO:  ZipWriter seems to want to put individual files in the zipfile, we need to zip a whole dir  shell out?
+
+    """
+    cmd = "zip -r "
+    cmd += args.compressednetworkmodelspath
+    cmd += "/"
+    cmd += model_id
+    cmd += ".zip "
+    cmd += args.rawnetworkmodelspath
+    cmd += "/"
+    cmd += model_id
+
+    os.system(cmd)
+
+
+def copy_xyfile(model_id):
+    """
+    Copies the XY coordinates file from a raw network model to the xy files directory, for a given model ID
+    """
+    xyfile_src = args.rawnetworkmodelspath
+    xyfile_src += "/"
+    xyfile_src += model_id
+    xyfile_src += "/"
+    xyfile_src += model_id
+    xyfile_src += "-XY.txt"
+
+    xyfile_dest = args.xyfilespath
+    xyfile_dest += "/"
+    xyfile_dest += model_id
+    xyfile_dest += "-XY.txt"
+
+    shutil.copy(xyfile_src, xyfile_dest)
 
 
 
 def main():
+    database = args.experiment
+    database += "_samples_raw"
+    db_args = {}
+    db_args['dbhost'] = args.dbhost
+    db_args['dbport'] = args.dbport
+    db_args['database'] = database
+    db_args['dbuser'] = None
+    db_args['dbpassword'] = None
+    network_db = NetworkModelDatabase(db_args)
+
+    modelrepository_file = args.experiment
+    modelrepository_file += "-networkmodels.csv"
+
+    with open(modelrepository_file, 'wb') as csvfile:
+        fields = get_csv_header()
+        writer = csv.DictWriter(csvfile, fieldnames=fields)
+        writer.writeheader()
 
 
-    for i in range(0, args.nummodels):
+        for i in range(0, args.nummodels):
+            cmd, record = generate_randomized_networkmodel(args.seed)
+            model_id = record['model_id']
+
+            rawdir = args.rawnetworkmodelspath
+            rawdir += "/"
+            rawdir += model_id
+
+            os.mkdir(rawdir)
+
+            os.system(cmd)
+            writer.writerow(record)
+
+            network_db.store_model_metadata(record)
+
+            copy_xyfile(model_id)
+            create_compressed_networkmodel(model_id)
 
 
 
-
-
-
-
-    file_list = []
-    base_name = "job-"
-    base_name += args.experiment
-    base_name += "-"
-
-    for i in range(0, num_files):
-        filename = ''
-        if args.jobdirectory is not None:
-            filename = args.jobdirectory + "/"
-        filename += base_name
-        filename += str(uuid.uuid4())
-        filename += ".sh"
-
-        log.debug("job file: %s", filename)
-        f = open(filename, 'w')
-
-        f.write("#!/bin/sh\n\n")
-        file_list.append(f)
-
-    file_cycle = itertools.cycle(file_list)
-
-
-    # read all the network model archives, and create a itertools.cycle for them
-    # so that we distribute network models across the randomly chosen priors
-    network_model_files = []
-
-    for file in os.listdir(args.networkmodels):
-        if file.endswith(".zip"):
-            full_filepath = args.networkmodels + "/" + file
-            network_model_files.append(full_filepath)
-            log.info("Network model found: %s", full_filepath)
-
-    network_model_cycle = itertools.cycle(network_model_files)
-
-
-    for i in xrange(0, args.numsims):
-
-        # give us a random seed that will fit in a 64 bit long integer
-        seed = npr.randint(1,2**31)
-
-        net_model = network_model_cycle.next()
-        cmd = generate_randomized_simulation(seed, net_model)
-
-        fc = file_cycle.next()
-        log.debug("cmd: %s", cmd)
-        fc.write(cmd)
-
-
-    for fh in file_list:
-        fh.close()
 
 
 

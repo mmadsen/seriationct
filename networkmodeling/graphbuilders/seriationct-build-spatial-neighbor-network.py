@@ -97,6 +97,7 @@ def setup():
     parser.add_argument("--debug", type=int, help="turn on debugging output")
     parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
     parser.add_argument("--experiment", help="experiment name, used as prefix to GML files", required=True)
+    parser.add_argument("--modelid", help="model ID for a specific network model instance", required = True)
     parser.add_argument("--slices", type=int, help="number of slices to create", default=6)
     parser.add_argument("--numpopulations",type=int, help="number of populations per slice", default=10)
     parser.add_argument("--spatialaspectratio", type=float, help="Aspect ratio for the overall space of the region.  "
@@ -557,8 +558,7 @@ if __name__ == "__main__":
     # write slices as GML files
     basename = args.outputdirectory
     basename += "/"
-    basename += args.experiment
-    basename += "-"
+    basename += args.modelid
 
     xyheader = "assemblage\teasting\tnorthing\n"
     xyrows = []
@@ -569,13 +569,14 @@ if __name__ == "__main__":
         xyrows.extend(generate_xyrows_for_slice(slice))
 
         filename = basename
+        filename += "-"
         filename += str(i).zfill(3)
         filename += ".gml"
         nx.write_gml(slice, filename)
 
     xybasename = args.outputdirectory
     xybasename += "/"
-    xybasename += args.experiment
+    xybasename += args.modelid
     xybasename += '-XY.txt'
 
     with open(xybasename, 'wb') as xyfile:

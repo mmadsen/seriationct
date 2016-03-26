@@ -10,7 +10,9 @@ Description here
 from dbutils import *
 from simulation_metadata import SimulationMetadata, store_simulation_metadata
 from sample_deme import ClassFrequencySampleUnaveraged, storeClassFrequencySample, storeClassFrequencySamples
-
+from processing_db import RegionalTemporalNetworkModel, NetworkModelDatabase, ExportedSimulationData, \
+    SampledSimulationData, AssemblageSampledSimulationData, \
+    FilteredAssemblageSimulationData, SeriationInputData
 
 # the following *should* be overridden by command line processing, even by defaults.
 # bogus values are to ensure that CLI processing and configuration is working without bugs
