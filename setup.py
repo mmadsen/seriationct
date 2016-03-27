@@ -75,18 +75,18 @@ class CustomDevelopClass(develop):
 
 @versioned
 class CustomInstallClass(install):
-    # def run(self):
-    #     super.run()
-    #     zip_cmd = "zip -r seriationct-experiment-template.zip experiment-template"
-    #     os.system(zip_cmd)
-    #     # create directory to house the experiment template, unless it already exists, then just allow the file to be overwritten
-    #     try:
-    #         os.mkdir("/usr/local/share/seriationct")
-    #     except:
-    #         pass
-    #     shutil.copy('seriationct-experiment-template.zip', '/usr/local/share/seriationct/seriationct-experiment-template.zip')
-    #     shutil.copy('admin/seriationct-create-experiment-directory.sh', '/usr/local/bin/seriationct-create-experiment-directory')
-    pass
+    def run(self):
+        install.run(self)
+        zip_cmd = "zip -r seriationct-experiment-template.zip experiment-template >& /dev/null"
+        os.system(zip_cmd)
+        # create directory to house the experiment template, unless it already exists, then just allow the file to be overwritten
+        try:
+            os.mkdir("/usr/local/share/seriationct")
+        except:
+            pass
+        shutil.copy('seriationct-experiment-template.zip', '/usr/local/share/seriationct/seriationct-experiment-template.zip')
+        shutil.copy('admin/seriationct-create-experiment-directory.sh', '/usr/local/bin/seriationct-create-experiment-directory')
+        print "Copied seriationct-experiment-template.zip to /usr/local/share/seriationct for use in setting up simulation experiments"
 
     # TODO: need to run custom commands, AND still have the normal install proceed.  we need something like super.run() but that doesn't work
 
