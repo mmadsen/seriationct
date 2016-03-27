@@ -9,8 +9,8 @@ set -e
 ## and samples the simulation output, builds seriation scripts, runs seriations, and annotates the output
 
 sh bin/build-simulations.sh &> build-simulation.log
-
-sh bin/run-simulations-gridengine.sh &> simulation.log
+sh bin/run-simulations.sh &> simulation.log
+#sh bin/run-simulations-gridengine.sh &> simulation.log
 sh bin/export-data.sh &> export.log
 sh bin/simulation-postprocess.sh &> postprocess.log
 sh bin/build-seriations.sh &> build-seriations.log

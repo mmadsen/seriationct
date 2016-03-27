@@ -34,7 +34,6 @@ def setup():
                         help="type of sampling.  random has no stratification, temporal is rough early/late stratification, spatial is"
                             "quadrants, spatiotemporal is stratification by both, complete preserves all rows, excludelist returns all rows except those given in a file", required=True)
     parser.add_argument("--excludefile", help="File of assemblage names to exclude from the input list")
-    parser.add_argument("--networkmodel", help="Path to the zipped network model used in simulations, used for slicestratification"),
     parser.add_argument("--numsamples", type=int, help="number of samples to take from each original data set (default is 1)", default=1)
     parser.add_argument("--temporaldata", help="path to directory with temporal data files to match files in inputdirectory "
                                                "(required for temporal or spatiotemporal sampling")
@@ -42,6 +41,9 @@ def setup():
     parser.add_argument("--spatialquadrats", type=int, help="Number of blocks in the X and Y directions in which to stratify the sample", default=3)
     parser.add_argument("--spatialdata", help="path to XY file of spatial coordinates for assemblages")
     parser.add_argument("--maxsizespatial", type=int, help="Maximum size of spatial coordinates in X and Y directions", default=1100)
+    parser.add_argument("--experiment", help="provide name for experiment, to be used as prefix for database collections")
+    parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
+    parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
 
 
 
@@ -494,7 +496,9 @@ if __name__ == "__main__":
     for file in os.listdir(args.inputdirectory):
         log.info("Starting processing of %s", file)
         if fnmatch.fnmatch(file, '*.txt'):
-
+            full_fname = args.inputdirectory
+            full_fname += "/"
+            full_fname += file
             root = parse_filename_into_root(file)
 
             (header, row_list,assemblage_to_row) = read_unsampled_file(file)
@@ -517,7 +521,7 @@ if __name__ == "__main__":
                 elif args.sampletype == 'excludelist':
                     sampled_rows = exclude_assemblage_list(row_list, args.excludefile, assemblage_to_row)
                 elif args.sampletype == 'slicestratified':
-                    sampled_rows = random_sample_per_slice_stratification(row_list, assemblage_to_row,file)
+                    sampled_rows = random_sample_per_slice_stratification(row_list, assemblage_to_row,full_fname)
 
                 log.info("Writing sampled output for file: %s ", outputfile)
 
@@ -531,6 +535,6 @@ if __name__ == "__main__":
                         outfile.write(row_str)
 
 
-        pp_db.store_assemblage_sampled_datafile(file, args.sampletype, args.samplefraction, outputfile)
+        pp_db.store_assemblage_sampled_datafile(full_fname, args.sampletype, args.samplefraction, outputfile)
         log.info("Completed processing of file %s", file)
 

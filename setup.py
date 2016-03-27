@@ -18,6 +18,7 @@ from setuptools.command.install import install
 import subprocess
 import os
 import re
+import shutil
 
 # create a decorator that wraps the normal develop and
 # install commands to first update the version
@@ -61,6 +62,9 @@ __version__ = '%s'
         print "updated _version.py to '%s'" % ver
         orig_callable(self)
 
+
+
+
     command_subclass.run = modified_callable
     return command_subclass
 
@@ -71,7 +75,20 @@ class CustomDevelopClass(develop):
 
 @versioned
 class CustomInstallClass(install):
+    # def run(self):
+    #     super.run()
+    #     zip_cmd = "zip -r seriationct-experiment-template.zip experiment-template"
+    #     os.system(zip_cmd)
+    #     # create directory to house the experiment template, unless it already exists, then just allow the file to be overwritten
+    #     try:
+    #         os.mkdir("/usr/local/share/seriationct")
+    #     except:
+    #         pass
+    #     shutil.copy('seriationct-experiment-template.zip', '/usr/local/share/seriationct/seriationct-experiment-template.zip')
+    #     shutil.copy('admin/seriationct-create-experiment-directory.sh', '/usr/local/bin/seriationct-create-experiment-directory')
     pass
+
+    # TODO: need to run custom commands, AND still have the normal install proceed.  we need something like super.run() but that doesn't work
 
 def get_version():
     try:
@@ -138,9 +155,10 @@ setup(name="seriationct",
           'analytics/seriationct-sample-exported-datafiles.py',
           'analytics/seriationct-assemblage-duration-export.py',
           'analytics/seriationct-sample-assemblages-for-seriation.py',
-          'analytics/seriationct-sample-assemblages-for-samplesize-sequence-seriation.py',
           'analytics/seriationct-score-single-linear-network.py',
           'analytics/seriationct-filter-types.py',
+          'analytics/seriationct-export-simids.py',
+          'analytics/seriationct-finalize-seriation-input.py',
           'networkmodeling/graphbuilders/seriationct-build-clustered-network.py',
           'networkmodeling/graphbuilders/seriationct-build-lineage-splitting-network.py',
           'networkmodeling/graphbuilders/seriationct-build-single-linear-network.py',

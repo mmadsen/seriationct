@@ -30,7 +30,6 @@ def setup():
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
     parser.add_argument("--inputdirectory", help="path to directory with CSV files to sample", required=True)
     parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
-    parser.add_argument("--networkmodel", help="path to network model which generated the data", required=True)
     parser.add_argument("--dropthreshold", type=float, help="Threshold for the Hartigan dip test for considering a type unimodal", default=0.1)
     parser.add_argument("--filtertype", choices=['nonzerodip','dip', 'onlynonzero'], help="Filtering can remove just types \
         that fail Hartigans dip test, dip plus types that have less than two nonzero entries, or just types with less than two nonzero entries", \
@@ -182,7 +181,7 @@ def row_num_for_assemblage(assemblage, assemblages):
     return None
 
 def get_networkmodel_for_input(file):
-    sampled_obj = data.SampledSimulationData.objects.get(output_file=file)
+    sampled_obj = data.AssemblageSampledSimulationData.objects.get(output_file=file)
     sim_id = sampled_obj.simulation_run_id
     sim_run = data.SimulationRunMetadata.objects.get(simulation_run_id=sim_id)
     networkmodel = sim_run.networkmodel
@@ -214,11 +213,14 @@ if __name__ == "__main__":
 
     for file in os.listdir(args.inputdirectory):
         if fnmatch.fnmatch(file, '*.txt'):
+            full_fname = args.inputdirectory
+            full_fname += "/"
+            full_fname += file
             root = parse_filename_into_root(file)
 
-            networkmodel = get_networkmodel_for_input(file)
+            networkmodel = get_networkmodel_for_input(full_fname)
             # we use the actual TemporalNetwork
-            netmodel = TemporalNetwork(networkmodel_path=args.networkmodel, sim_length=1000)
+            netmodel = TemporalNetwork(networkmodel_path=networkmodel, sim_length=1000)
 
             time_map = netmodel.get_subpopulation_slice_ids()
             # log.debug("assemblage time_map: %s", time_map)
@@ -281,9 +283,7 @@ if __name__ == "__main__":
                     outfile.write(row)
 
 
-        sim_id = pp_db.store_filtered_datafile(file,networkmodel,args.dropthreshold,args.filtertype,args.minnonzero,outputfile)
+        sim_id = pp_db.store_filtered_datafile(full_fname,networkmodel,args.dropthreshold,args.filtertype,args.minnonzero,outputfile)
 
-        # this is the last stage of processing so we just store the simulation input data now!
-        pp_db.store_seriation_inputfile(outputfile, sim_id)
         log.debug("Completed processing of file %s", outputfile)
 

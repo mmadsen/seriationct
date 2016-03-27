@@ -1,17 +1,9 @@
 #!/bin/sh
 
 # first command line argument is the directory within which to build the experiment
-mkdir -p $1
-cp -rp ../template/bin $1
-cp ../template/runall.sh $1/
+unzip /usr/local/share/seriationct/seriationct-experiment-template.zip
+mv experiment-template $1
 
-# second command line argument is the seriationct simulation configuration file
-cp ../template/$2.json $1/$2.json
-
-# second command line argument is a network model configuration file
-cp ../template/$3.json $1/$3.json
-
-cp ../template/README.md $1/
 cd $1/bin
 perl -pi.bak -e "s/REPLACEME/$1/g" *.sh
 rm *.bak

@@ -116,6 +116,10 @@ if __name__ == "__main__":
 
     for file in os.listdir(args.inputdirectory):
         if fnmatch.fnmatch(file, '*.txt'):
+            full_fname = args.inputdirectory
+            full_fname += "/"
+            full_fname += file
+
             root = parse_filename_into_root(file)
 
             outputfile = args.outputdirectory + "/" + root + "-sampled-" + str(args.samplesize) + ".txt"
@@ -172,7 +176,7 @@ if __name__ == "__main__":
                     row += "\n"
                     outfile.write(row)
 
-            pp_db.store_sampled_datafile(file,args.samplesize,outputfile)
+            pp_db.store_sampled_datafile(full_fname,args.samplesize,outputfile)
 
             log.info("Completed processing of file %s", outputfile)
 

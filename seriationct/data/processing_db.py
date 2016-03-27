@@ -40,7 +40,7 @@ class SimulationMetadataDatabase(object):
     def __init__(self, args):
         self.args = args
 
-        log.info("db connect args: %s", args)
+        log.debug("db connect args: %s", args)
         connect(db=args['database'],
                 host=args['dbhost'],
                 port=int(args['dbport']),
@@ -106,7 +106,7 @@ class NetworkModelDatabase(object):
     def __init__(self, args):
         self.args = args
 
-        log.info("db connect args: %s", args)
+        log.debug("db connect args: %s", args)
         connect(db = args['database'],
                 host = args['dbhost'],
                 port = int(args['dbport']),
@@ -151,7 +151,7 @@ class PostProcessingDatabase(object):
     def __init__(self, args):
         self.args = args
 
-        log.info("db connect args: %s", args)
+        log.debug("db connect args: %s", args)
         connect(db=args['database'],
                 host=args['dbhost'],
                 port=int(args['dbport']),
@@ -167,6 +167,7 @@ class PostProcessingDatabase(object):
 
     def store_sampled_datafile(self, input_file, ssize, output_file):
         # first query the simulation ID of the input file
+        log.debug("sampled input_file: %s", input_file)
         export_obj = ExportedSimulationData.objects.get(output_file=input_file)
         sampled_db = SampledSimulationData()
         sampled_db.input_file = input_file
@@ -176,6 +177,7 @@ class PostProcessingDatabase(object):
         sampled_db.save()
 
     def store_assemblage_sampled_datafile(self, input_file, sample_type, sample_fraction, output_file):
+        log.debug("assem sampled input_file: %s", input_file)
         sampled_obj = SampledSimulationData.objects.get(output_file=input_file)
         assem_db = AssemblageSampledSimulationData()
         assem_db.input_file = input_file
@@ -186,6 +188,7 @@ class PostProcessingDatabase(object):
         assem_db.save()
 
     def store_filtered_datafile(self, input_file, network_model_path, drop_threshold, filter_type, min_nonzero_assemblages, output_file):
+        log.debug("filter input_file: %s", input_file)
         assem_obj = AssemblageSampledSimulationData.objects.get(output_file=input_file)
         filtered_db = FilteredAssemblageSimulationData()
         filtered_db.input_file = input_file
@@ -198,15 +201,21 @@ class PostProcessingDatabase(object):
         filtered_db.save()
         return assem_obj.simulation_run_id
 
-    def store_seriation_inputfile(self, input_file, sim_id):
+    def store_seriation_inputfile(self, input_file):
+        log.debug("seriation input file: %s", input_file)
+        filtered_obj = FilteredAssemblageSimulationData.objects.get(output_file=input_file)
+        rtn_obj = RegionalTemporalNetworkModel.objects.get(compressedfilepath=filtered_obj.network_model_path)
+        xyfile = rtn_obj.xyfilepath
         ser = SeriationInputData()
-        ser.simulation_run_id = sim_id
+        ser.simulation_run_id = filtered_obj.simulation_run_id
         ser.seriation_input_file = input_file
+        ser.network_model_path = filtered_obj.network_model_path
+        ser.xy_file_path = xyfile
         ser.save()
 
 
 
-class ExportedSimulationData(EmbeddedDocument):
+class ExportedSimulationData(Document):
     """
     Simple export of raw simulation data to data files, time averaging all intervals
     together for a given assemblage.  There is only one of these files for each
@@ -224,7 +233,7 @@ class ExportedSimulationData(EmbeddedDocument):
     }
 
 
-class SampledSimulationData(EmbeddedDocument):
+class SampledSimulationData(Document):
     """
     Resampling of very large exported data records to standardize the sample of objects
     per assemblage to something closer to archaeological recovery.  This tends to
@@ -245,7 +254,7 @@ class SampledSimulationData(EmbeddedDocument):
     }
 
 
-class AssemblageSampledSimulationData(EmbeddedDocument):
+class AssemblageSampledSimulationData(Document):
     """
     Sample of some number of assemblages from the total number of communities
     available in the exported and sampled data.
@@ -267,7 +276,7 @@ class AssemblageSampledSimulationData(EmbeddedDocument):
     }
 
 
-class FilteredAssemblageSimulationData(EmbeddedDocument):
+class FilteredAssemblageSimulationData(Document):
     """
     Filtered set of assemblages where all assemblages are kept, but some types
     (columns) are removed based on a set of filtering criteria (e.g., < 3 assemblages
@@ -292,7 +301,7 @@ class FilteredAssemblageSimulationData(EmbeddedDocument):
     }
 
 
-class SeriationInputData(EmbeddedDocument):
+class SeriationInputData(Document):
     """
     Final set of post processed data files to be used as input to IDSS seriation.
     This class is a simple pointer to the output of whatever the last stage
@@ -306,6 +315,8 @@ class SeriationInputData(EmbeddedDocument):
     """
     seriation_input_file = StringField(required=True)
     simulation_run_id = StringField(required=True)
+    network_model_path = StringField(required=True)
+    xy_file_path = StringField(required=True)
     meta = {
         'indexes': [
             '$seriation_input_file'
