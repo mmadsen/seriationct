@@ -38,27 +38,36 @@ def setup():
     data.set_experiment_name(args.experiment)
     data.set_database_hostname(args.dbhost)
     data.set_database_port(args.dbport)
-    config = data.getMingConfiguration(data.modules)
-    ming.configure(**config)
+
 
 
 if __name__ == "__main__":
     setup()
 
+    database = args.experiment
+    database += "_samples_raw"
+    db_args = {}
+    db_args['dbhost'] = args.dbhost
+    db_args['dbport'] = args.dbport
+    db_args['database'] = database
+    db_args['dbuser'] = None
+    db_args['dbpassword'] = None
+    sm_db = data.SimulationMetadataDatabase(db_args)
 
-    cursor = data.SimulationMetadata.m.find(dict(),dict(timeout=False))
+    records = data.SimulationRunMetadata.objects()
+
     header = "Assemblage " + '\t' + "OriginTime" + '\t' + "Duration" + '\n'
-    for rec in cursor:
+    for rec in records:
 
         log.debug("rec: %s", rec)
 
-        sim_id = rec["simulation_run_id"]
+        sim_id = rec.simulation_run_id
         sim_id_clean = sim_id[9:]
 
         outputfile = args.outputdirectory + "/" + sim_id_clean +  "-assemblage-data.txt"
 
-        durations = rec["subpopulation_durations"]
-        origins = rec["subpopulation_origin_times"]
+        durations = rec.subpopulation_durations
+        origins = rec.subpopulation_origin_times
 
         with open(outputfile, 'wb') as outfile:
             outfile.write(header)

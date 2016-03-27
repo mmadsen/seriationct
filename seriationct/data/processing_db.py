@@ -1,9 +1,7 @@
 from mongoengine import *
 import logging as log
 
-# debug
-import inspect
-import pprint
+
 
 class SimulationRunMetadata(Document):
     """
@@ -27,6 +25,14 @@ class SimulationRunMetadata(Document):
     networkmodel = StringField()
     subpopulation_durations = DictField()
     subpopulation_origin_times = DictField()
+    meta = {
+        'indexes': [
+            'simulation_run_id',
+            'networkmodel',
+            'experiment_name'
+        ]
+    }
+
 
 
 
@@ -45,7 +51,6 @@ class SimulationMetadataDatabase(object):
                                         sampledlength, popsize, netmodel, durations,
                                         fcline, rseed, origins, innovrate, migrationrate,
                                         numloci, maxinittraits):
-        print  [type(locals()[arg]) for arg in inspect.getargspec(self.store_simulation_run_parameters).args]
 
         sm = SimulationRunMetadata()
         sm.script_filename = script
@@ -64,7 +69,6 @@ class SimulationMetadataDatabase(object):
         sm.migration_fraction = migrationrate
         sm.num_loci = numloci
         sm.max_init_traits = maxinittraits
-        pprint.pprint(sm)
         sm.save(validate=False)
 
 
@@ -192,6 +196,7 @@ class PostProcessingDatabase(object):
         filtered_db.min_nonzero_assemblages = min_nonzero_assemblages
         filtered_db.simulation_run_id = assem_obj.simulation_run_id
         filtered_db.save()
+        return assem_obj.simulation_run_id
 
     def store_seriation_inputfile(self, input_file, sim_id):
         ser = SeriationInputData()

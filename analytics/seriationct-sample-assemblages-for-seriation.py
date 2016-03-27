@@ -20,6 +20,7 @@ import numpy as np
 import re
 from collections import defaultdict
 import networkx as nx
+import seriationct.data as data
 
 
 def setup():
@@ -260,7 +261,7 @@ def random_sample_without_stratification(row_list):
     return sampled_rows
 
 
-def random_sample_per_slice_stratification(row_list, assemblage_to_row):
+def random_sample_per_slice_stratification(row_list, assemblage_to_row, file):
     """
     Takes a fraction of nodes of size args.samplefraction from each slice, so that each
     time slice in a set of assemblages is represented.  Mainly useful for simple, stylized
@@ -269,7 +270,8 @@ def random_sample_per_slice_stratification(row_list, assemblage_to_row):
     builder program.
     """
     sampled_rows = []
-    slices = _parse_networkmodel(args.networkmodel)
+    networkmodel = get_networkmodel_for_input(file)
+    slices = _parse_networkmodel(networkmodel)
     num_nodes = slices[1].number_of_nodes()
     sample_per_slice = int(args.samplefraction * num_nodes)
     log.debug("number of assemblages to sample per slice: %s", sample_per_slice)
@@ -468,16 +470,31 @@ def random_spatiotemporal_sample(row_list, assemblage_to_row):
 
 
 
-
-
+def get_networkmodel_for_input(file):
+    sampled_obj = data.SampledSimulationData.objects.get(output_file=file)
+    sim_id = sampled_obj.simulation_run_id
+    sim_run = data.SimulationRunMetadata.objects.get(simulation_run_id=sim_id)
+    networkmodel = sim_run.networkmodel
+    return networkmodel
 
 
 if __name__ == "__main__":
     setup()
+    database = args.experiment
+    database += "_samples_raw"
+    db_args = {}
+    db_args['dbhost'] = args.dbhost
+    db_args['dbport'] = args.dbport
+    db_args['database'] = database
+    db_args['dbuser'] = None
+    db_args['dbpassword'] = None
+    pp_db = data.PostProcessingDatabase(db_args)
+    sm_db = data.SimulationMetadataDatabase(db_args)
 
     for file in os.listdir(args.inputdirectory):
         log.info("Starting processing of %s", file)
         if fnmatch.fnmatch(file, '*.txt'):
+
             root = parse_filename_into_root(file)
 
             (header, row_list,assemblage_to_row) = read_unsampled_file(file)
@@ -500,7 +517,7 @@ if __name__ == "__main__":
                 elif args.sampletype == 'excludelist':
                     sampled_rows = exclude_assemblage_list(row_list, args.excludefile, assemblage_to_row)
                 elif args.sampletype == 'slicestratified':
-                    sampled_rows = random_sample_per_slice_stratification(row_list, assemblage_to_row)
+                    sampled_rows = random_sample_per_slice_stratification(row_list, assemblage_to_row,file)
 
                 log.info("Writing sampled output for file: %s ", outputfile)
 
@@ -513,5 +530,7 @@ if __name__ == "__main__":
                         row_str += '\n'
                         outfile.write(row_str)
 
+
+        pp_db.store_assemblage_sampled_datafile(file, args.sampletype, args.samplefraction, outputfile)
         log.info("Completed processing of file %s", file)
 

@@ -18,6 +18,7 @@ from decimal import *
 from seriationct.demography import TemporalNetwork
 import operator
 import tatome.dip as dip
+import seriationct.data as data
 
 
 def setup():
@@ -180,24 +181,33 @@ def row_num_for_assemblage(assemblage, assemblages):
             return i
     return None
 
+def get_networkmodel_for_input(file):
+    sampled_obj = data.SampledSimulationData.objects.get(output_file=file)
+    sim_id = sampled_obj.simulation_run_id
+    sim_run = data.SimulationRunMetadata.objects.get(simulation_run_id=sim_id)
+    networkmodel = sim_run.networkmodel
+    return networkmodel
+
+
 
 if __name__ == "__main__":
     setup()
-
-    # we use the actual TemporalNetwork
-    netmodel = TemporalNetwork(networkmodel_path=args.networkmodel, sim_length=1000)
-
-    time_map = netmodel.get_subpopulation_slice_ids()
-
-
-
-    #log.debug("assemblage time_map: %s", time_map)
-
-    # get the list of assemblages in order sorted by the origin time
-    sorted_assemblage_names = sorted(time_map.keys(), key=operator.itemgetter(1))
+    database = args.experiment
+    database += "_samples_raw"
+    db_args = {}
+    db_args['dbhost'] = args.dbhost
+    db_args['dbport'] = args.dbport
+    db_args['database'] = database
+    db_args['dbuser'] = None
+    db_args['dbpassword'] = None
+    pp_db = data.PostProcessingDatabase(db_args)
+    sm_db = data.SimulationMetadataDatabase(db_args)
 
 
-    log.debug("sorted_assemblages: %s", sorted_assemblage_names)
+
+
+
+
 
 
 
@@ -205,6 +215,18 @@ if __name__ == "__main__":
     for file in os.listdir(args.inputdirectory):
         if fnmatch.fnmatch(file, '*.txt'):
             root = parse_filename_into_root(file)
+
+            networkmodel = get_networkmodel_for_input(file)
+            # we use the actual TemporalNetwork
+            netmodel = TemporalNetwork(networkmodel_path=args.networkmodel, sim_length=1000)
+
+            time_map = netmodel.get_subpopulation_slice_ids()
+            # log.debug("assemblage time_map: %s", time_map)
+
+            # get the list of assemblages in order sorted by the origin time
+            sorted_assemblage_names = sorted(time_map.keys(), key=operator.itemgetter(1))
+
+            log.debug("sorted_assemblages: %s", sorted_assemblage_names)
 
             outputfile = args.outputdirectory + "/" + root + "-" + str(args.dropthreshold) + "-unimodal-filtered.txt"
 
@@ -259,6 +281,9 @@ if __name__ == "__main__":
                     outfile.write(row)
 
 
+        sim_id = pp_db.store_filtered_datafile(file,networkmodel,args.dropthreshold,args.filtertype,args.minnonzero,outputfile)
 
-            log.debug("Completed processing of file %s", outputfile)
+        # this is the last stage of processing so we just store the simulation input data now!
+        pp_db.store_seriation_inputfile(outputfile, sim_id)
+        log.debug("Completed processing of file %s", outputfile)
 
