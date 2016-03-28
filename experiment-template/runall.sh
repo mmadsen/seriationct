@@ -14,5 +14,6 @@ sh bin/run-simulations.sh &> simulation.log
 sh bin/export-data.sh &> export.log
 sh bin/simulation-postprocess.sh &> postprocess.log
 sh bin/build-seriations.sh &> build-seriations.log
+#sh bin/run-seriations-gridengine.sh &> seriation.log
 sh bin/run-seriations.sh &> seriation.log
 sh bin/annotate-seriation-output.sh &> annotate.log
