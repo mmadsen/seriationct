@@ -150,6 +150,7 @@ setup(name="seriationct",
       scripts = [
           'admin/seriationct-runbuilder.py',
           'admin/seriationct-explain-networkmodel.py',
+          'admin/seriationct-seriation-runbuilder.py',
           'analytics/seriationct-export-single-simulation.py',
           'analytics/seriationct-annotate-minmax-graph.py',
           'analytics/seriationct-sample-exported-datafiles.py',
