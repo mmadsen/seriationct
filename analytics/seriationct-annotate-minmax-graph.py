@@ -147,6 +147,7 @@ if __name__ == "__main__":
             output_filename, png_filename = process_single_file(contmbw_gml, network_model)
 
             annot = {}
+            annot['annotation_model_type'] = args.modeltype
             annot['cont_network_model_annotated_gml'] = output_filename
             annot['cont_network_model_annotated_png'] = png_filename
             pp_db.store_seriation_annotation(sinput_file, srun.source_identifier,id,annot)
@@ -157,6 +158,7 @@ if __name__ == "__main__":
             log.info("srun: %s  freq mbw gml: %s", id, freqmbw_gml)
 
             annot = {}
+            annot['annotation_model_type'] = args.modeltype
             annot['freq_network_model_annotated_gml'] = output_filename
             annot['freq_network_model_annotated_png'] = png_filename
             pp_db.store_seriation_annotation(sinput_file, srun.source_identifier,id,annot)
