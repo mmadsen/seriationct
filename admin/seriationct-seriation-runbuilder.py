@@ -12,6 +12,7 @@ import uuid
 import seriationct.data as data
 
 
+
 def parse_filename_into_root(filename):
     base = os.path.basename(filename)
     root, ext = os.path.splitext(base)
@@ -19,7 +20,7 @@ def parse_filename_into_root(filename):
 
 
 
-def generate_seriation_commandline(inputfile, outputdirectory, source_id, xyfile, database):
+def generate_seriation_commandline(inputfile, outputdirectory, xyfile, database, source_identifier):
     """
     Creates a seriation command line for the given input file and output directory
 
@@ -59,7 +60,7 @@ def generate_seriation_commandline(inputfile, outputdirectory, source_id, xyfile
     cmd += base_cmd + " --inputfile " + inputfile
     cmd += " --outputdirectory " + outputdirectory
     cmd += " --xyfile " + xyfile
-    cmd += " --source_identifier " + source_id
+    cmd += " --source_identifier " + source_identifier
 
     log.debug("cmd: %s", cmd)
     return cmd
@@ -151,7 +152,7 @@ def main():
             pass
 
 
-        cmd = generate_seriation_commandline(input_file, outdir, s.simulation_run_id, s.xy_file_path, database)
+        cmd = generate_seriation_commandline(input_file, outdir, s.xy_file_path, database, s.source_identifier)
 
         fc = file_cycle.next()
         log.debug("cmd: %s", cmd)

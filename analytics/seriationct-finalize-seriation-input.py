@@ -20,6 +20,7 @@ from seriationct.demography import TemporalNetwork
 import operator
 import tatome.dip as dip
 import seriationct.data as data
+import uuid
 
 
 def setup():
@@ -58,7 +59,8 @@ if __name__ == "__main__":
             full_fname += "/"
             full_fname += file
 
-            pp_db.store_seriation_inputfile(full_fname)
+            source_identifier = uuid.uuid1().urn
+            pp_db.store_seriation_inputfile(full_fname, source_identifier)
 
         log.debug("Completed processing of file %s", full_fname)
 

@@ -13,7 +13,7 @@ from sample_deme import ClassFrequencySampleUnaveraged, storeClassFrequencySampl
 from processing_db import RegionalTemporalNetworkModel, NetworkModelDatabase, ExportedSimulationData, \
     SampledSimulationData, AssemblageSampledSimulationData, \
     FilteredAssemblageSimulationData, SeriationInputData, PostProcessingDatabase, \
-    SimulationMetadataDatabase, SimulationRunMetadata
+    SimulationMetadataDatabase, SimulationRunMetadata, SeriationAnnotationData
 
 # the following *should* be overridden by command line processing, even by defaults.
 # bogus values are to ensure that CLI processing and configuration is working without bugs

@@ -201,7 +201,7 @@ class PostProcessingDatabase(object):
         filtered_db.save()
         return assem_obj.simulation_run_id
 
-    def store_seriation_inputfile(self, input_file):
+    def store_seriation_inputfile(self, input_file, source_identifier):
         log.debug("seriation input file: %s", input_file)
         filtered_obj = FilteredAssemblageSimulationData.objects.get(output_file=input_file)
         rtn_obj = RegionalTemporalNetworkModel.objects.get(compressedfilepath=filtered_obj.network_model_path)
@@ -211,8 +211,16 @@ class PostProcessingDatabase(object):
         ser.seriation_input_file = input_file
         ser.network_model_path = filtered_obj.network_model_path
         ser.xy_file_path = xyfile
+        ser.source_identifier = source_identifier
         ser.save()
 
+    def store_seriation_annotation(self, input_file, source_identifier, seriation_run_id, annotation_dict):
+        annot = SeriationAnnotationData()
+        annot.seriation_input_file = input_file
+        annot.source_identifier = source_identifier
+        annot.seriation_run_id = seriation_run_id
+        annot.annotations = annotation_dict
+        annot.save()
 
 
 class ExportedSimulationData(Document):
@@ -308,18 +316,41 @@ class SeriationInputData(Document):
     of post-processing and sampling is, and exists to allow that pipeline to be
     mutable while preserving a single point of entry for seriation job construction.
 
-    As such, there is no foreign key/ReferenceField relationship here.  The script
-    that constructs these objects actually will copy the path from the output_file
-    field in the final stage of post-processing to this object.
+    The "source_identifier" field shall consist of a UUID which identifies the link
+    between this seriation input record and the seriation run output.  Many seriations
+    might have the same network model, simulation run, xyfile, etc., so we need
+    a unique key to tie input to output.  This is passed to IDSS as --source_identifier
+    and recorded in the database.
 
+    This allows seriation output post-processing to find the original simulation info,
+    and through the input file itself, chain back to the simulation post-processing steps.
     """
     seriation_input_file = StringField(required=True)
     simulation_run_id = StringField(required=True)
     network_model_path = StringField(required=True)
     xy_file_path = StringField(required=True)
+    source_identifier = StringField(required=True)
     meta = {
         'indexes': [
             '$seriation_input_file'
         ]
     }
 
+
+class SeriationAnnotationData(Document):
+    """
+    the primary data source for seriation output is the IDSS SeriationRun object,
+    but for seriationct purposes, we often want to annotate the output with
+    network models and other classification information that we know in the context
+    of an experiment.  This object carries that information at the end of an
+    annotation.
+    """
+    seriation_input_file = StringField(required=True)
+    seriation_run_id = StringField(required=True)
+    annotations = DictField()
+    source_identifier = StringField(required=True)
+    meta = {
+        'indexes': [
+            '$seriation_input_file',
+        ]
+    }
