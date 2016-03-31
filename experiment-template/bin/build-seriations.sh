@@ -2,7 +2,7 @@
 
 mkdir -p seriation-output
 
-seriationct-seriation-runbuilder.py --inputdirectory slice-stratified-filtered-data \
+seriationct-seriation-builder.py --inputdirectory slice-stratified-filtered-data \
 	--outputdirectory seriation-output \
 	--dobootstrapsignificance 1 \
 	--frequency 0 \
