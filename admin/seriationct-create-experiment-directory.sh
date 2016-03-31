@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # first command line argument is the directory within which to build the experiment
-unzip /usr/local/share/seriationct/seriationct-experiment-template.zip
+py_loc=`which python`
+basedir=`dirname $py_loc | sed "s/bin//"`
+unzip $basedir/seriationct-template/seriationct-experiment-template.zip
 mv experiment-template $1
 
 cd $1/bin
