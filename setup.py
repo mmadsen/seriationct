@@ -79,7 +79,7 @@ class CustomInstallClass(install):
     def run(self):
         zip_cmd = "zip -r seriationct-templates/seriationct-experiment-template.zip experiment-template >& /dev/null"
         os.system(zip_cmd)
-        shutil.copy('admin/seriationct-create-experiment-directory.sh','/usr/local/bin/seriationct-create-experiment-directory')
+        #shutil.copy('admin/seriationct-create-experiment-directory.sh','/usr/local/bin/seriationct-create-experiment-directory')
 
         install.run(self)
 
@@ -146,6 +146,7 @@ setup(name="seriationct",
           'admin/seriationct-explain-networkmodel.py',
           'admin/seriationct-seriation-builder.py',
           'admin/seriationct-simulation-export-builder.py',
+          'admin/seriationct-create-experiment-directory.sh',
           'analytics/seriationct-export-single-simulation.py',
           'analytics/seriationct-annotate-minmax-graph.py',
           'analytics/seriationct-sample-exported-datafiles.py',
