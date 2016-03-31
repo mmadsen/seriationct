@@ -88,7 +88,6 @@ class CustomInstallClass(install):
         shutil.copy('admin/seriationct-create-experiment-directory.sh', '/usr/local/bin/seriationct-create-experiment-directory')
         print "Copied seriationct-experiment-template.zip to /usr/local/share/seriationct for use in setting up simulation experiments"
 
-    # TODO: need to run custom commands, AND still have the normal install proceed.  we need something like super.run() but that doesn't work
 
 def get_version():
     try:
@@ -162,7 +161,7 @@ setup(name="seriationct",
           'analytics/seriationct-finalize-seriation-input.py',
           'networkmodeling/graphbuilders/seriationct-build-clustered-network.py',
           'networkmodeling/graphbuilders/seriationct-build-lineage-splitting-network.py',
-          'networkmodeling/graphbuilders/seriationct-build-single-linear-network.py',
+          'networkmodeling/graphbuilders/seriationct-build-complete-network.py',
           'networkmodeling/graphbuilders/seriationct-build-spatial-neighbor-network.py',
           'networkmodeling/samplers/seriationct-sampler-spatial-neighbor.py',
           'simulations/sim-seriationct-networkmodel.py',
