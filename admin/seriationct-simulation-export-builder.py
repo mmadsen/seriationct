@@ -33,7 +33,7 @@ def generate_export_commandline(experiment, outputdirectory, sim_id):
 
     base_cmd += experiment
     base_cmd += " --simid "
-    base_cmd += sim_id
+    base_cmd += sim_id.rstrip()
     base_cmd += " --outputdirectory "
     base_cmd += outputdirectory
 
