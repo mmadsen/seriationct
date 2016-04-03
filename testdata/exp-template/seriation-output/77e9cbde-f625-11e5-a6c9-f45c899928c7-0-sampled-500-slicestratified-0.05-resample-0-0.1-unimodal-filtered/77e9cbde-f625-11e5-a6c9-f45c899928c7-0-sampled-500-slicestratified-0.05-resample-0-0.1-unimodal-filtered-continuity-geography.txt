@@ -1,0 +1,1 @@
+77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered	0.13	2720.97675612	3267.24088152	485.829921091	3634.0

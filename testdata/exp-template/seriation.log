@@ -1,0 +1,40 @@
+2016-03-29 20:32:17,869 INFO: seriation run identifier: urn:uuid:00e35386-f628-11e5-bd9d-f45c899928c7
+2016-03-29 20:32:17,869 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:19,023 INFO: Continuity seriation processing complete: 0.823534965515
+2016-03-29 20:32:19,023 INFO: Time elapsed for completion of program: 1.15849089622 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:32:19,802 INFO: seriation run identifier: urn:uuid:020a4986-f628-11e5-a56f-f45c899928c7
+2016-03-29 20:32:19,802 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:22,631 INFO: Continuity seriation processing complete: 1.7007651329
+2016-03-29 20:32:22,631 INFO: Time elapsed for completion of program: 2.83356595039 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:32:23,386 INFO: seriation run identifier: urn:uuid:042d3890-f628-11e5-b5ef-f45c899928c7
+2016-03-29 20:32:23,386 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:24,612 INFO: Continuity seriation processing complete: 0.82878112793
+2016-03-29 20:32:24,612 INFO: Time elapsed for completion of program: 1.23046898842 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:32:25,353 INFO: seriation run identifier: urn:uuid:05595ac8-f628-11e5-82df-f45c899928c7
+2016-03-29 20:32:25,353 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:28,472 INFO: Continuity seriation processing complete: 1.73767995834
+2016-03-29 20:32:28,472 INFO: Time elapsed for completion of program: 3.12483310699 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:32:29,203 INFO: seriation run identifier: urn:uuid:07a4c20e-f628-11e5-8d0c-f45c899928c7
+2016-03-29 20:32:29,203 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:30,361 INFO: Continuity seriation processing complete: 0.783921003342
+2016-03-29 20:32:30,362 INFO: Time elapsed for completion of program: 1.16260004044 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:32:31,101 INFO: seriation run identifier: urn:uuid:08c674a2-f628-11e5-9ac9-f45c899928c7
+2016-03-29 20:32:31,102 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:34,210 INFO: Continuity seriation processing complete: 1.75880908966
+2016-03-29 20:32:34,210 INFO: Time elapsed for completion of program: 3.11381006241 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:32:34,952 INFO: seriation run identifier: urn:uuid:0b11fcea-f628-11e5-9bc7-f45c899928c7
+2016-03-29 20:32:34,952 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:36,092 INFO: Continuity seriation processing complete: 0.822746992111
+2016-03-29 20:32:36,092 INFO: Time elapsed for completion of program: 1.14405083656 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:32:36,824 INFO: seriation run identifier: urn:uuid:0c2fbf04-f628-11e5-a158-f45c899928c7
+2016-03-29 20:32:36,825 INFO: IDSS seriation Version 2.4-2-g33b146b
+2016-03-29 20:32:39,376 INFO: Continuity seriation processing complete: 1.67379808426
+2016-03-29 20:32:39,376 INFO: Time elapsed for completion of program: 2.55526709557 seconds
+Couldn't import dot_parser, loading of dot files will not be possible.

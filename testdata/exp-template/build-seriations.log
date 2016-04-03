@@ -1,0 +1,10 @@
+2016-03-29 20:32:17,007 INFO: Generating seriation commands for experiment: test3
+2016-03-29 20:32:17,009 INFO: Opening 1 output files for seriation configuration
+2016-03-29 20:32:17,012 INFO: Processing input file: slice-stratified-filtered-data/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt
+2016-03-29 20:32:17,012 INFO: Processing input file: slice-stratified-filtered-data/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt
+2016-03-29 20:32:17,012 INFO: Processing input file: slice-stratified-filtered-data/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt
+2016-03-29 20:32:17,012 INFO: Processing input file: slice-stratified-filtered-data/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt
+2016-03-29 20:32:17,012 INFO: Processing input file: slice-stratified-filtered-data/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt
+2016-03-29 20:32:17,013 INFO: Processing input file: slice-stratified-filtered-data/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt
+2016-03-29 20:32:17,013 INFO: Processing input file: slice-stratified-filtered-data/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt
+2016-03-29 20:32:17,013 INFO: Processing input file: slice-stratified-filtered-data/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt

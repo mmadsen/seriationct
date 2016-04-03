@@ -1,0 +1,22 @@
+MongoDB shell version: 2.6.11
+connecting to: test
+switched to db test3_samples_raw
+{
+	"createdCollectionAutomatically" : false,
+	"numIndexesBefore" : 1,
+	"numIndexesAfter" : 2,
+	"ok" : 1
+}
+bye
+=================== exporting simulation data ==============
+2016-03-29 20:29:56,137 INFO: EXPORT Simulation IDs - Experiment: test3
+2016-03-29 20:29:56,483 INFO: EXPORT DATA TO CSV - Experiment: test3  SimulationID: urn:uuid:77e9cbde-f625-11e5-a6c9-f45c899928c7
+2016-03-29 20:30:09,853 INFO: total number of classes: 9808
+2016-03-29 20:30:25,510 INFO: EXPORT DATA TO CSV - Experiment: test3  SimulationID: urn:uuid:074a4538-f626-11e5-8d68-f45c899928c7
+2016-03-29 20:30:38,387 INFO: total number of classes: 8572
+2016-03-29 20:30:50,274 INFO: EXPORT DATA TO CSV - Experiment: test3  SimulationID: urn:uuid:92a8426a-f626-11e5-9f09-f45c899928c7
+2016-03-29 20:31:02,215 INFO: total number of classes: 5190
+2016-03-29 20:31:08,284 INFO: EXPORT DATA TO CSV - Experiment: test3  SimulationID: urn:uuid:19e18c00-f627-11e5-91ed-f45c899928c7
+2016-03-29 20:31:21,405 INFO: total number of classes: 8491
+=============== exporting temporal information on assemblages ===============
+2016-03-29 20:31:33,244 INFO: EXPORT DATA TO CSV - Experiment: test3

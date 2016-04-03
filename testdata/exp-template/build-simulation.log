@@ -1,0 +1,6 @@
+2016-03-29 20:14:08,752 INFO: Generating simulation commands for experiment: test3
+2016-03-29 20:14:08,753 INFO: Opening 1 output files for simulation configuration
+2016-03-29 20:14:08,753 INFO: Network model found: networkmodels/test3_pnn_23c0b748-bc9c-4643-bef6-d65fd97a7052.zip
+2016-03-29 20:14:08,753 INFO: Network model found: networkmodels/test3_pnn_4f66d8c6-cfc1-4831-881d-d9cf30dfd1a8.zip
+2016-03-29 20:14:08,753 INFO: Network model found: networkmodels/test3_pnn_8f92d675-5f67-4e1c-8171-42ed4c04cfdf.zip
+2016-03-29 20:14:08,753 INFO: Network model found: networkmodels/test3_pnn_d887f3da-726a-4fd2-a182-855589b7cb52.zip

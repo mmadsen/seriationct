@@ -1,0 +1,66 @@
+==================== sample exported data files =====================
+2016-03-29 20:31:33,603 INFO: Starting processing of sampled-traits/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:35,382 INFO: Writing sampled output for file: sampled-traits/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500.txt  remaining classes in sample: 92
+2016-03-29 20:31:38,985 INFO: Completed processing of file sampled-traits/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:38,985 INFO: Starting processing of sampled-traits/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:40,663 INFO: Writing sampled output for file: sampled-traits/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500.txt  remaining classes in sample: 109
+2016-03-29 20:31:44,674 INFO: Completed processing of file sampled-traits/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:44,674 INFO: Starting processing of sampled-traits/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:46,668 INFO: Writing sampled output for file: sampled-traits/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500.txt  remaining classes in sample: 143
+2016-03-29 20:31:52,748 INFO: Completed processing of file sampled-traits/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:52,748 INFO: Starting processing of sampled-traits/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:53,764 INFO: Writing sampled output for file: sampled-traits/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500.txt  remaining classes in sample: 94
+2016-03-29 20:31:56,030 INFO: Completed processing of file sampled-traits/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500.txt
+==================== sample temporal slices 5%  =====================
+2016-03-29 20:31:56,576 INFO: Starting processing of 074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:57,586 INFO: Writing sampled output for file: slice-stratified-sampled-data/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0.txt 
+2016-03-29 20:31:57,618 INFO: Completed processing of file 074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:57,618 INFO: Starting processing of 19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:58,810 INFO: Writing sampled output for file: slice-stratified-sampled-data/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0.txt 
+2016-03-29 20:31:58,828 INFO: Completed processing of file 19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:58,828 INFO: Starting processing of 77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:59,741 INFO: Writing sampled output for file: slice-stratified-sampled-data/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0.txt 
+2016-03-29 20:31:59,743 INFO: Completed processing of file 77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:31:59,743 INFO: Starting processing of 92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:00,939 INFO: Writing sampled output for file: slice-stratified-sampled-data/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0.txt 
+2016-03-29 20:32:00,941 INFO: Completed processing of file 92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500.txt
+Couldn't import dot_parser, loading of dot files will not be possible.
+==================== sample temporal slices 10%  =====================
+2016-03-29 20:32:01,345 INFO: Starting processing of 074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:02,299 INFO: Writing sampled output for file: slice-stratified-sampled-data/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0.txt 
+2016-03-29 20:32:02,302 INFO: Completed processing of file 074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:02,302 INFO: Starting processing of 19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:03,475 INFO: Writing sampled output for file: slice-stratified-sampled-data/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0.txt 
+2016-03-29 20:32:03,477 INFO: Completed processing of file 19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:03,477 INFO: Starting processing of 77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:04,389 INFO: Writing sampled output for file: slice-stratified-sampled-data/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0.txt 
+2016-03-29 20:32:04,391 INFO: Completed processing of file 77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:04,391 INFO: Starting processing of 92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500.txt
+2016-03-29 20:32:05,549 INFO: Writing sampled output for file: slice-stratified-sampled-data/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0.txt 
+2016-03-29 20:32:05,551 INFO: Completed processing of file 92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500.txt
+Couldn't import dot_parser, loading of dot files will not be possible.
+==================== filter sampled assemblages =====================
+2016-03-29 20:32:06,967 INFO: Writing filtered output for file: slice-stratified-filtered-data/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt rejected classes: 81  remaining classes: 11
+2016-03-29 20:32:08,048 INFO: Writing filtered output for file: slice-stratified-filtered-data/074a4538-f626-11e5-8d68-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt rejected classes: 52  remaining classes: 40
+2016-03-29 20:32:09,330 INFO: Writing filtered output for file: slice-stratified-filtered-data/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt rejected classes: 90  remaining classes: 19
+2016-03-29 20:32:10,776 INFO: Writing filtered output for file: slice-stratified-filtered-data/19e18c00-f627-11e5-91ed-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt rejected classes: 63  remaining classes: 46
+2016-03-29 20:32:11,939 INFO: Writing filtered output for file: slice-stratified-filtered-data/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt rejected classes: 125  remaining classes: 18
+2016-03-29 20:32:13,166 INFO: Writing filtered output for file: slice-stratified-filtered-data/77e9cbde-f625-11e5-a6c9-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt rejected classes: 95  remaining classes: 48
+2016-03-29 20:32:14,641 INFO: Writing filtered output for file: slice-stratified-filtered-data/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500-slicestratified-0.05-resample-0-0.1-unimodal-filtered.txt rejected classes: 82  remaining classes: 12
+2016-03-29 20:32:16,245 INFO: Writing filtered output for file: slice-stratified-filtered-data/92a8426a-f626-11e5-9f09-f45c899928c7-0-sampled-500-slicestratified-0.1-resample-0-0.1-unimodal-filtered.txt rejected classes: 67  remaining classes: 27
+Couldn't import dot_parser, loading of dot files will not be possible.
+simuPOP Version 1.1.7 : Copyright (c) 2004-2016 Bo Peng
+Revision 5000 (Jan 20 2016) for Python 2.7.11 (64bit, 0thread)
+Random Number Generator is set to mt19937 with random seed 0x64f97824b8676e62.
+This is the standard short allele version with 256 maximum allelic states.
+For more information, please visit http://simupop.sourceforge.net,
+or email simupop-list@lists.sourceforge.net (subscription required).
+bin/simulation-postprocess.sh: line 52: --debug: command not found
+==================== finalize seriation input data for assemblages =====================
+Couldn't import dot_parser, loading of dot files will not be possible.
+simuPOP Version 1.1.7 : Copyright (c) 2004-2016 Bo Peng
+Revision 5000 (Jan 20 2016) for Python 2.7.11 (64bit, 0thread)
+Random Number Generator is set to mt19937 with random seed 0x1477c8760a6d5ca3.
+This is the standard short allele version with 256 maximum allelic states.
+For more information, please visit http://simupop.sourceforge.net,
+or email simupop-list@lists.sourceforge.net (subscription required).

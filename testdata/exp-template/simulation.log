@@ -1,0 +1,452 @@
+2016-03-29 20:14:09,070 INFO: Setting up 4 cores for parallel simulation
+2016-03-29 20:14:09,070 INFO: config: Namespace(cores=4, dbhost='localhost', dbport='27017', debug='0', devel=0, experiment='test3', innovrate=9.81470778598e-05, maxinittraits=5, migrationfraction=0.0639458040741, networkmodel='networkmodels/test3_pnn_23c0b748-bc9c-4643-bef6-d65fd97a7052.zip', numloci=3, popsize=250, reps=1, samplefraction=0.5, seed=2135118461, simlength=10000)
+2016-03-29 20:14:09,216 INFO: Starting simulation run urn:uuid:77e9cbde-f625-11e5-a6c9-f45c899928c7
+2016-03-29 20:14:09,216 INFO: Minimum burn in time given popsize and theta: 3000
+2016-03-29 20:14:09,994 INFO: population sizes: (250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L) names: ('assemblage-19-73', 'assemblage-58-38', 'assemblage-264-337', 'assemblage-549-538', 'assemblage-402-441', 'assemblage-52-121', 'assemblage-487-526', 'assemblage-549-220', 'assemblage-127-296', 'assemblage-23-550', 'assemblage-16-386', 'assemblage-517-309', 'assemblage-41-161', 'assemblage-365-57', 'assemblage-122-530', 'assemblage-164-276', 'assemblage-169-244', 'assemblage-478-124', 'assemblage-369-487', 'assemblage-499-118', 'assemblage-360-392', 'assemblage-411-526', 'assemblage-12-224', 'assemblage-193-195', 'assemblage-490-178', 'assemblage-410-139', 'assemblage-154-193', 'assemblage-527-100', 'assemblage-199-314', 'assemblage-205-410', 'assemblage-520-211', 'assemblage-70-395')
+2016-03-29 20:14:09,996 INFO: Generation: 0
+2016-03-29 20:14:10,335 INFO: Generation: 100
+2016-03-29 20:14:10,665 INFO: Generation: 200
+2016-03-29 20:14:10,996 INFO: Generation: 300
+2016-03-29 20:14:11,336 INFO: Generation: 400
+2016-03-29 20:14:11,671 INFO: Generation: 500
+2016-03-29 20:14:12,015 INFO: Generation: 600
+2016-03-29 20:14:12,355 INFO: Generation: 700
+2016-03-29 20:14:12,702 INFO: Generation: 800
+2016-03-29 20:14:13,042 INFO: Generation: 900
+2016-03-29 20:14:13,385 INFO: Generation: 1000
+2016-03-29 20:14:13,718 INFO: Generation: 1100
+2016-03-29 20:14:14,049 INFO: Generation: 1200
+2016-03-29 20:14:14,380 INFO: Generation: 1300
+2016-03-29 20:14:14,702 INFO: Generation: 1400
+2016-03-29 20:14:15,029 INFO: Generation: 1500
+2016-03-29 20:14:15,372 INFO: Generation: 1600
+2016-03-29 20:14:15,693 INFO: Generation: 1700
+2016-03-29 20:14:16,027 INFO: Generation: 1800
+2016-03-29 20:14:16,379 INFO: Generation: 1900
+2016-03-29 20:14:16,739 INFO: Generation: 2000
+2016-03-29 20:14:17,088 INFO: Generation: 2100
+2016-03-29 20:14:17,425 INFO: Generation: 2200
+2016-03-29 20:14:17,787 INFO: Generation: 2300
+2016-03-29 20:14:18,150 INFO: Generation: 2400
+2016-03-29 20:14:18,526 INFO: Generation: 2500
+2016-03-29 20:14:18,881 INFO: Generation: 2600
+2016-03-29 20:14:19,248 INFO: Generation: 2700
+2016-03-29 20:14:19,634 INFO: Generation: 2800
+2016-03-29 20:14:20,232 INFO: Generation: 2900
+2016-03-29 20:14:20,588 INFO: Generation: 3000
+2016-03-29 20:14:23,945 INFO: Generation: 3100
+2016-03-29 20:14:27,225 INFO: Generation: 3200
+2016-03-29 20:14:30,552 INFO: Generation: 3300
+2016-03-29 20:14:33,867 INFO: Generation: 3400
+2016-03-29 20:14:37,151 INFO: Generation: 3500
+2016-03-29 20:14:40,440 INFO: Generation: 3600
+2016-03-29 20:14:43,687 INFO: Generation: 3700
+2016-03-29 20:14:47,027 INFO: Generation: 3800
+2016-03-29 20:14:50,298 INFO: Generation: 3900
+2016-03-29 20:14:53,541 INFO: Generation: 4000
+2016-03-29 20:14:56,779 INFO: Generation: 4100
+2016-03-29 20:15:00,170 INFO: Generation: 4200
+2016-03-29 20:15:03,620 INFO: Generation: 4300
+2016-03-29 20:15:07,009 INFO: Generation: 4400
+2016-03-29 20:15:10,725 INFO: Generation: 4500
+2016-03-29 20:15:14,583 INFO: Generation: 4600
+2016-03-29 20:15:17,901 INFO: Generation: 4700
+2016-03-29 20:15:21,285 INFO: Generation: 4800
+2016-03-29 20:15:24,681 INFO: Generation: 4900
+2016-03-29 20:15:27,990 INFO: Generation: 5000
+2016-03-29 20:15:31,238 INFO: Generation: 5100
+2016-03-29 20:15:34,482 INFO: Generation: 5200
+2016-03-29 20:15:37,759 INFO: Generation: 5300
+2016-03-29 20:15:40,872 INFO: Generation: 5400
+2016-03-29 20:15:43,837 INFO: Generation: 5500
+2016-03-29 20:15:46,800 INFO: Generation: 5600
+2016-03-29 20:15:50,019 INFO: Generation: 5700
+2016-03-29 20:15:53,290 INFO: Generation: 5800
+2016-03-29 20:15:56,614 INFO: Generation: 5900
+2016-03-29 20:15:59,973 INFO: Generation: 6000
+2016-03-29 20:16:03,680 INFO: Generation: 6100
+2016-03-29 20:16:07,021 INFO: Generation: 6200
+2016-03-29 20:16:10,315 INFO: Generation: 6300
+2016-03-29 20:16:13,547 INFO: Generation: 6400
+2016-03-29 20:16:17,184 INFO: Generation: 6500
+2016-03-29 20:16:20,575 INFO: Generation: 6600
+2016-03-29 20:16:23,826 INFO: Generation: 6700
+2016-03-29 20:16:27,111 INFO: Generation: 6800
+2016-03-29 20:16:30,431 INFO: Generation: 6900
+2016-03-29 20:16:33,602 INFO: Generation: 7000
+2016-03-29 20:16:36,819 INFO: Generation: 7100
+2016-03-29 20:16:40,042 INFO: Generation: 7200
+2016-03-29 20:16:43,662 INFO: Generation: 7300
+2016-03-29 20:16:46,834 INFO: Generation: 7400
+2016-03-29 20:16:50,022 INFO: Generation: 7500
+2016-03-29 20:16:53,202 INFO: Generation: 7600
+2016-03-29 20:16:56,438 INFO: Generation: 7700
+2016-03-29 20:16:59,685 INFO: Generation: 7800
+2016-03-29 20:17:02,920 INFO: Generation: 7900
+2016-03-29 20:17:05,939 INFO: Generation: 8000
+2016-03-29 20:17:08,894 INFO: Generation: 8100
+2016-03-29 20:17:11,874 INFO: Generation: 8200
+2016-03-29 20:17:15,224 INFO: Generation: 8300
+2016-03-29 20:17:18,209 INFO: Generation: 8400
+2016-03-29 20:17:21,224 INFO: Generation: 8500
+2016-03-29 20:17:24,205 INFO: Generation: 8600
+2016-03-29 20:17:27,351 INFO: Generation: 8700
+2016-03-29 20:17:30,546 INFO: Generation: 8800
+2016-03-29 20:17:34,095 INFO: Generation: 8900
+2016-03-29 20:17:37,197 INFO: Generation: 9000
+2016-03-29 20:17:40,379 INFO: Generation: 9100
+2016-03-29 20:17:43,505 INFO: Generation: 9200
+2016-03-29 20:17:46,728 INFO: Generation: 9300
+2016-03-29 20:17:49,969 INFO: Generation: 9400
+2016-03-29 20:17:53,109 INFO: Generation: 9500
+2016-03-29 20:17:56,291 INFO: Generation: 9600
+2016-03-29 20:17:59,485 INFO: Generation: 9700
+2016-03-29 20:18:02,719 INFO: Generation: 9800
+2016-03-29 20:18:05,908 INFO: Generation: 9900
+2016-03-29 20:18:09,130 INFO: simulation complete,4,240.061714172
+simuPOP Version 1.1.7 : Copyright (c) 2004-2016 Bo Peng
+Revision 5000 (Jan 20 2016) for Python 2.7.11 (64bit, 0thread)
+Random Number Generator is set to mt19937 with random seed 0x696d976a5eb61c56.
+This is the optimized long allele version with 18446744073709551616 maximum allelic states.
+For more information, please visit http://simupop.sourceforge.net,
+or email simupop-list@lists.sourceforge.net (subscription required).
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:18:09,616 INFO: Setting up 4 cores for parallel simulation
+2016-03-29 20:18:09,617 INFO: config: Namespace(cores=4, dbhost='localhost', dbport='27017', debug='0', devel=0, experiment='test3', innovrate=8.27297873939e-05, maxinittraits=5, migrationfraction=0.0612566410473, networkmodel='networkmodels/test3_pnn_4f66d8c6-cfc1-4831-881d-d9cf30dfd1a8.zip', numloci=3, popsize=250, reps=1, samplefraction=0.5, seed=317952528, simlength=10000)
+2016-03-29 20:18:09,837 INFO: Starting simulation run urn:uuid:074a4538-f626-11e5-8d68-f45c899928c7
+2016-03-29 20:18:09,837 INFO: Minimum burn in time given popsize and theta: 3000
+2016-03-29 20:18:10,857 INFO: population sizes: (250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L) names: ('assemblage-121-302', 'assemblage-89-285', 'assemblage-274-494', 'assemblage-105-207', 'assemblage-71-155', 'assemblage-94-483', 'assemblage-38-86', 'assemblage-260-403', 'assemblage-480-269', 'assemblage-23-364', 'assemblage-16-518', 'assemblage-442-265', 'assemblage-113-415', 'assemblage-376-55', 'assemblage-533-477', 'assemblage-355-250', 'assemblage-365-506', 'assemblage-12-562', 'assemblage-299-197', 'assemblage-147-72', 'assemblage-529-324', 'assemblage-85-266', 'assemblage-558-554', 'assemblage-445-138', 'assemblage-447-327', 'assemblage-140-129', 'assemblage-396-204', 'assemblage-417-229', 'assemblage-322-476', 'assemblage-354-351', 'assemblage-258-478', 'assemblage-188-232')
+2016-03-29 20:18:10,859 INFO: Generation: 0
+2016-03-29 20:18:11,217 INFO: Generation: 100
+2016-03-29 20:18:11,565 INFO: Generation: 200
+2016-03-29 20:18:11,921 INFO: Generation: 300
+2016-03-29 20:18:12,263 INFO: Generation: 400
+2016-03-29 20:18:12,598 INFO: Generation: 500
+2016-03-29 20:18:12,938 INFO: Generation: 600
+2016-03-29 20:18:13,274 INFO: Generation: 700
+2016-03-29 20:18:13,603 INFO: Generation: 800
+2016-03-29 20:18:13,948 INFO: Generation: 900
+2016-03-29 20:18:14,282 INFO: Generation: 1000
+2016-03-29 20:18:14,613 INFO: Generation: 1100
+2016-03-29 20:18:14,951 INFO: Generation: 1200
+2016-03-29 20:18:15,285 INFO: Generation: 1300
+2016-03-29 20:18:15,625 INFO: Generation: 1400
+2016-03-29 20:18:15,954 INFO: Generation: 1500
+2016-03-29 20:18:16,289 INFO: Generation: 1600
+2016-03-29 20:18:16,647 INFO: Generation: 1700
+2016-03-29 20:18:16,986 INFO: Generation: 1800
+2016-03-29 20:18:17,336 INFO: Generation: 1900
+2016-03-29 20:18:17,666 INFO: Generation: 2000
+2016-03-29 20:18:18,004 INFO: Generation: 2100
+2016-03-29 20:18:18,346 INFO: Generation: 2200
+2016-03-29 20:18:18,684 INFO: Generation: 2300
+2016-03-29 20:18:19,022 INFO: Generation: 2400
+2016-03-29 20:18:19,361 INFO: Generation: 2500
+2016-03-29 20:18:19,693 INFO: Generation: 2600
+2016-03-29 20:18:20,025 INFO: Generation: 2700
+2016-03-29 20:18:20,366 INFO: Generation: 2800
+2016-03-29 20:18:20,707 INFO: Generation: 2900
+2016-03-29 20:18:21,060 INFO: Generation: 3000
+2016-03-29 20:18:24,268 INFO: Generation: 3100
+2016-03-29 20:18:27,490 INFO: Generation: 3200
+2016-03-29 20:18:30,657 INFO: Generation: 3300
+2016-03-29 20:18:33,779 INFO: Generation: 3400
+2016-03-29 20:18:36,925 INFO: Generation: 3500
+2016-03-29 20:18:40,088 INFO: Generation: 3600
+2016-03-29 20:18:43,216 INFO: Generation: 3700
+2016-03-29 20:18:46,327 INFO: Generation: 3800
+2016-03-29 20:18:49,423 INFO: Generation: 3900
+2016-03-29 20:18:52,510 INFO: Generation: 4000
+2016-03-29 20:18:55,586 INFO: Generation: 4100
+2016-03-29 20:18:58,663 INFO: Generation: 4200
+2016-03-29 20:19:01,735 INFO: Generation: 4300
+2016-03-29 20:19:04,798 INFO: Generation: 4400
+2016-03-29 20:19:07,893 INFO: Generation: 4500
+2016-03-29 20:19:11,321 INFO: Generation: 4600
+2016-03-29 20:19:14,439 INFO: Generation: 4700
+2016-03-29 20:19:17,609 INFO: Generation: 4800
+2016-03-29 20:19:20,651 INFO: Generation: 4900
+2016-03-29 20:19:23,754 INFO: Generation: 5000
+2016-03-29 20:19:26,873 INFO: Generation: 5100
+2016-03-29 20:19:30,809 INFO: Generation: 5200
+2016-03-29 20:19:34,017 INFO: Generation: 5300
+2016-03-29 20:19:37,169 INFO: Generation: 5400
+2016-03-29 20:19:40,302 INFO: Generation: 5500
+2016-03-29 20:19:43,467 INFO: Generation: 5600
+2016-03-29 20:19:46,675 INFO: Generation: 5700
+2016-03-29 20:19:49,945 INFO: Generation: 5800
+2016-03-29 20:19:53,165 INFO: Generation: 5900
+2016-03-29 20:19:56,432 INFO: Generation: 6000
+2016-03-29 20:19:59,626 INFO: Generation: 6100
+2016-03-29 20:20:02,824 INFO: Generation: 6200
+2016-03-29 20:20:05,964 INFO: Generation: 6300
+2016-03-29 20:20:09,070 INFO: Generation: 6400
+2016-03-29 20:20:12,221 INFO: Generation: 6500
+2016-03-29 20:20:15,392 INFO: Generation: 6600
+2016-03-29 20:20:18,548 INFO: Generation: 6700
+2016-03-29 20:20:21,697 INFO: Generation: 6800
+2016-03-29 20:20:24,811 INFO: Generation: 6900
+2016-03-29 20:20:28,179 INFO: Generation: 7000
+2016-03-29 20:20:31,343 INFO: Generation: 7100
+2016-03-29 20:20:34,441 INFO: Generation: 7200
+2016-03-29 20:20:37,558 INFO: Generation: 7300
+2016-03-29 20:20:40,820 INFO: Generation: 7400
+2016-03-29 20:20:44,022 INFO: Generation: 7500
+2016-03-29 20:20:47,263 INFO: Generation: 7600
+2016-03-29 20:20:50,474 INFO: Generation: 7700
+2016-03-29 20:20:53,655 INFO: Generation: 7800
+2016-03-29 20:20:56,800 INFO: Generation: 7900
+2016-03-29 20:21:00,072 INFO: Generation: 8000
+2016-03-29 20:21:03,314 INFO: Generation: 8100
+2016-03-29 20:21:06,472 INFO: Generation: 8200
+2016-03-29 20:21:09,647 INFO: Generation: 8300
+2016-03-29 20:21:12,903 INFO: Generation: 8400
+2016-03-29 20:21:16,097 INFO: Generation: 8500
+2016-03-29 20:21:19,263 INFO: Generation: 8600
+2016-03-29 20:21:22,549 INFO: Generation: 8700
+2016-03-29 20:21:25,699 INFO: Generation: 8800
+2016-03-29 20:21:28,808 INFO: Generation: 8900
+2016-03-29 20:21:32,045 INFO: Generation: 9000
+2016-03-29 20:21:35,103 INFO: Generation: 9100
+2016-03-29 20:21:38,150 INFO: Generation: 9200
+2016-03-29 20:21:41,386 INFO: Generation: 9300
+2016-03-29 20:21:44,472 INFO: Generation: 9400
+2016-03-29 20:21:47,555 INFO: Generation: 9500
+2016-03-29 20:21:50,687 INFO: Generation: 9600
+2016-03-29 20:21:53,747 INFO: Generation: 9700
+2016-03-29 20:21:56,829 INFO: Generation: 9800
+2016-03-29 20:21:59,860 INFO: Generation: 9900
+2016-03-29 20:22:02,943 INFO: simulation complete,4,233.328778982
+simuPOP Version 1.1.7 : Copyright (c) 2004-2016 Bo Peng
+Revision 5000 (Jan 20 2016) for Python 2.7.11 (64bit, 0thread)
+Random Number Generator is set to mt19937 with random seed 0xb19c9c1a2ad7b097.
+This is the optimized long allele version with 18446744073709551616 maximum allelic states.
+For more information, please visit http://simupop.sourceforge.net,
+or email simupop-list@lists.sourceforge.net (subscription required).
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:22:03,436 INFO: Setting up 4 cores for parallel simulation
+2016-03-29 20:22:03,436 INFO: config: Namespace(cores=4, dbhost='localhost', dbport='27017', debug='0', devel=0, experiment='test3', innovrate=5.31877613521e-05, maxinittraits=5, migrationfraction=0.0597586263056, networkmodel='networkmodels/test3_pnn_8f92d675-5f67-4e1c-8171-42ed4c04cfdf.zip', numloci=3, popsize=250, reps=1, samplefraction=0.5, seed=830112099, simlength=10000)
+2016-03-29 20:22:03,658 INFO: Starting simulation run urn:uuid:92a8426a-f626-11e5-9f09-f45c899928c7
+2016-03-29 20:22:03,658 INFO: Minimum burn in time given popsize and theta: 3000
+2016-03-29 20:22:04,662 INFO: population sizes: (250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L) names: ('assemblage-18-170', 'assemblage-66-406', 'assemblage-49-203', 'assemblage-133-343', 'assemblage-169-169', 'assemblage-141-542', 'assemblage-229-138', 'assemblage-400-527', 'assemblage-394-144', 'assemblage-125-24', 'assemblage-47-180', 'assemblage-156-307', 'assemblage-153-20', 'assemblage-315-532', 'assemblage-302-11', 'assemblage-118-311', 'assemblage-1-301', 'assemblage-453-179', 'assemblage-370-548', 'assemblage-346-322', 'assemblage-483-444', 'assemblage-417-424', 'assemblage-386-330', 'assemblage-262-293', 'assemblage-140-173', 'assemblage-233-329', 'assemblage-408-338', 'assemblage-404-166', 'assemblage-264-554', 'assemblage-334-261', 'assemblage-323-119', 'assemblage-264-176')
+2016-03-29 20:22:04,663 INFO: Generation: 0
+2016-03-29 20:22:05,018 INFO: Generation: 100
+2016-03-29 20:22:05,385 INFO: Generation: 200
+2016-03-29 20:22:05,742 INFO: Generation: 300
+2016-03-29 20:22:06,098 INFO: Generation: 400
+2016-03-29 20:22:06,453 INFO: Generation: 500
+2016-03-29 20:22:06,817 INFO: Generation: 600
+2016-03-29 20:22:07,174 INFO: Generation: 700
+2016-03-29 20:22:07,544 INFO: Generation: 800
+2016-03-29 20:22:07,923 INFO: Generation: 900
+2016-03-29 20:22:08,275 INFO: Generation: 1000
+2016-03-29 20:22:08,648 INFO: Generation: 1100
+2016-03-29 20:22:09,011 INFO: Generation: 1200
+2016-03-29 20:22:09,361 INFO: Generation: 1300
+2016-03-29 20:22:09,741 INFO: Generation: 1400
+2016-03-29 20:22:10,110 INFO: Generation: 1500
+2016-03-29 20:22:10,483 INFO: Generation: 1600
+2016-03-29 20:22:10,849 INFO: Generation: 1700
+2016-03-29 20:22:11,207 INFO: Generation: 1800
+2016-03-29 20:22:11,566 INFO: Generation: 1900
+2016-03-29 20:22:11,928 INFO: Generation: 2000
+2016-03-29 20:22:12,279 INFO: Generation: 2100
+2016-03-29 20:22:12,637 INFO: Generation: 2200
+2016-03-29 20:22:13,011 INFO: Generation: 2300
+2016-03-29 20:22:13,365 INFO: Generation: 2400
+2016-03-29 20:22:13,726 INFO: Generation: 2500
+2016-03-29 20:22:14,087 INFO: Generation: 2600
+2016-03-29 20:22:14,446 INFO: Generation: 2700
+2016-03-29 20:22:14,789 INFO: Generation: 2800
+2016-03-29 20:22:15,160 INFO: Generation: 2900
+2016-03-29 20:22:15,528 INFO: Generation: 3000
+2016-03-29 20:22:18,675 INFO: Generation: 3100
+2016-03-29 20:22:21,787 INFO: Generation: 3200
+2016-03-29 20:22:24,788 INFO: Generation: 3300
+2016-03-29 20:22:27,742 INFO: Generation: 3400
+2016-03-29 20:22:30,703 INFO: Generation: 3500
+2016-03-29 20:22:33,695 INFO: Generation: 3600
+2016-03-29 20:22:36,966 INFO: Generation: 3700
+2016-03-29 20:22:40,121 INFO: Generation: 3800
+2016-03-29 20:22:43,098 INFO: Generation: 3900
+2016-03-29 20:22:46,084 INFO: Generation: 4000
+2016-03-29 20:22:49,068 INFO: Generation: 4100
+2016-03-29 20:22:51,995 INFO: Generation: 4200
+2016-03-29 20:22:54,965 INFO: Generation: 4300
+2016-03-29 20:22:57,920 INFO: Generation: 4400
+2016-03-29 20:23:01,037 INFO: Generation: 4500
+2016-03-29 20:23:04,118 INFO: Generation: 4600
+2016-03-29 20:23:07,196 INFO: Generation: 4700
+2016-03-29 20:23:10,350 INFO: Generation: 4800
+2016-03-29 20:23:13,481 INFO: Generation: 4900
+2016-03-29 20:23:16,621 INFO: Generation: 5000
+2016-03-29 20:23:19,729 INFO: Generation: 5100
+2016-03-29 20:23:22,841 INFO: Generation: 5200
+2016-03-29 20:23:25,971 INFO: Generation: 5300
+2016-03-29 20:23:29,115 INFO: Generation: 5400
+2016-03-29 20:23:32,279 INFO: Generation: 5500
+2016-03-29 20:23:35,383 INFO: Generation: 5600
+2016-03-29 20:23:38,496 INFO: Generation: 5700
+2016-03-29 20:23:41,638 INFO: Generation: 5800
+2016-03-29 20:23:44,843 INFO: Generation: 5900
+2016-03-29 20:23:48,071 INFO: Generation: 6000
+2016-03-29 20:23:51,261 INFO: Generation: 6100
+2016-03-29 20:23:54,434 INFO: Generation: 6200
+2016-03-29 20:23:57,580 INFO: Generation: 6300
+2016-03-29 20:24:00,691 INFO: Generation: 6400
+2016-03-29 20:24:03,770 INFO: Generation: 6500
+2016-03-29 20:24:06,900 INFO: Generation: 6600
+2016-03-29 20:24:09,995 INFO: Generation: 6700
+2016-03-29 20:24:13,039 INFO: Generation: 6800
+2016-03-29 20:24:16,089 INFO: Generation: 6900
+2016-03-29 20:24:19,085 INFO: Generation: 7000
+2016-03-29 20:24:22,188 INFO: Generation: 7100
+2016-03-29 20:24:25,286 INFO: Generation: 7200
+2016-03-29 20:24:28,405 INFO: Generation: 7300
+2016-03-29 20:24:31,462 INFO: Generation: 7400
+2016-03-29 20:24:34,492 INFO: Generation: 7500
+2016-03-29 20:24:37,556 INFO: Generation: 7600
+2016-03-29 20:24:40,667 INFO: Generation: 7700
+2016-03-29 20:24:43,824 INFO: Generation: 7800
+2016-03-29 20:24:46,894 INFO: Generation: 7900
+2016-03-29 20:24:50,021 INFO: Generation: 8000
+2016-03-29 20:24:53,196 INFO: Generation: 8100
+2016-03-29 20:24:56,268 INFO: Generation: 8200
+2016-03-29 20:24:59,337 INFO: Generation: 8300
+2016-03-29 20:25:02,472 INFO: Generation: 8400
+2016-03-29 20:25:05,598 INFO: Generation: 8500
+2016-03-29 20:25:08,771 INFO: Generation: 8600
+2016-03-29 20:25:11,895 INFO: Generation: 8700
+2016-03-29 20:25:14,920 INFO: Generation: 8800
+2016-03-29 20:25:17,936 INFO: Generation: 8900
+2016-03-29 20:25:20,909 INFO: Generation: 9000
+2016-03-29 20:25:23,884 INFO: Generation: 9100
+2016-03-29 20:25:26,883 INFO: Generation: 9200
+2016-03-29 20:25:29,771 INFO: Generation: 9300
+2016-03-29 20:25:32,830 INFO: Generation: 9400
+2016-03-29 20:25:35,851 INFO: Generation: 9500
+2016-03-29 20:25:38,802 INFO: Generation: 9600
+2016-03-29 20:25:41,526 INFO: Generation: 9700
+2016-03-29 20:25:44,255 INFO: Generation: 9800
+2016-03-29 20:25:47,130 INFO: Generation: 9900
+2016-03-29 20:25:49,829 INFO: simulation complete,4,226.395432949
+simuPOP Version 1.1.7 : Copyright (c) 2004-2016 Bo Peng
+Revision 5000 (Jan 20 2016) for Python 2.7.11 (64bit, 0thread)
+Random Number Generator is set to mt19937 with random seed 0xeb219266f1d98ba0.
+This is the optimized long allele version with 18446744073709551616 maximum allelic states.
+For more information, please visit http://simupop.sourceforge.net,
+or email simupop-list@lists.sourceforge.net (subscription required).
+Couldn't import dot_parser, loading of dot files will not be possible.
+2016-03-29 20:25:50,304 INFO: Setting up 4 cores for parallel simulation
+2016-03-29 20:25:50,304 INFO: config: Namespace(cores=4, dbhost='localhost', dbport='27017', debug='0', devel=0, experiment='test3', innovrate=8.14380568885e-05, maxinittraits=5, migrationfraction=0.0714235018719, networkmodel='networkmodels/test3_pnn_d887f3da-726a-4fd2-a182-855589b7cb52.zip', numloci=3, popsize=250, reps=1, samplefraction=0.5, seed=612100450, simlength=10000)
+2016-03-29 20:25:50,521 INFO: Starting simulation run urn:uuid:19e18c00-f627-11e5-91ed-f45c899928c7
+2016-03-29 20:25:50,521 INFO: Minimum burn in time given popsize and theta: 3000
+2016-03-29 20:25:51,647 INFO: population sizes: (250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L, 250L) names: ('assemblage-138-552', 'assemblage-333-99', 'assemblage-362-85', 'assemblage-79-242', 'assemblage-390-426', 'assemblage-444-11', 'assemblage-173-80', 'assemblage-41-72', 'assemblage-244-538', 'assemblage-28-44', 'assemblage-385-262', 'assemblage-539-83', 'assemblage-26-30', 'assemblage-327-232', 'assemblage-513-272', 'assemblage-309-342', 'assemblage-357-192', 'assemblage-553-500', 'assemblage-531-87', 'assemblage-358-466', 'assemblage-373-178', 'assemblage-442-15', 'assemblage-508-159', 'assemblage-70-130', 'assemblage-126-13', 'assemblage-220-227', 'assemblage-536-150', 'assemblage-136-249', 'assemblage-290-350', 'assemblage-149-418', 'assemblage-104-486', 'assemblage-467-77')
+2016-03-29 20:25:51,648 INFO: Generation: 0
+2016-03-29 20:25:51,990 INFO: Generation: 100
+2016-03-29 20:25:52,333 INFO: Generation: 200
+2016-03-29 20:25:52,680 INFO: Generation: 300
+2016-03-29 20:25:53,026 INFO: Generation: 400
+2016-03-29 20:25:53,376 INFO: Generation: 500
+2016-03-29 20:25:53,750 INFO: Generation: 600
+2016-03-29 20:25:54,110 INFO: Generation: 700
+2016-03-29 20:25:54,474 INFO: Generation: 800
+2016-03-29 20:25:54,841 INFO: Generation: 900
+2016-03-29 20:25:55,216 INFO: Generation: 1000
+2016-03-29 20:25:55,557 INFO: Generation: 1100
+2016-03-29 20:25:55,907 INFO: Generation: 1200
+2016-03-29 20:25:56,269 INFO: Generation: 1300
+2016-03-29 20:25:56,604 INFO: Generation: 1400
+2016-03-29 20:25:56,962 INFO: Generation: 1500
+2016-03-29 20:25:57,305 INFO: Generation: 1600
+2016-03-29 20:25:57,653 INFO: Generation: 1700
+2016-03-29 20:25:58,009 INFO: Generation: 1800
+2016-03-29 20:25:58,364 INFO: Generation: 1900
+2016-03-29 20:25:58,709 INFO: Generation: 2000
+2016-03-29 20:25:59,052 INFO: Generation: 2100
+2016-03-29 20:25:59,418 INFO: Generation: 2200
+2016-03-29 20:25:59,774 INFO: Generation: 2300
+2016-03-29 20:26:00,132 INFO: Generation: 2400
+2016-03-29 20:26:00,481 INFO: Generation: 2500
+2016-03-29 20:26:00,825 INFO: Generation: 2600
+2016-03-29 20:26:01,161 INFO: Generation: 2700
+2016-03-29 20:26:01,506 INFO: Generation: 2800
+2016-03-29 20:26:01,855 INFO: Generation: 2900
+2016-03-29 20:26:02,189 INFO: Generation: 3000
+2016-03-29 20:26:05,463 INFO: Generation: 3100
+2016-03-29 20:26:08,681 INFO: Generation: 3200
+2016-03-29 20:26:11,920 INFO: Generation: 3300
+2016-03-29 20:26:15,187 INFO: Generation: 3400
+2016-03-29 20:26:18,446 INFO: Generation: 3500
+2016-03-29 20:26:21,649 INFO: Generation: 3600
+2016-03-29 20:26:24,855 INFO: Generation: 3700
+2016-03-29 20:26:28,039 INFO: Generation: 3800
+2016-03-29 20:26:31,144 INFO: Generation: 3900
+2016-03-29 20:26:34,141 INFO: Generation: 4000
+2016-03-29 20:26:37,114 INFO: Generation: 4100
+2016-03-29 20:26:40,064 INFO: Generation: 4200
+2016-03-29 20:26:42,999 INFO: Generation: 4300
+2016-03-29 20:26:45,927 INFO: Generation: 4400
+2016-03-29 20:26:49,085 INFO: Generation: 4500
+2016-03-29 20:26:52,260 INFO: Generation: 4600
+2016-03-29 20:26:55,463 INFO: Generation: 4700
+2016-03-29 20:26:58,665 INFO: Generation: 4800
+2016-03-29 20:27:01,820 INFO: Generation: 4900
+2016-03-29 20:27:04,995 INFO: Generation: 5000
+2016-03-29 20:27:08,231 INFO: Generation: 5100
+2016-03-29 20:27:11,672 INFO: Generation: 5200
+2016-03-29 20:27:15,068 INFO: Generation: 5300
+2016-03-29 20:27:18,378 INFO: Generation: 5400
+2016-03-29 20:27:21,788 INFO: Generation: 5500
+2016-03-29 20:27:25,393 INFO: Generation: 5600
+2016-03-29 20:27:28,838 INFO: Generation: 5700
+2016-03-29 20:27:32,161 INFO: Generation: 5800
+2016-03-29 20:27:35,498 INFO: Generation: 5900
+2016-03-29 20:27:38,893 INFO: Generation: 6000
+2016-03-29 20:27:42,133 INFO: Generation: 6100
+2016-03-29 20:27:45,747 INFO: Generation: 6200
+2016-03-29 20:27:49,337 INFO: Generation: 6300
+2016-03-29 20:27:52,678 INFO: Generation: 6400
+2016-03-29 20:27:56,114 INFO: Generation: 6500
+2016-03-29 20:27:59,512 INFO: Generation: 6600
+2016-03-29 20:28:02,876 INFO: Generation: 6700
+2016-03-29 20:28:06,228 INFO: Generation: 6800
+2016-03-29 20:28:09,624 INFO: Generation: 6900
+2016-03-29 20:28:13,008 INFO: Generation: 7000
+2016-03-29 20:28:16,521 INFO: Generation: 7100
+2016-03-29 20:28:19,770 INFO: Generation: 7200
+2016-03-29 20:28:24,341 INFO: Generation: 7300
+2016-03-29 20:28:27,528 INFO: Generation: 7400
+2016-03-29 20:28:30,711 INFO: Generation: 7500
+2016-03-29 20:28:33,877 INFO: Generation: 7600
+2016-03-29 20:28:37,087 INFO: Generation: 7700
+2016-03-29 20:28:40,293 INFO: Generation: 7800
+2016-03-29 20:28:43,548 INFO: Generation: 7900
+2016-03-29 20:28:46,827 INFO: Generation: 8000
+2016-03-29 20:28:50,038 INFO: Generation: 8100
+2016-03-29 20:28:53,317 INFO: Generation: 8200
+2016-03-29 20:28:56,595 INFO: Generation: 8300
+2016-03-29 20:28:59,879 INFO: Generation: 8400
+2016-03-29 20:29:03,130 INFO: Generation: 8500
+2016-03-29 20:29:06,387 INFO: Generation: 8600
+2016-03-29 20:29:09,728 INFO: Generation: 8700
+2016-03-29 20:29:13,052 INFO: Generation: 8800
+2016-03-29 20:29:16,358 INFO: Generation: 8900
+2016-03-29 20:29:19,615 INFO: Generation: 9000
+2016-03-29 20:29:22,849 INFO: Generation: 9100
+2016-03-29 20:29:26,109 INFO: Generation: 9200
+2016-03-29 20:29:29,380 INFO: Generation: 9300
+2016-03-29 20:29:32,648 INFO: Generation: 9400
+2016-03-29 20:29:35,874 INFO: Generation: 9500
+2016-03-29 20:29:39,099 INFO: Generation: 9600
+2016-03-29 20:29:42,306 INFO: Generation: 9700
+2016-03-29 20:29:45,479 INFO: Generation: 9800
+2016-03-29 20:29:48,692 INFO: Generation: 9900
+2016-03-29 20:29:52,104 INFO: simulation complete,4,241.802508116
+simuPOP Version 1.1.7 : Copyright (c) 2004-2016 Bo Peng
+Revision 5000 (Jan 20 2016) for Python 2.7.11 (64bit, 0thread)
+Random Number Generator is set to mt19937 with random seed 0x1029d0f327c97808.
+This is the optimized long allele version with 18446744073709551616 maximum allelic states.
+For more information, please visit http://simupop.sourceforge.net,
+or email simupop-list@lists.sourceforge.net (subscription required).
+Couldn't import dot_parser, loading of dot files will not be possible.
