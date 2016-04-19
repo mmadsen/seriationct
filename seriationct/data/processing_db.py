@@ -267,7 +267,7 @@ class AssemblageSampledSimulationData(Document):
     Sample of some number of assemblages from the total number of communities
     available in the exported and sampled data.
 
-    Object created by:  seriationct-sample-assemblages-for-seriation.py
+    Object created by:  seriationct-sample-assemblages.py
 
     There can be more than one of these for every SampledSimulationData object,
     especially given the --numsamples <int> argument

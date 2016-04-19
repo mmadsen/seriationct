@@ -27,7 +27,7 @@ def setup():
     global args, config, simconfig
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", type=int, help="turn on debugging output")
-    parser.add_argument("--inputdirectory", help="path to directory with IDSS format input files to sample", required=True)
+    parser.add_argument("--inputfile", help="path to directory with IDSS format input files to sample", required=True)
     parser.add_argument("--outputdirectory", help="path to directory for sampled data files", required=True)
     parser.add_argument("--samplefraction", type=float, help="Sample size to resample frequencies for each sim run and replication", required=True)
     parser.add_argument("--sampletype", choices=['random', 'spatial', 'temporal', 'spatiotemporal','complete','excludelist','slicestratified'],
@@ -493,48 +493,45 @@ if __name__ == "__main__":
     pp_db = data.PostProcessingDatabase(db_args)
     sm_db = data.SimulationMetadataDatabase(db_args)
 
-    for file in os.listdir(args.inputdirectory):
-        log.info("Starting processing of %s", file)
-        if fnmatch.fnmatch(file, '*.txt'):
-            full_fname = args.inputdirectory
-            full_fname += "/"
-            full_fname += file
-            root = parse_filename_into_root(file)
 
-            (header, row_list,assemblage_to_row) = read_unsampled_file(file)
-            log.debug("header: %s", header)
+    log.info("Starting processing of %s", args.inputfile)
+    full_fname = args.inputfile
+    root = parse_filename_into_root(args.inputfile)
 
-            # create N independent samplings from each input file
-            for sample_num in range(0, args.numsamples):
-                outputfile = args.outputdirectory + "/" + root + "-" + args.sampletype  +"-" + str(args.samplefraction) + "-resample-" + str(sample_num) + ".txt"
+    (header, row_list,assemblage_to_row) = read_unsampled_file(file)
+    log.debug("header: %s", header)
 
-                if args.sampletype == 'random':
-                    sampled_rows = random_sample_without_stratification(row_list)
-                elif args.sampletype == 'spatial':
-                    sampled_rows = random_spatial_sample(row_list, assemblage_to_row)
-                elif args.sampletype == 'temporal':
-                    sampled_rows = random_temporal_sample(row_list, root, assemblage_to_row)
-                elif args.sampletype == 'spatiotemporal':
-                    sampled_rows = random_spatiotemporal_sample(row_list, assemblage_to_row)
-                elif args.sampletype == 'complete':
-                    sampled_rows = complete_inventory(row_list, assemblage_to_row)
-                elif args.sampletype == 'excludelist':
-                    sampled_rows = exclude_assemblage_list(row_list, args.excludefile, assemblage_to_row)
-                elif args.sampletype == 'slicestratified':
-                    sampled_rows = random_sample_per_slice_stratification(row_list, assemblage_to_row,full_fname)
+    # create N independent samplings from each input file
+    for sample_num in range(0, args.numsamples):
+        outputfile = args.outputdirectory + "/" + root + "-" + args.sampletype  +"-" + str(args.samplefraction) + "-assemsample-" + str(sample_num) + ".txt"
 
-                log.info("Writing sampled output for file: %s ", outputfile)
+        if args.sampletype == 'random':
+            sampled_rows = random_sample_without_stratification(row_list)
+        elif args.sampletype == 'spatial':
+            sampled_rows = random_spatial_sample(row_list, assemblage_to_row)
+        elif args.sampletype == 'temporal':
+            sampled_rows = random_temporal_sample(row_list, root, assemblage_to_row)
+        elif args.sampletype == 'spatiotemporal':
+            sampled_rows = random_spatiotemporal_sample(row_list, assemblage_to_row)
+        elif args.sampletype == 'complete':
+            sampled_rows = complete_inventory(row_list, assemblage_to_row)
+        elif args.sampletype == 'excludelist':
+            sampled_rows = exclude_assemblage_list(row_list, args.excludefile, assemblage_to_row)
+        elif args.sampletype == 'slicestratified':
+            sampled_rows = random_sample_per_slice_stratification(row_list, assemblage_to_row,full_fname)
 
-                with open(outputfile, 'wb') as outfile:
-                    outfile.write(header)
+        log.info("Writing sampled output for file: %s ", outputfile)
 
-                    for row_idx in sampled_rows:
-                        row = row_list[row_idx]
-                        row_str = '\t'.join(row)
-                        row_str += '\n'
-                        outfile.write(row_str)
+        with open(outputfile, 'wb') as outfile:
+            outfile.write(header)
+
+            for row_idx in sampled_rows:
+                row = row_list[row_idx]
+                row_str = '\t'.join(row)
+                row_str += '\n'
+                outfile.write(row_str)
 
 
-        pp_db.store_assemblage_sampled_datafile(full_fname, args.sampletype, args.samplefraction, outputfile)
-        log.info("Completed processing of file %s", file)
+    pp_db.store_assemblage_sampled_datafile(full_fname, args.sampletype, args.samplefraction, outputfile)
+    log.info("Completed processing of file %s", file)
 

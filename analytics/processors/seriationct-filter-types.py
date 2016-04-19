@@ -203,87 +203,74 @@ if __name__ == "__main__":
     sm_db = data.SimulationMetadataDatabase(db_args)
 
 
+    full_fname = args.inputfile
+    root = parse_filename_into_root(full_fname)
+
+    networkmodel = get_networkmodel_for_input(full_fname)
+    # we use the actual TemporalNetwork
+    netmodel = TemporalNetwork(networkmodel_path=networkmodel, sim_length=1000)
+
+    time_map = netmodel.get_subpopulation_slice_ids()
+    # log.debug("assemblage time_map: %s", time_map)
+
+    # get the list of assemblages in order sorted by the origin time
+    sorted_assemblage_names = sorted(time_map.keys(), key=operator.itemgetter(1))
+
+    log.debug("sorted_assemblages: %s", sorted_assemblage_names)
+
+    outputfile = args.outputdirectory + "/" + root + "-" + str(args.dropthreshold) + "-filtered.txt"
+
+    log.debug("Starting processing of %s", outputfile)
+
+    (assemblages, classes, count_arr) = read_unsampled_file(file, sorted_assemblage_names)
+    #log.debug("assemblages: %s", assemblages)
+
+    # sort the rows of the count_arr by the temporal order we've got above.  This isn't easy to do
+    # automatically, so we basically do it manually
+    # class order hasn't changed so the classes variable is still valid.
+
+    sorted_row_list = []
+    for assem in sorted_assemblage_names:
+        if assem in assemblages:
+            row_in_orig = row_num_for_assemblage(assem, assemblages)
+            sorted_row_list.append(count_arr[row_in_orig,:])
+
+    #log.debug("sorted row list: %s", sorted_row_list)
+
+    sorted_data = np.array(sorted_row_list,dtype=np.float32)
 
 
+    # sorted_assemblages and sorted_data now represent the data set in sorted temporal order
+    # filter this using the Hartigans' dip test
+    (rejected_cols, retained_cols) = filter_cols_for_unimodality(sorted_data,args.dropthreshold)
 
 
+    log.info("Writing filtered output for file: %s rejected classes: %s  remaining classes: %s", outputfile,len(rejected_cols), len(retained_cols))
+
+    with open(outputfile, 'wb') as outfile:
+
+        # write header row
+        header = "Assemblage_Name"
+
+        for idx in range(0, len(classes)):
+            if idx in retained_cols:
+                header += '\t'
+                header += classes[idx]
+        header += '\n'
+
+        outfile.write(header)
+
+        for row_idx in range(0, sorted_data.shape[0]):
+            row = assemblages[row_idx]
+            for idx in range(0, len(classes)):
+                if idx in retained_cols:
+                    row += "\t"
+                    row += str(int(sorted_data[row_idx, idx]))
+            row += "\n"
+            outfile.write(row)
 
 
+    sim_id = pp_db.store_filtered_datafile(full_fname,networkmodel,args.dropthreshold,args.filtertype,args.minnonzero,outputfile)
 
-
-    for file in os.listdir(args.inputdirectory):
-        if fnmatch.fnmatch(file, '*.txt'):
-            full_fname = args.inputdirectory
-            full_fname += "/"
-            full_fname += file
-            root = parse_filename_into_root(file)
-
-            networkmodel = get_networkmodel_for_input(full_fname)
-            # we use the actual TemporalNetwork
-            netmodel = TemporalNetwork(networkmodel_path=networkmodel, sim_length=1000)
-
-            time_map = netmodel.get_subpopulation_slice_ids()
-            # log.debug("assemblage time_map: %s", time_map)
-
-            # get the list of assemblages in order sorted by the origin time
-            sorted_assemblage_names = sorted(time_map.keys(), key=operator.itemgetter(1))
-
-            log.debug("sorted_assemblages: %s", sorted_assemblage_names)
-
-            outputfile = args.outputdirectory + "/" + root + "-" + str(args.dropthreshold) + "-unimodal-filtered.txt"
-
-            log.debug("Starting processing of %s", outputfile)
-
-            (assemblages, classes, count_arr) = read_unsampled_file(file, sorted_assemblage_names)
-            #log.debug("assemblages: %s", assemblages)
-
-            # sort the rows of the count_arr by the temporal order we've got above.  This isn't easy to do
-            # automatically, so we basically do it manually
-            # class order hasn't changed so the classes variable is still valid.
-
-            sorted_row_list = []
-            for assem in sorted_assemblage_names:
-                if assem in assemblages:
-                    row_in_orig = row_num_for_assemblage(assem, assemblages)
-                    sorted_row_list.append(count_arr[row_in_orig,:])
-
-            #log.debug("sorted row list: %s", sorted_row_list)
-
-            sorted_data = np.array(sorted_row_list,dtype=np.float32)
-
-
-
-            # sorted_assemblages and sorted_data now represent the data set in sorted temporal order
-            # filter this using the Hartigans' dip test
-            (rejected_cols, retained_cols) = filter_cols_for_unimodality(sorted_data,args.dropthreshold)
-
-
-            log.info("Writing filtered output for file: %s rejected classes: %s  remaining classes: %s", outputfile,len(rejected_cols), len(retained_cols))
-
-            with open(outputfile, 'wb') as outfile:
-
-                # write header row
-                header = "Assemblage_Name"
-
-                for idx in range(0, len(classes)):
-                    if idx in retained_cols:
-                        header += '\t'
-                        header += classes[idx]
-                header += '\n'
-
-                outfile.write(header)
-
-                for row_idx in range(0, sorted_data.shape[0]):
-                    row = assemblages[row_idx]
-                    for idx in range(0, len(classes)):
-                        if idx in retained_cols:
-                            row += "\t"
-                            row += str(int(sorted_data[row_idx, idx]))
-                    row += "\n"
-                    outfile.write(row)
-
-
-        sim_id = pp_db.store_filtered_datafile(full_fname,networkmodel,args.dropthreshold,args.filtertype,args.minnonzero,outputfile)
-
-        log.debug("Completed processing of file %s", outputfile)
+    log.debug("Completed processing of file %s", outputfile)
 

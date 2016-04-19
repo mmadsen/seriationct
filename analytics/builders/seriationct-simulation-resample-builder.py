@@ -30,7 +30,7 @@ def generate_sample_command(experiment, inputfile, outputdirectory, samplesize,
 
     base_cmd = ''
 
-    base_cmd = "seriationct-sample-exported-datafile.py --experiment "
+    base_cmd = "seriationct-resample-exported-datafile.py --experiment "
 
     base_cmd += experiment
     base_cmd += " --inputfile "
@@ -90,7 +90,7 @@ def main():
     db_args['dbpassword'] = None
     pp_db = data.PostProcessingDatabase(db_args)
 
-    log.info("Opening %s output files for seriation configuration", args.parallelism)
+    log.info("Opening %s output files for resampling jobs", args.parallelism)
     num_files = int(args.parallelism)
     file_list = []
     base_name = "resamplejob-"
