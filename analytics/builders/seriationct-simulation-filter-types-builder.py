@@ -25,21 +25,20 @@ def parse_filename_into_root(filename):
 
 def generate_filter_command(inputfile):
     cmd = "seriationct-filter-types.py "
-    cmd += " --debug 0"
+    cmd += " --debug "
+    cmd += args.debug
     cmd += " --experiment "
     cmd += args.experiment
     cmd += " --inputfile "
     cmd += inputfile
     cmd += " --outputdirectory "
     cmd += args.outputdirectory
-    cmd += " --samplefraction "
-    cmd += args.samplefraction
     cmd += " --dropthreshold "
-    cmd += args.dropthreshold
+    cmd += str(args.dropthreshold)
     cmd += " --filtertype "
     cmd += args.filtertype
     cmd += " --minnonzero "
-    cmd += args.minnonzero
+    cmd += str(args.minnonzero)
 
     return cmd
 
@@ -118,15 +117,23 @@ def main():
 
     file_cycle = itertools.cycle(file_list)
 
-    cmd = generate_filter_command(args.inputfile)
 
-    fc = file_cycle.next()
-    log.debug("cmd: %s", cmd)
-    fc.write(cmd)
-    fc.write('\n')
+    for file in os.listdir(args.inputdirectory):
+        if fnmatch.fnmatch(file, '*.txt'):
+            full_fname = args.inputdirectory
+            full_fname += "/"
+            full_fname += file
+
+
+        cmd = generate_filter_command(full_fname)
+
+        fc = file_cycle.next()
+        log.debug("cmd: %s", cmd)
+        fc.write(cmd)
+        fc.write('\n')
 
     for fh in file_list:
-        fh.close()
+            fh.close()
 
 
 

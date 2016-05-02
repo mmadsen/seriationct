@@ -1,7 +1,4 @@
 #!/bin/sh
-
-set -o errexit
-
 for d in `ls jobs/job*.sh`
 do
         qsub -V -cwd $d

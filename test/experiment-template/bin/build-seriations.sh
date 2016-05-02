@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -o errexit
-
 mkdir -p seriation-output
 
 seriationct-seriation-builder.py --inputdirectory slice-stratified-filtered-data \

@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -o errexit
-
 mkdir -p exported-data
 mkdir -p temporal
 

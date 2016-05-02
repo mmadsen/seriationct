@@ -1,8 +1,5 @@
 #!/bin/sh
-
-set -o errexit
-
-for d in `ls jobs/job*.sh`
+for d in `ls jobs/ser*.sh`
 do
         qsub -V -cwd $d
 done
@@ -14,7 +11,6 @@ while [ $count -ne 0 ]
 do
 	sleep 60
 	count=`qstat | wc -l`
-	echo "still $count processes running in gridengine"
+	echo "still $count seriations running in gridengine"
 done
 
-echo "All simulation jobs completed at `date`"

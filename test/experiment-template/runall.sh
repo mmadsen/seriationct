@@ -2,7 +2,6 @@
 
 # exit if any of the subcommands returns an error, since they only work if the preceding command succeeded
 set -e
-set -o errexit
 
 
 ## assumes that network models are built and in place, because this is typically an exploratory step

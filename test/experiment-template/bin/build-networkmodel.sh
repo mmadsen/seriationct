@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -o errexit
-
 echo "========================================================="
 echo "  Sampling random network models from config"
 echo "========================================================="

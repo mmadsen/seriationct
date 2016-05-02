@@ -96,8 +96,7 @@ def read_unsampled_file(filename):
 
     """
     assemblage_to_row = dict()
-    fullpath = args.inputdirectory + "/" + filename
-    with open(fullpath, 'r') as incsv:
+    with open(filename, 'r') as incsv:
         csvread = csv.reader(incsv, delimiter="\t")
 
         header_row = csvread.next()
@@ -473,9 +472,9 @@ def random_spatiotemporal_sample(row_list, assemblage_to_row):
 
 
 def get_networkmodel_for_input(file):
-    sampled_obj = data.SampledSimulationData.objects.get(output_file=file)
+    sampled_obj = data.SampledSimulationData.objects(output_file = file).first()
     sim_id = sampled_obj.simulation_run_id
-    sim_run = data.SimulationRunMetadata.objects.get(simulation_run_id=sim_id)
+    sim_run = data.SimulationRunMetadata.objects(simulation_run_id = sim_id).first()
     networkmodel = sim_run.networkmodel
     return networkmodel
 
@@ -498,7 +497,7 @@ if __name__ == "__main__":
     full_fname = args.inputfile
     root = parse_filename_into_root(args.inputfile)
 
-    (header, row_list,assemblage_to_row) = read_unsampled_file(file)
+    (header, row_list,assemblage_to_row) = read_unsampled_file(full_fname)
     log.debug("header: %s", header)
 
     # create N independent samplings from each input file
@@ -533,5 +532,5 @@ if __name__ == "__main__":
 
 
     pp_db.store_assemblage_sampled_datafile(full_fname, args.sampletype, args.samplefraction, outputfile)
-    log.info("Completed processing of file %s", file)
+    log.info("Completed processing of file %s", full_fname)
 

@@ -150,7 +150,7 @@ def main():
     log.info("Opening %s output files for simulation configuration", args.parallelism)
     num_files = int(args.parallelism)
     file_list = []
-    base_name = "job-"
+    base_name = "simulationjob-"
     base_name += args.experiment
     base_name += "-"
 

@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -o errexit
-
 mkdir -p sampled-traits
 mkdir -p assemblage-sampled
 mkdir -p filtered-data
@@ -11,7 +9,7 @@ mkdir -p filtered-data
 echo "==================== resample exported data files ====================="
 
 
-seriationct-simulation-resample-builder.py --inputdirectory exported-data \
+seriationct-resample-builder.py --inputdirectory exported-data \
     --experiment REPLACEME \
     --outputdirectory sampled-traits \
     --jobdirectory jobs \

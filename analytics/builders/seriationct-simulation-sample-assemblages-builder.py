@@ -35,9 +35,9 @@ def generate_base_command(inputfile):
     cmd += " --outputdirectory "
     cmd += args.outputdirectory
     cmd += " --samplefraction "
-    cmd += args.samplefraction
+    cmd += str(args.samplefraction)
     cmd += " --numsamples "
-    cmd += args.numsamples
+    cmd += str(args.numsamples)
     cmd += " --sampletype "
     cmd += args.sampletype
 
@@ -122,8 +122,7 @@ def setup():
     parser.add_argument("--samplefraction", type=float,
                         help="Sample size to resample frequencies for each sim run and replication", required=True)
     parser.add_argument("--sampletype",
-                        choices=['random', 'spatial', 'temporal', 'spatiotemporal', 'complete', 'excludelist',
-                                 'slicestratified'],
+                        choices=['random', 'spatial', 'temporal', 'spatiotemporal', 'complete', 'excludelist','slicestratified'],
                         help="type of sampling.  random has no stratification, temporal is rough early/late stratification, spatial is"
                              "quadrants, spatiotemporal is stratification by both, complete preserves all rows, excludelist returns all rows except those given in a file",
                         required=True)
@@ -196,19 +195,19 @@ def main():
 
 
             if args.sampletype == 'random':
-                cmd = generate_random_sample_command()
+                cmd = generate_random_sample_command(full_fname)
             elif args.sampletype == 'spatial':
-                cmd = generate_spatial_sample_command()
+                cmd = generate_spatial_sample_command(full_fname)
             elif args.sampletype == 'temporal':
-                cmd = generate_temporal_sample_command()
+                cmd = generate_temporal_sample_command(full_fname)
             elif args.sampletype == 'spatiotemporal':
-                cmd = generate_spatiotemporal_sample_command()
+                cmd = generate_spatiotemporal_sample_command(full_fname)
             elif args.sampletype == 'complete':
-                cmd = generate_complete_sample_command()
+                cmd = generate_complete_sample_command(full_fname)
             elif args.sampletype == 'excludelist':
-                cmd = generate_exclusion_sample_command()
-            elif args.sampletype == 'slicestraified':
-                cmd = generate_slicestratified_sample_command()
+                cmd = generate_exclusion_sample_command(full_fname)
+            elif args.sampletype == 'slicestratified':
+                cmd = generate_slicestratified_sample_command(full_fname)
             else:
                 print "sampletype not recognized, fatal error"
                 sys.exit(1)

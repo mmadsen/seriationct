@@ -28,7 +28,7 @@ def setup():
     parser.add_argument("--debug", type=int, help="turn on debugging output")
     parser.add_argument("--dbhost", help="database hostname, defaults to localhost", default="localhost")
     parser.add_argument("--dbport", help="database port, defaults to 27017", default="27017")
-    parser.add_argument("--inputdirectory", help="path to directory with CSV files to sample", required=True)
+    parser.add_argument("--inputfile", help="path to file to filter", required=True)
     parser.add_argument("--outputdirectory", help="path to directory for exported data files", required=True)
     parser.add_argument("--dropthreshold", type=float, help="Threshold for the Hartigan dip test for considering a type unimodal", default=0.1)
     parser.add_argument("--filtertype", choices=['nonzerodip','dip', 'onlynonzero'], help="Filtering can remove just types \
@@ -59,8 +59,8 @@ def read_unsampled_file(filename, sorted_assemblages):
 
     :return: tuple with a list of assemblage names, class_names, and a Numpy array of trait counts
     """
-    fullpath = args.inputdirectory + "/" + filename
-    with open(fullpath, 'r') as incsv:
+
+    with open(filename, 'r') as incsv:
         csvread = csv.reader(incsv, delimiter="\t")
 
         header_row = csvread.next()
@@ -181,9 +181,9 @@ def row_num_for_assemblage(assemblage, assemblages):
     return None
 
 def get_networkmodel_for_input(file):
-    sampled_obj = data.AssemblageSampledSimulationData.objects.get(output_file=file)
+    sampled_obj = data.AssemblageSampledSimulationData.objects(output_file = file).first()
     sim_id = sampled_obj.simulation_run_id
-    sim_run = data.SimulationRunMetadata.objects.get(simulation_run_id=sim_id)
+    sim_run = data.SimulationRunMetadata.objects(simulation_run_id=sim_id).first()
     networkmodel = sim_run.networkmodel
     return networkmodel
 
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
     log.debug("Starting processing of %s", outputfile)
 
-    (assemblages, classes, count_arr) = read_unsampled_file(file, sorted_assemblage_names)
+    (assemblages, classes, count_arr) = read_unsampled_file(full_fname, sorted_assemblage_names)
     #log.debug("assemblages: %s", assemblages)
 
     # sort the rows of the count_arr by the temporal order we've got above.  This isn't easy to do

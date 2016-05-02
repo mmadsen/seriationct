@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -o errexit
-
 ## the coresperprocess argument is meant to be changed given GridEngine versus serial execution
 ## if GridEngine, you want this value to be 1, so that each simulation occupies a single core, and 
 ## GridEngine schedules simulations across all the cores without interference.
