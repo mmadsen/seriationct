@@ -2,7 +2,7 @@
 
 set -o errexit
 
-for d in `ls jobs/job*.sh`
+for d in `ls jobs/simulationjob*.sh`
 do
         qsub -V -cwd $d
 done
