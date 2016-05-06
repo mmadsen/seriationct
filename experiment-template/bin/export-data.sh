@@ -2,8 +2,8 @@
 
 set -o errexit
 
-mkdir -p exported-data
-mkdir -p temporal
+mkdir -p data/exported-data
+mkdir -p data/temporal
 
 cat << EOF > /tmp/mongo-index
 use REPLACEME_samples_raw;
@@ -15,12 +15,12 @@ rm /tmp/mongo-index
 
 echo "=================== exporting simulation data =============="
 
-seriationct-export-simids.py --experiment REPLACEME --outputfile simids.txt
-for d in `cat simids.txt`;
+seriationct-export-simids.py --experiment REPLACEME --outputfile data/simids.txt
+for d in `cat data/simids.txt`;
 do ( 
 	#echo "export $d"
 	seriationct-export-single-simulation.py --experiment REPLACEME \
-		--outputdirectory exported-data \
+		--outputdirectory data/exported-data \
 		--simid $d 
 ); done
 
@@ -28,4 +28,4 @@ do (
 echo "=============== exporting temporal information on assemblages ==============="
 
 seriationct-assemblage-duration-export.py --experiment REPLACEME \
-    --outputdirectory temporal
+    --outputdirectory data/temporal

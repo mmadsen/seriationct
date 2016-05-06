@@ -8,12 +8,13 @@ set -o errexit
 ## if you're NOT using GridEngine, either remove this argument, or let it default to the number
 ## of cores/hyperthreads, or perhaps cores/hyperthreads-1.  
 
-seriationct-simulation-builder.py --experiment REPLACEME \
---expconfig seriationct-priors.json \
---parallelism 5 \
---numsims 20 \
---networkmodels networkmodels \
---debug 0 \
---coresperprocess 1 \
---jobdirectory jobs
+seriationct-simulation-builder.py \
+    --experiment REPLACEME \
+    --expconfig seriationct-priors.json \
+    --parallelism 100 \
+    --numsims 500 \
+    --networkmodels data/networkmodels \
+    --debug 0 \
+    --coresperprocess 1 \
+    --jobdirectory jobs
 

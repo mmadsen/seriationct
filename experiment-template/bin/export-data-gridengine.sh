@@ -2,8 +2,8 @@
 
 set -o errexit
 
-mkdir -p exported-data
-mkdir -p temporal
+mkdir -p data/exported-data
+mkdir -p data/temporal
 
 cat << EOF > /tmp/mongo-index
 use REPLACEME_samples_raw;
@@ -15,15 +15,15 @@ rm /tmp/mongo-index
 
 echo "=================== exporting simulation data =============="
 
-seriationct-export-simids.py --experiment REPLACEME --outputfile simids.txt
+seriationct-export-simids.py --experiment REPLACEME --outputfile data/simids.txt
 
 seriationct-simulation-export-builder.py --experiment REPLACEME \
-    --simidfile simids.txt --outputdirectory exported-data
+    --simidfile data/simids.txt --outputdirectory data/exported-data --parallelism 100
 
 echo "=============== exporting temporal information on assemblages ==============="
 
 seriationct-assemblage-duration-export.py --experiment REPLACEME \
-    --outputdirectory temporal
+    --outputdirectory data/temporal
 
 
 
@@ -41,5 +41,7 @@ while [ $count -ne 0 ]
 do
 	sleep 60
 	count=`qstat | wc -l`
+	# the first two lines are header
+	count=$count-2
 	echo "still $count exports running in gridengine"
 done

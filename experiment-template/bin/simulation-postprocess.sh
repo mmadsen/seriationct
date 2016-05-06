@@ -2,18 +2,18 @@
 
 set -o errexit
 
-mkdir -p sampled-traits
-mkdir -p assemblage-sampled
-mkdir -p filtered-data
+mkdir -p data/sampled-traits
+mkdir -p data/assemblage-sampled
+mkdir -p data/filtered-data
 
 ######## Sample exported datafiles to create synthetic assemblages of 500 artifacts each #########
 
 echo "==================== resample exported data files ====================="
 
 
-seriationct-simulation-resample-builder.py --inputdirectory exported-data \
+seriationct-simulation-resample-builder.py --inputdirectory data/exported-data \
     --experiment REPLACEME \
-    --outputdirectory sampled-traits \
+    --outputdirectory data/sampled-traits \
     --jobdirectory jobs \
     --samplesize 500 \
     --debug 0 \
@@ -30,9 +30,9 @@ for d in `ls jobs/resamplejob*.sh`; do ( sh $d ); done
 echo "==================== subsample assemblages ====================="
 
 
-seriationct-simulation-sample-assemblages-builder.py --inputdirectory sampled-traits \
+seriationct-simulation-sample-assemblages-builder.py --inputdirectory data/sampled-traits \
     --experiment REPLACEME \
-    --outputdirectory assemblage-sampled \
+    --outputdirectory data/assemblage-sampled \
     --sampletype slicestratified \
     --numsamples 1 \
     --samplefraction 0.05 \
@@ -48,9 +48,9 @@ for d in `ls jobs/assemsamplejob*.sh`; do ( sh $d ); done
 echo "==================== filter subsampled assemblages ====================="
 
 
-seriationct-simulation-filter-types-builder.py --inputdirectory assemblage-sampled \
+seriationct-simulation-filter-types-builder.py --inputdirectory data/assemblage-sampled \
     --experiment REPLACEME \
-    --outputdirectory filtered-data \
+    --outputdirectory data/filtered-data \
     --dropthreshold 0.10 \
     --filtertype onlynonzero \
     --minnonzero 3 \
@@ -67,7 +67,7 @@ echo "==================== finalize seriation input data  ====================="
 
 seriationct-finalize-seriation-input.py \
     --experiment REPLACEME \
-    --inputdirectory filtered-data \
+    --inputdirectory data/filtered-data \
     --debug 0
 
 

@@ -2,16 +2,19 @@
 
 set -o errexit
 
-mkdir -p seriation-output
+mkdir -p data/seriation-output
 
-seriationct-seriation-builder.py --inputdirectory slice-stratified-filtered-data \
-	--outputdirectory seriation-output \
+### EDIT PARALLELISM to match the parallelism chosen in build-simulations.sh given the number of simulations,
+### or to match the number of post processing output files if this multiplies over the number of simulations.
+
+seriationct-seriation-builder.py --inputdirectory data/filtered-data \
+	--outputdirectory data/seriation-output \
 	--dobootstrapsignificance 1 \
 	--frequency 0 \
 	--continuity 1 \
 	--experiment REPLACEME \
 	--jobdirectory jobs \
-	--parallelism 1 \
+	--parallelism 100 \
 	--debug 0
 
 
