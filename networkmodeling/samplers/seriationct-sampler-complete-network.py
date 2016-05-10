@@ -63,17 +63,6 @@ def setup():
 
     log.info("Generating %s network models with sampled priors for experiment: %s using generator: %s", args.nummodels, args.experiment, nmconfig['network_generator'])
 
-#
-# seriationct-build-single-linear-network.py --outputdirectory rawnetworkmodels/gc-simple-linear-sample-1-networkmodel \
-# 	--experiment gc-simple-linear-sample-1 \
-# 	--slices 10 \
-# 	--numpopulations 64 \
-# 	--centroidx 500 \
-# 	--centroidy 500 \
-# 	--spatialsd 100 \
-# 	--edgeweight 10 \
-# 	--debug 0
-
 
 
 def generate_randomized_networkmodel(seed):
@@ -115,19 +104,6 @@ def generate_randomized_networkmodel(seed):
     xyfilepath += '-XY.txt'
     record['xyfilepath'] = xyfilepath
 
-    mean_edges_perpopulation = npr.uniform(low=float(nmconfig['mean_edges_perpopulation_low']),
-                                           high=float(nmconfig['mean_edges_perpopulation_high']))
-
-    sd_edges_perpopulation = npr.uniform(low=float(nmconfig['sd_edges_perpopulation_low']),
-                                         high=float(nmconfig['sd_edges_perpopulation_high']))
-
-    exponential_coefficient = npr.uniform(low=float(nmconfig['exponential_coefficient_low']),
-                                          high=float(nmconfig['exponential_coefficient_high']))
-
-    record['mean_edges_per_population'] = mean_edges_perpopulation
-    record['sd_edges_per_population'] = sd_edges_perpopulation
-    record['exponential_decay_coefficient'] = exponential_coefficient
-
 
     nm_generator = nmconfig['network_generator']
     record['generator'] = nm_generator
@@ -157,18 +133,17 @@ def generate_randomized_networkmodel(seed):
     cmd += str(nmconfig['edgeweight'])
     record['edgeweight'] = nmconfig['edgeweight']
 
-    cmd += " --spatialaspectratio "
-    cmd += str(nmconfig['spatial_aspect_ratio'])
-    record['spatial_aspect_ratio'] = nmconfig['spatial_aspect_ratio']
+    cmd += " --centroidx "
+    cmd += str(nmconfig['centroidx'])
+    record['centroidx'] = nmconfig['centroidx']
 
-    cmd += " --meanedgesperpopulation "
-    cmd += str(mean_edges_perpopulation)
+    cmd += " --centroidy "
+    cmd += str(nmconfig['centroidy'])
+    record['centroidy'] = nmconfig['centroidy']
 
-    cmd += " --sdedgesperpopulation "
-    cmd += str(sd_edges_perpopulation)
-
-    cmd += " --exponentialcoefficient "
-    cmd += str(exponential_coefficient)
+    cmd += " --spatialsd "
+    cmd += str(nmconfig['spatialsd'])
+    record['spatialsd'] = nmconfig['spatialsd']
 
 
     cmd += '\n'
@@ -178,9 +153,8 @@ def generate_randomized_networkmodel(seed):
 
 
 def get_csv_header():
-    fields = ['model_id', 'model_uuid', 'network_type', 'generator', 'mean_edges_per_population',
-              'sd_edges_per_population','exponential_decay_coefficient',
-              'edgeweight', 'spatial_aspect_ratio', 'populations_per_slice', 'slices', 'rawdirectorypath',
+    fields = ['model_id', 'model_uuid', 'network_type', 'generator', 'centroidx', 'centroidy', 'spatialsd',
+              'edgeweight', 'populations_per_slice', 'slices', 'rawdirectorypath',
               'xyfilepath', 'compressedfilepath']
 
     return fields
