@@ -79,6 +79,8 @@ def random_interconnect_clusters(full_g, clusters_to_connect, cluster_id_ranges,
     and a number of interconnects to make, randomly sample pairs of node IDs from the two clusters, and
     create an edge in the full union graph.
     """
+    log.info("clusters_to_connect: %s", clusters_to_connect)
+    log.info("cluster_id_ranges: %s", cluster_id_ranges)
     c1_ids = cluster_id_ranges[clusters_to_connect[0]]
     c2_ids = cluster_id_ranges[clusters_to_connect[1]]
     c1_nodes_chosen = random.sample(c1_ids, num_interconnects)
@@ -161,25 +163,31 @@ def create_cluster_interconnect_schedule():
     This method constructs a dict whose keys are slice ID's, and values that are lists of tuples
     of cluster ID's to interconnect.
     """
-    cluster_ids = range(0, args.numclusters)
+    num_clusters_per_lineage = int(args.numclusters)
+    total_clusters = num_clusters_per_lineage * args.numlineages
+    cluster_ids = range(0, total_clusters)
     interconnect_schedule = dict()
     slice_ids = range(1, args.slices+1)
     cluster_to_lineage_map = dict()
+
+    log.debug("cluster_ids: %s", cluster_ids)
+    log.debug("slice_ids: %s", slice_ids)
 
     # calculate how to break up the lineages
     lineage_list = dict()
     for lineage in range(1,args.numlineages+1):
         lineage_list[lineage] = []
-    num_clusters_per_lineage = int(args.numclusters) / int(args.numlineages)
-    # handle the integral number of clusters per lineage
+
+
     for lineage in range(1,args.numlineages+1):
         for i in range(0,num_clusters_per_lineage):
             cluster = cluster_ids.pop()
+            log.debug("assigning cluster %s to lineage %s", cluster, lineage)
             lineage_list[lineage].append(cluster)
             cluster_to_lineage_map[cluster] = lineage
-    # handle the remainder if numclusters % numlineages != 0
-    for i in range(0,len(cluster_ids)):
-        lineage_list[i].append(cluster_ids.pop())
+    # # handle the remainder if numclusters % numlineages != 0
+    # for i in range(0,len(cluster_ids)):
+    #     lineage_list[i].append(cluster_ids.pop())
 
     log.debug("lineage list to apply to split-phase in model: %s", lineage_list)
 

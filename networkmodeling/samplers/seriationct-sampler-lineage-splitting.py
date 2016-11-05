@@ -27,6 +27,7 @@ for postprocessing (which now gets more complex).
 import logging as log
 import argparse
 import itertools
+import numpy as np
 import numpy.random as npr
 import json
 import uuid
@@ -52,7 +53,7 @@ def setup():
     parser.add_argument("--rawnetworkmodelspath", help="Path to directory to place raw temporal network model subdirectories", required=True)
     parser.add_argument("--compressednetworkmodelspath", help="Path to directory to place compressed network model files", required=True)
     parser.add_argument("--xyfilespath", help="Path to directory to place assemblage coordinate XY files", required=True)
-    #parser.add_argument("--modelrepositorycsv", help="Path to CSV file to record parameters for each model for later analysis", required=True)
+
 
     args = parser.parse_args()
     nmconfig = parse_netmodel_config(args.netmodelconfig)
@@ -106,19 +107,17 @@ def generate_randomized_networkmodel(seed):
     xyfilepath += '-XY.txt'
     record['xyfilepath'] = xyfilepath
 
-    intercluster_edgeweight = npr.uniform(low=float(nmconfig['intercluster_edgeweight_low']),
-                                           high=float(nmconfig['intercluster_edgeweight_high']))
+    change_time = npr.randint(low=int(nmconfig['change_time_low']),
+                              high=int(nmconfig['change_time_high'] + 1), # rand int high is exclusive
+                              size=1)[0]
 
-    intracluster_edgeweight = npr.uniform(low=float(nmconfig['intracluster_edgeweight_low']),
-                                         high=float(nmconfig['intracluster_edgeweight_high']))
+    log.info("change_time: %s", change_time)
 
-    change_time = npr.uniform(low=float(nmconfig['change_time_low']),
-                              high=float(nmconfig['change_time_high']))
+    numlineages_choices = np.array(nmconfig['numlineages_choose'])
+    numclusters_choices = np.array(nmconfig['numclusters_choose'])
 
-
-    record['intercluster_edgeweight'] = intercluster_edgeweight
-    record['intracluster_edgeweight'] = intracluster_edgeweight
-    record['change_time'] = change_time
+    numlineages = npr.choice(numlineages_choices, size=1)[0]
+    numclusters = npr.choice(numclusters_choices, size=1)[0]
 
 
     nm_generator = nmconfig['network_generator']
@@ -142,12 +141,16 @@ def generate_randomized_networkmodel(seed):
     cmd += args.debug
 
     cmd += " --numclusters "
-    cmd += str(nmconfig['num_clusters'])
-    record['num_clusters'] = nmconfig['num_clusters']
+    cmd += str(numclusters)
+    record['num_clusters'] = numclusters
 
     cmd += " --numlineages "
-    cmd += str(nmconfig['num_lineages'])
-    record['num_lineages'] = nmconfig['num_lineages']
+    cmd += str(numlineages)
+    record['num_lineages'] = numlineages
+
+    cmd += " --change_time "
+    cmd += str(change_time)
+    record['change_time'] = change_time
 
     cmd += " --clusterspread "
     cmd += str(nmconfig['clusterspread'])
@@ -169,6 +172,21 @@ def generate_randomized_networkmodel(seed):
     cmd += str(nmconfig['direction'])
     record['direction'] = nmconfig['direction']
 
+    cmd += " --interconnectfraction "
+    cmd += str(nmconfig['interconnectfraction'])
+    record['interconnectfraction'] = nmconfig['interconnectfraction']
+
+    intercluster_edgeweight = float(nmconfig['intercluster_edgeweight'])
+    intracluster_edgeweight = float(nmconfig['intracluster_edgeweight'])
+    record['intercluster_edgeweight'] = intercluster_edgeweight
+    record['intracluster_edgeweight'] = intracluster_edgeweight
+
+    cmd += " --intercluster_edgeweight "
+    cmd += str(intercluster_edgeweight)
+
+    cmd += " --intracluster_edgeweight "
+    cmd += str(intracluster_edgeweight)
+
     cmd += '\n'
 
     log.debug("%s", cmd)
@@ -177,7 +195,7 @@ def generate_randomized_networkmodel(seed):
 
 def get_csv_header():
     fields = ['model_id', 'model_uuid', 'network_type', 'generator', 'numclusters',
-              'numlineages','clusterspread', 'direction', 'foo',
+              'numlineages','clusterspread', 'direction', 'change_time',
               'centroidmin', 'centroidmax', 'nodespercluster', 'slices', 'rawdirectorypath',
               'xyfilepath', 'compressedfilepath']
 
@@ -206,7 +224,7 @@ def create_compressed_networkmodel(model_id):
     TODO:  ZipWriter seems to want to put individual files in the zipfile, we need to zip a whole dir  shell out?
 
     """
-    cmd = "zip -r "
+    cmd = "zip -q -r "
     cmd += args.compressednetworkmodelspath
     cmd += "/"
     cmd += model_id

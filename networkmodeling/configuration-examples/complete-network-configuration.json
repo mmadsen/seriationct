@@ -1,0 +1,11 @@
+{
+  "network_type": "complete",
+  "network_generator": "seriationct-build-complete-network.py",
+  "centroidx": 500,
+  "centroidy": 500,
+  "spatialsd": 100,
+  "edgeweight": 10,
+  "num_populations_per_slice": 32,
+  "slices": 10
+}
+

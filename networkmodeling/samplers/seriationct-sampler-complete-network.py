@@ -182,7 +182,7 @@ def create_compressed_networkmodel(model_id):
     TODO:  ZipWriter seems to want to put individual files in the zipfile, we need to zip a whole dir  shell out?
 
     """
-    cmd = "zip -r "
+    cmd = "zip -q -r "
     cmd += args.compressednetworkmodelspath
     cmd += "/"
     cmd += model_id

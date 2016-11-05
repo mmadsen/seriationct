@@ -1,0 +1,18 @@
+{
+  "network_type": "lineagesplit",
+  "network_generator": "seriationct-build-lineage-splitting-network.py",
+  "intercluster_edgeweight": 1.0,
+  "intracluster_edgeweight": 10.0,
+  "nodespercluster": 8,
+  "interconnectfraction": 0.1,
+  "centroidmin": 100,
+  "centroidmax": 1000,
+  "clusterspread": 10,
+  "numclusters_choose": [2,4],
+  "numlineages_choose": [2,3,4],
+  "direction": "split",
+  "change_time_low": 2,
+  "change_time_high": 7,
+  "slices": 10
+}
+
