@@ -185,6 +185,6 @@ setup(name="seriationct",
           'Topic :: Scientific/Engineering',
       ],
       license="APACHE",
-      data_files=[('seriationct-template', ['seriationct-templates/seriationct-experiment-template.zip'])],
+      # data_files=[('seriationct-template', ['seriationct-templates/seriationct-experiment-template.zip'])],
       cmdclass={ "version": VersionUpdate, "install": CustomInstallClass, "develop": CustomDevelopClass },
       )
