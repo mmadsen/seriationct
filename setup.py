@@ -77,7 +77,7 @@ class CustomDevelopClass(develop):
 class CustomInstallClass(install):
 
     def run(self):
-        zip_cmd = "zip -r seriationct-templates/seriationct-experiment-template.zip experiment-template >& /dev/null"
+        zip_cmd = "zip -r seriationct-template/seriationct-experiment-template.zip experiment-template >& /dev/null"
         os.system(zip_cmd)
         #shutil.copy('admin/seriationct-create-experiment-directory.sh','/usr/local/bin/seriationct-create-experiment-directory')
 
