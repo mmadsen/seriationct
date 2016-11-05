@@ -9,6 +9,7 @@ Description here
 """
 import math
 from parallel import get_parallel_cores
+from exceptions import format_exception
 
 
 # Function for testing the partial or total ordering of a list of numbers
